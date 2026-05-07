@@ -20,6 +20,7 @@ const CONTENT_ROOT = path.join(ROOT, 'src', 'content');
 const DIST = path.join(ROOT, 'dist');
 
 const COVERAGE_TO_DIR = {
+  overview: 'explainers',
   setup: 'setups',
   connections: 'connections',
   plugins: 'plugins',

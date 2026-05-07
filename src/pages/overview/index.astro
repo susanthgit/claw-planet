@@ -1,0 +1,39 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+import CatalogTable from '@components/CatalogTable.astro';
+import { getCollection } from 'astro:content';
+
+const allExplainers = await getCollection('explainers');
+const overviewEntries = allExplainers
+  .filter(e => e.data.section === 'Overview' && e.data.status === 'published')
+  .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
+
+const catalogEntries = overviewEntries.map(e => ({
+  num: e.data.sectionNumber,
+  title: e.data.title,
+  href: `/overview/${e.id.replace(/\.mdx?$/, '')}/`,
+  description: e.data.description,
+  state: e.data.verificationState,
+  date: e.data.lastReviewedAt,
+}));
+
+const verbCount = `${overviewEntries.length} entries · all sourced`;
+---
+
+<BaseLayout
+  title="§ 1 Overview"
+  description="Plain-English orientation to the OpenClaw agent runtime — what it is, the canonical config files, the architecture, and the honest drawbacks."
+  noIndex={true}
+>
+  <SectionHead num="1" title="Overview" verb={verbCount} />
+  <SectionBlurb>
+    Start here if OpenClaw is new to you. Five-minute orientation, the seven canonical workspace files,
+    a flat schematic of the runtime, and the drawbacks the official docs won't lead with. Every entry
+    is sourced from <a href="https://docs.openclaw.ai">docs.openclaw.ai</a> or
+    the <a href="https://github.com/openclaw/openclaw">canonical GitHub README</a>; the verification
+    state on each one tells you whether we've also run it ourselves yet.
+  </SectionBlurb>
+  <CatalogTable entries={catalogEntries} />
+</BaseLayout>

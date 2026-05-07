@@ -1,0 +1,101 @@
+---
+title: "What is OpenClaw, plainly"
+section: "Overview"
+sectionNumber: "1.1"
+description: "Five-minute orientation. What problem OpenClaw solves and what trade-offs it makes vs MCP-based stacks and framework-only approaches."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from docs.openclaw.ai and the github.com/openclaw/openclaw README. We have not run OpenClaw end-to-end yet."
+lastReviewedAt: "2026-05-07"
+sources:
+  - "https://docs.openclaw.ai/concepts/agent"
+  - "https://github.com/openclaw/openclaw"
+  - "https://docs.openclaw.ai/concepts/agent-workspace"
+seeAlso:
+  - "1.2"
+  - "2.3"
+  - "3.1"
+---
+
+## The thirty-second version
+
+OpenClaw is a **personal AI assistant you run on your own machine**. One process — the *Gateway* — sits on your laptop or server and connects to the messaging apps you already use (WhatsApp, Telegram, Slack, iMessage, Discord, and twenty-plus others). When a message comes in, the Gateway hands it to a single agent process. The agent reads its config files (which describe its personality, your preferences, and the rules it must follow), calls a model like Claude or GPT, runs whatever tools are needed, and replies back through the same channel.
+
+So the agent is **always the same agent** — same memory, same personality, same rules — whether you message it from your phone, your laptop, or your watch. It's local-first, single-user, and explicitly designed to feel like *yours*.
+
+> *"If you want a personal, single-user assistant that feels local, fast, and always-on, this is it."* — [openclaw.ai README](https://github.com/openclaw/openclaw)
+
+## A real example
+
+You're cooking dinner. You message your OpenClaw agent on WhatsApp:
+
+> "Remind me to push the deploy script changes at 10pm tonight."
+
+What happens under the hood:
+
+1. The **WhatsApp channel** (sitting inside your local Gateway) receives the message.
+2. The Gateway hands it to your **agent runtime**.
+3. The agent loads its **workspace files** — the markdown documents that tell it your name, your habits, your boundaries.
+4. It calls a model (whichever you've configured) with the system prompt assembled from those files plus your message.
+5. The model decides this is a scheduling task. The agent invokes the **cron** tool and books a reminder for 22:00.
+6. Back through WhatsApp: *"OK — I'll remind you at 10pm. I'll send it back here unless you tell me otherwise."*
+
+At 10pm, the cron tool fires. The agent gets the trigger, looks up your context, and sends *"⏰ Time to push the deploy script changes."* — to whichever channel you prefer.
+
+No cloud service in the middle. No third-party server holding your context. The whole thing ran on the machine sitting under your desk.
+
+## Why this matters
+
+A lot of AI-assistant products on the market today are services — you talk to OpenAI's servers, Anthropic's servers, Microsoft's servers. Your context lives there. Your conversation history lives there. The product disappears if the company decides to change pricing, deprecate the model, or discontinue the service.
+
+OpenClaw flips the shape: **your machine runs the agent**, and the agent talks to whatever model you've authenticated with. Switch from OpenAI to Claude tomorrow — your agent doesn't change. Cancel a subscription — your assistant doesn't disappear. You move machines — `git clone` the workspace and you're back.
+
+This isn't free, of course. You pay for it in **operational responsibility**: you keep the Gateway running, you patch it, you handle the network, you manage credentials. But you also *own* the thing.
+
+## How it compares to other agent stacks
+
+This is the most useful question to answer up front, because the agent space has gotten crowded:
+
+| Stack | Shape | Where the runtime lives | Persistent identity |
+|---|---|---|---|
+| **OpenClaw** | Self-hosted Gateway + single agent + workspace files | Your machine | Yes — workspace files persist across sessions |
+| **Claude Desktop + MCP** | Single host app + plug-in MCP servers | Your machine, but limited to that desktop session | Limited — depends on which MCP servers you use |
+| **LangChain / LlamaIndex / DSPy** | Library you call from your own code | Wherever your code runs | You build it |
+| **AutoGen / CrewAI** | Multi-agent orchestration framework | Wherever your code runs | You build it |
+| **OpenAI ChatGPT (Plus)** | Hosted SaaS | OpenAI's servers | Yes — but on their servers |
+
+The closest cousin is **Claude Desktop + MCP** — both are local-first, both connect external tools to a model. The difference: Claude Desktop is one host app for one person at one machine. OpenClaw is a Gateway that handles your whole messaging life across every channel you use, with a workspace that persists when the host app would have ended its session.
+
+If you've used MCP and liked it but wished it had more shape — channel routing, persistent memory across machines, scheduled tasks, multi-channel delivery — OpenClaw is what *that* shape looks like.
+
+## The five things that make OpenClaw OpenClaw
+
+If you only remember five things from this page, make it these:
+
+1. **The Gateway is one process per machine.** It's a daemon, runs in the background, handles everything. Install with `npm install -g openclaw@latest` and run `openclaw onboard --install-daemon`.
+
+2. **There's exactly one agent runtime per Gateway.** Not a swarm. Not multi-agent. One persistent assistant.
+
+3. **The workspace is a directory of plain markdown files.** [SOUL.md](/overview/concepts/#soul-md) is its personality, [AGENTS.md](/overview/concepts/#agents-md) is its operating instructions, [USER.md](/overview/concepts/#user-md) is what it knows about you, and so on. You can edit them with `vim`. You can put them in a git repo. They're injected into the system prompt every time the agent starts a session.
+
+4. **Channels connect the Gateway to messaging surfaces.** WhatsApp, Telegram, Slack, Discord, iMessage, and 19+ more. Each channel has a default `pairing` policy — unknown senders get a pairing code, not your agent.
+
+5. **Tools and skills extend what the agent can do.** Built-in tools (`read`, `exec`, `edit`, `write`, `browser`, `canvas`) are always there. Skills are bundles of instructions and helpers the agent loads from the workspace, your home directory, or the install bundle.
+
+That's the shape. Everything else in this reference — security gotchas, setup paths for laptop / Linux / Azure / Raspberry Pi, plugin field notes, comparison matchups — sits on top of those five things.
+
+## What we are NOT going to claim
+
+We have not run OpenClaw end-to-end ourselves yet (verification state on this page is `sourced-only`). The page above is compiled from official docs and the canonical GitHub README. Where we say "the agent does X," we mean "the docs say the agent does X" — not "we ran it and watched X happen."
+
+Setup pages like [§2.3 Laptop quick-start](/setup/laptop/) carry the same honesty: each declares whether we've actually executed the install or only sourced it from documentation. When that flips from `sourced` to `tested` the page says so, with a date.
+
+## What to read next
+
+| You're trying to | Go to |
+|---|---|
+| Understand the canonical config files (SOUL.md, AGENTS.md, etc.) | [§1.2 Concepts & glossary](/overview/concepts/) |
+| See how the pieces fit together visually | [§1.3 Architecture diagram](/overview/architecture/) |
+| Know what OpenClaw is *not* great at | [§1.4 Honest drawbacks](/overview/honest-drawbacks/) |
+| Install it on your laptop today | [§2.3 Laptop quick-start](/setup/laptop/) |
+| Browse the channels (Slack, WhatsApp, etc.) you can connect | [§3.2 Channels](/connections/channels/) |

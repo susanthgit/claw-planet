@@ -34,10 +34,12 @@ jobs:
 
       - name: Audit claims (counts + internal links)
         env:
-          # Ratcheted threshold during P0a build — placeholder home links to
-          # /overview/ /setup/ /plugins/* etc. that ship in Batches 5–8.
-          # MUST go back to 0 (default) when P0a content is complete.
-          INTEGRITY_LINK_THRESHOLD: '60'
+          # Ratcheted threshold during P0a build — entries cross-reference
+          # routes that ship later in P0a (Batches 6-8): /setup/*,
+          # /connections/*, /plugins/*, /use-cases/*, /security/*, /compare/*,
+          # /resources/, /faq/, /methodology/, /colophon/.
+          # MUST go back to 0 (default) when P0a content is complete (Batch 8).
+          INTEGRITY_LINK_THRESHOLD: '300'
         run: node scripts/integrity-check.mjs
 
       - name: Voice lint (advisory)

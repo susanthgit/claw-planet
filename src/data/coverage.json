@@ -3,7 +3,7 @@
   "_lastUpdated": "2026-05-07",
   "phase": "P0a",
   "sections": {
-    "overview": { "code": "S.01", "title": "Overview", "current": 0, "target": 4, "verified": 0 },
+    "overview": { "code": "S.01", "title": "Overview", "current": 4, "target": 4, "verified": 0 },
     "setup": { "code": "S.02", "title": "Setup methods", "current": 0, "target": 10, "tested": 0, "sourced": 0 },
     "connections": { "code": "C.03", "title": "Connection categories", "current": 0, "target": 4 },
     "plugins": { "code": "P.04", "title": "Plugin field notes", "current": 0, "target": 30 },

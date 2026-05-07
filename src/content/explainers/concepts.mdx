@@ -1,0 +1,272 @@
+---
+title: "Concepts & glossary"
+section: "Overview"
+sectionNumber: "1.2"
+description: "Every OpenClaw concept that matters — what each one is, where the docs live, what it's called officially, and where it shows up in this site. Sourced from openclaw-primitives.json."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Every entry is sourced from docs.openclaw.ai or the github.com/openclaw/openclaw README. We have not run OpenClaw end-to-end. If we use an umbrella term that is not in official docs (e.g. 'Connections'), we say so explicitly."
+lastReviewedAt: "2026-05-07"
+sources:
+  - "https://docs.openclaw.ai/llms.txt"
+  - "https://github.com/openclaw/openclaw"
+seeAlso:
+  - "1.1"
+  - "1.3"
+---
+
+## How to read this page
+
+OpenClaw has its own vocabulary. Some of it is invented (`SOUL.md` is a real OpenClaw thing, not a generic agent term). Some of it overlaps with the broader agent-runtime vocabulary (channels, tools, skills, sessions). And some of it is *our* framing — like the umbrella tab "Connections" we use on this site to group channels + tools + models + memory.
+
+This glossary tells you:
+
+- **What the term is** in plain English
+- **Whether it's an official OpenClaw term** or our umbrella
+- **Where the canonical doc lives** so you can verify
+- **Where it shows up in this site**
+
+If we ever invent a term that isn't in OpenClaw docs, the entry says so explicitly with `our framing` on the badge.
+
+> **Source-of-truth for this page:** [`src/data/openclaw-primitives.json`](https://github.com/susanthgit/claw-planet/blob/main/src/data/openclaw-primitives.json) in the repo. Fully cited, machine-readable, dispute via GitHub.
+
+---
+
+## Workspace files (7 canonical markdown files inside the agent's workspace)
+
+These are the files OpenClaw expects to find at `~/.openclaw/workspace/`. They get injected into the system prompt every time a new session starts.
+
+### SOUL.md — persona, boundaries, tone
+
+**The agent's personality file.** Defines *who* the agent is — character, values, communication style, hard limits. The runtime injects SOUL.md into every model call so identity stays stable across reboots, channel switches, and skill installs. SOUL.md is not for operational rules ("never email without my approval" lives in AGENTS.md) — it's for *character*.
+
+> *Why it matters:* if your agent feels off — too formal, too chatty, ignoring your boundaries — this is the file you edit. Most config files ship as defaults. SOUL is the one you'll actually own.
+
+[Official SOUL.md guide →](https://docs.openclaw.ai/concepts/soul) · [Agent runtime overview →](https://docs.openclaw.ai/concepts/agent)
+
+### AGENTS.md — operating instructions + memory
+
+**The rules file plus accumulated working memory.** This is where "always confirm before deleting files," "use my work GitHub for commits," "I prefer concise summaries" all live. The agent reads this every session, so its operating rules persist.
+
+> *Why it matters:* unlike SOUL.md (which is character), AGENTS.md is *behaviour*. When you find yourself repeating an instruction to your agent ("you keep using emojis, please stop"), you write it here once and it sticks.
+
+[Official agent runtime docs →](https://docs.openclaw.ai/concepts/agent)
+
+### TOOLS.md — your tool conventions
+
+**Notes about how YOU want tools used** — not which tools exist (that's tool policy). For example: "use `imsg` for short replies; use `sag` for spec generation." It's a living cheat-sheet for the agent.
+
+> *Why it matters:* it answers "when should the agent use which tool?" without you having to repeat yourself. The runtime treats it as guidance, not gating.
+
+[Official agent runtime docs →](https://docs.openclaw.ai/concepts/agent)
+
+### BOOTSTRAP.md — one-time first-run ritual
+
+**Created only for brand-new workspaces.** Auto-deleted after the first session. Contains the very first set-up instructions the agent walks you through. After it's been deleted once, it doesn't come back unless you wipe the workspace.
+
+> *Why it matters:* it makes the first install feel like a guided tour. After that, it gets out of the way.
+
+[Official docs →](https://docs.openclaw.ai/concepts/agent)
+
+### IDENTITY.md — agent name, vibe, emoji
+
+**A short identity card** — what the agent calls itself, what emoji it uses, what its vibe is. Smaller than SOUL.md (which is the deeper persona). Some users use just IDENTITY.md and skip SOUL.md.
+
+[Official docs →](https://docs.openclaw.ai/concepts/agent)
+
+### USER.md — your profile
+
+**What the agent knows about you** — your name, how you prefer to be addressed, your time zone, your habits. Read at every session bootstrap so the agent doesn't ask "what's your name again?" every time.
+
+[Official docs →](https://docs.openclaw.ai/concepts/agent)
+
+### HEARTBEAT.md — long-running rhythm
+
+**Defines the cadence** of background check-ins. Used by the Gateway heartbeat system to keep the assistant present even when no message is inbound. For example: "every weekday at 9am, summarise yesterday's commits."
+
+[Official Heartbeat docs →](https://docs.openclaw.ai/gateway/heartbeat)
+
+---
+
+## Architecture (top-level concepts)
+
+### Gateway
+
+**The control-plane process.** One Gateway per machine. Handles sessions, channels, tools, and events. It runs as a daemon (`launchd` on macOS, `systemd` on Linux). Install with `openclaw onboard --install-daemon`.
+
+> *Mental model:* think of the Gateway like a desktop notification service. It runs in the background, listens to incoming messages on every channel you've connected, and routes them to your agent.
+
+[Official Gateway docs →](https://docs.openclaw.ai/gateway)
+
+### Agent runtime
+
+**The single agent process inside the Gateway.** Built on the *Pi agent core* (models, tools, prompt pipeline). One agent runtime per Gateway. OpenClaw layers session management, discovery, tool wiring, and channel delivery on top of the core.
+
+[Official agent runtime docs →](https://docs.openclaw.ai/concepts/agent)
+
+### Workspace
+
+**The agent's home directory.** Default `~/.openclaw/workspace`. Holds the seven workspace files plus your skills directory and any other files the agent needs to work with. Treated as private memory — back it up to a *private* git repo.
+
+> *Important distinction:* `~/.openclaw/workspace` is the agent's working directory. `~/.openclaw/` (the parent) holds config, credentials, and session transcripts — those should NOT go in the workspace git repo.
+
+[Official workspace docs →](https://docs.openclaw.ai/concepts/agent-workspace)
+
+### Session
+
+**A single conversation thread.** Stored as JSONL at `~/.openclaw/agents/<agentId>/sessions/<SessionId>.jsonl`. Session IDs are stable and chosen by OpenClaw. When you open a chat, the runtime resumes the existing session unless you start a new one.
+
+[Official session docs →](https://docs.openclaw.ai/concepts/session)
+
+### Skill
+
+**A reusable capability the agent can load.** Skills are loaded from (highest precedence first):
+
+1. `<workspace>/skills` — your project skills
+2. `<workspace>/.agents/skills` — project-agent skills
+3. `~/.agents/skills` — your personal skills
+4. `~/.openclaw/skills` — managed skills (installed via CLI)
+5. Bundled — shipped with OpenClaw itself
+
+If two locations define the same skill, the higher-precedence one wins.
+
+[Official skills docs →](https://docs.openclaw.ai/tools/skills)
+
+### Multi-agent routing
+
+**Route different channels, accounts, or peers to different isolated agents** — each with its own workspace. Useful if you want a "work agent" with one persona connected to Slack/Teams, and a "personal agent" with a different persona connected to WhatsApp/iMessage.
+
+[Official multi-agent docs →](https://docs.openclaw.ai/concepts/multi-agent)
+
+### Compaction
+
+**How long sessions get summarised** so the context window stays under model limits. The runtime trims older turns and keeps a rolling summary so your agent doesn't lose the plot in long conversations.
+
+[Official compaction docs →](https://docs.openclaw.ai/concepts/compaction)
+
+---
+
+## Channels (24+ messaging surfaces)
+
+OpenClaw connects to a *lot* of channels — see [§3.2 Channels](/connections/channels/) for the full catalog. The official list as of last review:
+
+WhatsApp · Telegram · Slack · Discord · Google Chat · Signal · iMessage · BlueBubbles · IRC · Microsoft Teams · Matrix · Feishu · LINE · Mattermost · Nextcloud Talk · Nostr · Synology Chat · Tlon · Twitch · Zalo · Zalo Personal · WeChat · QQ · WebChat · Yuanbao · plus voice nodes on macOS / iOS / Android.
+
+[Official channel index →](https://docs.openclaw.ai/channels/index)
+
+### DM Policy (security default that matters)
+
+**Default `pairing` mode** means unknown senders receive a pairing code and the bot does NOT process their message. You approve them with `openclaw pairing approve <channel> <code>`. Public DM access requires `dmPolicy="open"` AND `"*"` in the channel's `allowFrom` list. This is one of the security defaults you should verify after install.
+
+[Official pairing docs →](https://docs.openclaw.ai/channels/pairing)
+
+---
+
+## Built-in tools
+
+The agent always has these available, subject to tool policy:
+
+- **`read`** — read a file
+- **`write`** — create a new file
+- **`edit`** — edit an existing file (find/replace style)
+- **`exec`** — run a shell command
+- **`browser`** — headless browser
+- **`canvas`** — Live Canvas (macOS-first visual workspace)
+- **`mcp`** — MCP bridge for external tools
+
+`apply_patch` is optional and gated by `tools.exec.applyPatch`.
+
+> *Important:* `TOOLS.md` (the workspace file) does NOT control which tools exist. It's *guidance for how you want them used*. Tool existence is controlled by tool policy and sandbox rules.
+
+[Official tools docs →](https://docs.openclaw.ai/tools)
+
+---
+
+## Models
+
+### Model ref
+
+**Format `provider/model`.** For example: `anthropic/claude-3-5-sonnet`. For OpenRouter-style nested refs, include the provider prefix: `openrouter/moonshotai/kimi-k2`. If you omit the provider, OpenClaw tries an alias first, then a unique configured-provider match for that exact model id.
+
+[Official models docs →](https://docs.openclaw.ai/concepts/models)
+
+### Auth profile
+
+**Per-agent OAuth + API-key store.** Lives at `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`. OpenClaw supports OAuth for OpenAI subscriptions (ChatGPT/Codex) so you can use your existing subscription as the model source.
+
+[Official auth docs →](https://docs.openclaw.ai/auth-credential-semantics)
+
+---
+
+## Memory
+
+OpenClaw supports three memory engines:
+
+- **Built-in** — the default. Simple, lives under the workspace.
+- **Honcho** — external service for richer relational memory across sessions.
+- **QMD** — quantised markdown engine. Long-term context in markdown chunks indexable by semantic search.
+
+There's also **Active memory** (memory injected into the current session's context) vs long-term memory (workspace files / engine storage). [Memory search](https://docs.openclaw.ai/concepts/memory-search) is engine-dependent — each backend exposes a slightly different shape.
+
+[Memory overview →](https://docs.openclaw.ai/concepts/memory)
+
+---
+
+## Security primitives
+
+### Sandbox
+
+**Optional process isolation for non-`main` sessions.** Default backend is Docker; SSH and OpenShell backends are also available. Set `agents.defaults.sandbox.mode: "non-main"`. Typical sandbox policy allows `bash`, `process`, `read`, `write`, `edit`, `sessions_*`; denies `browser`, `canvas`, `nodes`, `cron`, `discord`, `gateway`.
+
+> *Why this matters:* the default ("tools run on host for `main` session") is fine when it's just you. The moment you let other people DM your agent — friends, colleagues, group chats — you want non-main sessions sandboxed. See [§6 Security](/security/).
+
+[Sandboxing docs →](https://docs.openclaw.ai/gateway/sandboxing)
+
+### Tool policy
+
+**Per-tool allow/deny rules** that work independently of the sandbox. You can have `browser` denied even on the host (no sandbox), or allowed inside a sandbox. The two are orthogonal.
+
+[Sandbox vs tool policy vs elevated →](https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated)
+
+### `openclaw doctor`
+
+**Diagnostic CLI command.** Surfaces risky / misconfigured DM policies, missing config, deployment health issues. Run after every config change. If it complains, fix before exposing the Gateway.
+
+[Doctor CLI →](https://docs.openclaw.ai/cli/doctor)
+
+---
+
+## Automation
+
+OpenClaw has a real automation surface most agent runtimes don't:
+
+- **Cron jobs** — time-triggered runs ([docs](https://docs.openclaw.ai/automation/cron-jobs))
+- **Hooks** — event-triggered runs ([docs](https://docs.openclaw.ai/automation/hooks))
+- **Standing orders** — persistent instructions in workspace files ([docs](https://docs.openclaw.ai/automation/standing-orders))
+- **Task flow** — multi-step background tasks ([docs](https://docs.openclaw.ai/automation/taskflow))
+
+These are how you get "every weekday at 9am, summarise commits" or "when a critical Slack alert comes in, page me on iMessage."
+
+---
+
+## Our umbrella terms (flagged so you know they're OUR framing)
+
+These three terms are *not* in official OpenClaw docs. We use them on this site for navigation and editorial clarity. Each entry below tells you what official primitives the umbrella maps to.
+
+### Connections (our umbrella for §3)
+
+We grouped **channels + tools + models + memory** under one §3 tab called "Connections." OpenClaw doesn't have a single official term for this group — it documents each separately. Our reasoning: for a learner, the question *"what plugs into what?"* is easier to answer with one tab than four.
+
+> If you're hunting OpenClaw's official docs, search for the specific subterm: channels, tools, models, or memory.
+
+### Plugins (our editorial sense)
+
+OpenClaw uses **two related but distinct terms** — *skills* (bundles loaded from skill folders) and *plugins* (the `openclaw plugins` CLI surface). Our §4 catalog covers both under "Plugins" because for a tech-savvy reader the difference is a footnote, not a navigation gate. Each individual entry on the site declares its actual mechanism.
+
+### Field note (our editorial pattern)
+
+A **field note** is what we call our writeup of a specific plugin or skill. Lighter than a formal scorecard. Each field note declares what we checked, what we didn't, sources used, and links to a dispute issue. This is editorial — not an OpenClaw-coined term.
+
+---
+
+*Page derived from `src/data/openclaw-primitives.json` in the repo. To dispute or correct an entry, [open a primitive-correction issue on GitHub](https://github.com/susanthgit/claw-planet/issues/new?template=primitive-correction.md).*

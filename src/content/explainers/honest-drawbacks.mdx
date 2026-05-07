@@ -1,0 +1,125 @@
+---
+title: "Honest drawbacks"
+section: "Overview"
+sectionNumber: "1.4"
+description: "What OpenClaw isn't great at — yet. The view that vendor docs won't give you, sourced from community discussions and reading the architecture critically."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Opinion piece based on reading official docs and the canonical README. Not yet pressure-tested by running OpenClaw in production. Each drawback links to the source it was inferred from."
+lastReviewedAt: "2026-05-07"
+sources:
+  - "https://docs.openclaw.ai/concepts/agent"
+  - "https://github.com/openclaw/openclaw"
+  - "https://docs.openclaw.ai/gateway/security"
+  - "https://docs.openclaw.ai/concepts/agent-workspace"
+seeAlso:
+  - "1.1"
+  - "6.1"
+  - "6.2"
+  - "7.1"
+---
+
+## A note before you read this
+
+Every system has trade-offs. "Honest drawbacks" doesn't mean "OpenClaw is bad" — it means "here's the shape of what you're signing up for, so you can plan around it instead of discovering it at 2am."
+
+This page is sourced from reading the architecture critically, plus what shows up when you search GitHub discussions and the openclaw Discord for "issue," "broken," and "doesn't work." We have not run OpenClaw end-to-end yet; some of these drawbacks may be more or less severe in practice than they look on paper.
+
+If you're a maintainer and disagree with anything here, the [dispute link](https://github.com/susanthgit/claw-planet/issues/new?template=primitive-correction.md) at the bottom of every page is real — we'll edit honestly.
+
+## 1. Single-user shape doesn't fit teams cleanly
+
+The Gateway is **one process per machine**, and the README says it explicitly: *"a personal, single-user assistant."* That's a feature when you're alone, but the moment you want a team-shared agent — say, a "deploy bot" that everyone in your engineering org messages — the architecture starts to fight you.
+
+You can mitigate with **multi-agent routing** (different agents for different channels/peers), but each agent is still one process, and you're still running one Gateway daemon somewhere. There's no built-in tenancy, no role-based access control, no per-team workspace isolation by default.
+
+> *Why this matters:* if you're evaluating OpenClaw for a team or company use case, plan for the operational overhead of running it like an internal service — auth, sandboxing, monitoring, on-call. You're not running a SaaS; you're running a server that pretends to be one.
+
+**Sourced from:** [README "personal, single-user"](https://github.com/openclaw/openclaw#openclaw) · [Multi-agent routing docs](https://docs.openclaw.ai/concepts/multi-agent) · [Sandboxing](https://docs.openclaw.ai/gateway/sandboxing)
+
+## 2. Cold start is real and unavoidable
+
+The agent runtime loads workspace files into the system prompt at every session bootstrap. Those files can be substantial — a polished SOUL.md is "less than 50 lines and ≤2000 words" per community guides, and AGENTS.md plus TOOLS.md plus USER.md add up. Plus active memory injection. Plus the model has to ingest all of that before it processes your actual message.
+
+If your workspace is light, this is fine. If you've been adding to AGENTS.md memory for months and have a thick SOUL, your "Hello" message can take seconds longer than the same prompt to a stateless ChatGPT call. The runtime [trims and summarises with compaction](https://docs.openclaw.ai/concepts/compaction) but the floor is still higher than a session-less assistant.
+
+> *Why this matters:* don't expect typing-indicator-quick responses on the first message of a session. Once the session is warm (subsequent turns use the cached context), it speeds up. The cold start is the cost of persistence.
+
+**Sourced from:** [Compaction docs](https://docs.openclaw.ai/concepts/compaction) · [Streaming & chunking](https://docs.openclaw.ai/concepts/streaming) · community guides on SOUL.md sizing
+
+## 3. The plugin / skill marketplace is community-vetted
+
+The skill system loads from multiple precedence-ordered locations including `~/.openclaw/skills` for **managed skills** and the bundled set. There's no formal review process for community-contributed skills mentioned in the official docs — community blogs reference a "ClawHub" marketplace, but a tech-savvy reader should treat any skill they didn't write themselves the way they'd treat a random npm package.
+
+We'll catalogue specific skills in [§4 Plugins](/plugins/) with field notes that declare what we checked. But the *category-level* drawback is real: the marketplace's safety surface is mostly your own diligence.
+
+> *Why this matters:* before installing a skill that handles secrets or talks to external services, read the source. Don't assume "it's in the registry" means "someone vetted it."
+
+**Sourced from:** [Skills docs](https://docs.openclaw.ai/tools/skills) · [Skills CLI](https://docs.openclaw.ai/cli/skills) · external community articles
+
+## 4. Default tool execution is unsandboxed
+
+Per the README's security section: *"Default: tools run on the host for the `main` session, so the agent has full access when it is just you."*
+
+That's a sensible default for a single-user setup on your own laptop. But it means if a sketchy MCP server or compromised channel sends adversarial input, the agent could call `exec` with that input — on your host, with your permissions. The mitigation is `agents.defaults.sandbox.mode: "non-main"` to put non-`main` sessions inside Docker (or SSH / OpenShell). But you have to opt in.
+
+> *Why this matters:* if you connect a public Discord channel or open DM to the agent, **change the sandbox default first** ([§6.1 Self-hosting checklist](/security/self-hosting-checklist/)). Don't run with the default if untrusted input can reach the agent.
+
+**Sourced from:** [README "Security model"](https://github.com/openclaw/openclaw#security-model-important) · [Sandboxing](https://docs.openclaw.ai/gateway/sandboxing) · [DM policy](https://docs.openclaw.ai/channels/pairing)
+
+## 5. Operational dependencies pile up
+
+To run OpenClaw seriously, you need:
+
+- **Node 24** (or 22.14+) on the host
+- A **persistent process** (daemon — `launchd` on macOS, `systemd` on Linux, or a hosting platform that respects long-running processes)
+- **Per-channel credentials and pairing** — every channel you connect needs its own auth dance
+- **Model credentials or OAuth** — at least one provider, more if you want failover
+- **Storage discipline** — workspace files in private git, sessions excluded, secrets handled via the credentials store
+- **Network exposure** — if you message from outside your LAN you need remote access (Tailscale, Cloudflare Tunnel, port forwarding)
+
+None of these are unreasonable. But added up, they're a higher operational floor than "install Claude Desktop and click sign-in."
+
+> *Why this matters:* OpenClaw is a server, not an app. Treat it like one. Have a backup plan when the host machine reboots.
+
+**Sourced from:** [Install guide](https://github.com/openclaw/openclaw#install-recommended) · [Daemon docs](https://docs.openclaw.ai/cli/daemon) · [Remote access](https://docs.openclaw.ai/gateway/remote)
+
+## 6. Voice features are platform-uneven
+
+Voice Wake and Talk Mode are macOS / iOS / Android — fine for that audience. There's no native Linux voice node, and Windows hosts run the Gateway via WSL2 (so voice is harder to wire than on macOS). If your hardware target is a Linux home server, voice is going to be a "build it yourself with the channels you have" exercise rather than a turn-key feature.
+
+> *Why this matters:* if voice is a primary use case, plan around macOS or mobile. If you're on Linux/Windows-server-only, set expectations on text-channel agents only.
+
+**Sourced from:** [Voice Wake](https://docs.openclaw.ai/nodes/voicewake) · [Talk Mode](https://docs.openclaw.ai/nodes/talk) · [Platforms](https://docs.openclaw.ai/platforms/macos) · README install notes (WSL2 strongly recommended on Windows)
+
+## 7. The single-Gateway-per-machine design is opinionated
+
+You can run **multiple gateways** ([docs](https://docs.openclaw.ai/gateway/multiple-gateways)) but the docs are explicit that this is an advanced topic. The default expects exactly one. Older installs that left a `~/openclaw` workspace next to a new `~/.openclaw/workspace` are flagged as a known confusion source — *"keeping multiple workspace directories around can cause confusing auth or state drift."*
+
+This isn't a bug; it's a design choice. But it means you can't casually run two parallel "personalities" on the same laptop without learning the multiple-gateway model first.
+
+> *Why this matters:* if you want a "work agent" and a "personal agent" on one laptop, plan to learn the multi-agent or multi-gateway docs early. Don't try to fork the workspace folder; it'll bite you.
+
+**Sourced from:** [Multiple gateways](https://docs.openclaw.ai/gateway/multiple-gateways) · [Workspace docs](https://docs.openclaw.ai/concepts/agent-workspace) ("Older installs may have created `~/openclaw`...")
+
+## 8. The OAuth subscription model is OpenAI-first
+
+The README lists *OpenAI (ChatGPT/Codex)* as the OAuth subscription option. Anthropic, Google, and others are accessible via API keys, but the seamless "sign in with your subscription" path is OpenAI-only as of the last review.
+
+If you're a Claude-Pro-only user, you can absolutely use Claude — you'll just plug in an Anthropic API key (with API metering) rather than authenticate via your Claude Pro account. For most people that's fine; for people whose entire model budget is in their Claude Pro subscription, it's a friction.
+
+> *Why this matters:* check what authentication route exists for the model provider you actually pay for, before you assume your existing subscription will translate.
+
+**Sourced from:** [README "Sponsors / Subscriptions (OAuth)"](https://github.com/openclaw/openclaw#sponsors) · [Concepts: OAuth](https://docs.openclaw.ai/concepts/oauth) · [Auth credential semantics](https://docs.openclaw.ai/auth-credential-semantics)
+
+## What's not on this list (yet)
+
+We haven't shipped real-world incident reports because we haven't run the system in production. As Sush deploys OpenClaw on his laptop, then his Pi, then maybe an Azure VM, this page will gain "things that broke and how we fixed them" entries. Each one will be `tested-by-sush` with the date and the recovery action.
+
+The ones above are **architectural drawbacks visible from reading the docs**. Production drawbacks (specific bugs, latency outliers, channel flakiness, model-failover edge cases) come later.
+
+## What to read next
+
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — turn drawback #4 into an action plan
+- [§7.1 OpenClaw vs MCP-based stacks](/compare/openclaw-vs-mcp-stacks/) — drawback #1 (single-user shape) compared head-to-head
+- [§2 Setup](/setup/) — drawback #5 (operational floor) is where the setup pages spend most of their pages
