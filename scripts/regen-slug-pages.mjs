@@ -47,7 +47,7 @@ const { Content, headings } = await render(entry);
 
 const tocItems = headings
   .filter((h) => h.depth >= 2 && h.depth <= 3)
-  .map((h) => ({ id: h.slug, text: h.text, level: h.depth }));
+  .map((h) => ({ id: h.slug, text: String(h.text).replace(/#\s*$/, '').trim(), level: h.depth }));
 
 const sectionPairs = [
   ['explainers', '/overview/', 'Overview'],
