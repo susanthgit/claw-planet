@@ -1,0 +1,165 @@
+---
+title: "Tools"
+section: "Connections"
+sectionNumber: "3.3"
+description: "What the agent can DO — built-in tools (read/exec/edit/write/browser/canvas/MCP) and how to think about tool policy."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Sourced from the official tools docs and the README's tools section. Tool descriptions are direct from docs; editorial framing is ours."
+lastReviewedAt: "2026-05-07"
+category: "tools"
+sources:
+  - "https://docs.openclaw.ai/tools"
+  - "https://github.com/openclaw/openclaw#highlights"
+  - "https://docs.openclaw.ai/cli/mcp"
+  - "https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated"
+seeAlso:
+  - "1.2"
+  - "3.2"
+  - "3.4"
+  - "6.1"
+---
+
+## What tools are
+
+Tools are **what the agent can DO besides talking**. The model can decide it needs to read a file, run a shell command, edit code, or browse the web — and the agent runtime invokes the appropriate tool, runs it, and feeds the result back to the model.
+
+OpenClaw ships with a tight set of built-in tools. You can extend with **MCP servers** (external processes the Gateway talks to) and **skills** (reusable bundles loaded from skill folders).
+
+## The built-in tools
+
+These ship with the runtime and are always available subject to tool policy:
+
+### `read` — read a file
+
+The agent reads a file from the workspace (or anywhere it has read permission). The most-used tool for "look at my code / config / docs."
+
+**Example use:** *"What does my AGENTS.md say about meeting reminders?"* → agent calls `read("AGENTS.md")` → quotes the relevant section back to you.
+
+### `write` — create a new file
+
+Agent creates a file with content. Less common than `edit` for existing work.
+
+**Example use:** *"Make a file `/tmp/scratch.md` with a draft of the email I dictated."* → agent calls `write("/tmp/scratch.md", "...")`.
+
+### `edit` — modify an existing file
+
+Surgical edits via find/replace style. The agent's go-to for refactoring tasks.
+
+**Example use:** *"Update the version in `package.json` to 0.2.0."* → agent calls `edit("package.json", { find: "0.1.0", replace: "0.2.0" })`.
+
+### `exec` — run a shell command
+
+The agent runs an arbitrary command in your shell. Powerful and dangerous in equal measure.
+
+**Example use:** *"What's the git status of this repo?"* → agent calls `exec("git status")` → reports back.
+
+> *Security note:* `exec` is the most-restricted built-in tool in default sandbox setups. Non-`main` sessions running in Docker can't escape the container. Read [§6.3 pattern #5](/security/practical-patterns/) for the injection failure mode.
+
+The optional `apply_patch` shape is gated by `tools.exec.applyPatch` — useful for code-edit workflows where you want the agent to produce a unified diff that you then apply.
+
+### `browser` — headless browser
+
+Selenium-style page automation. The agent can navigate, click, fill forms, scrape.
+
+**Example use:** *"Check if the build status badge on github.com/foo/bar is green."* → agent calls `browser` → returns the badge state.
+
+> *Security note:* `browser` is in the default-deny list for non-`main` sandbox sessions because it can fetch arbitrary URLs, including ones an adversary supplied via prompt injection.
+
+### `canvas` — Live Canvas (macOS)
+
+Agent-driven visual workspace. The agent renders interactive UIs (charts, forms, custom views) using the [A2UI protocol](https://docs.openclaw.ai/platforms/mac/canvas#canvas-a2ui). macOS-first; iOS in beta.
+
+**Example use:** *"Show me a calendar view of next week's commits."* → agent renders a Canvas with a calendar grid.
+
+### `mcp` — MCP bridge
+
+OpenClaw's Model Context Protocol bridge. Lets the agent use tools defined by external MCP servers — filesystem, GitHub, Slack, browserbase, anything with an MCP server.
+
+**Example use:** *"Find me all the issues assigned to me."* → agent uses an `mcp` GitHub server to query → returns the list.
+
+The MCP layer is how OpenClaw connects to the broader MCP plugin world. See [§4 Plugins](/plugins/) for specific MCP field notes.
+
+## Tool policy and sandbox
+
+These are two orthogonal mechanisms:
+
+| Mechanism | What it controls | When to use |
+|---|---|---|
+| **Tool policy** | Which tools exist for which sessions | "Deny `browser` for non-main sessions" |
+| **Sandbox** | What environment tools run inside | "Run non-main sessions inside Docker" |
+
+You can have a tool denied even outside a sandbox (most defensive), or allowed inside a sandbox (defence-in-depth — the tool exists but limited blast radius).
+
+The sane default: **sandbox non-main + deny dangerous tools in non-main**. See [§6.1 check 4 + check 5](/security/self-hosting-checklist/).
+
+## Adding tools beyond the built-ins
+
+Three paths:
+
+### 1. Skills
+
+Bundle of helpers loaded from a skill folder. Skills can register custom tools the agent can call. Loaded from (highest precedence first):
+
+- `<workspace>/skills`
+- `<workspace>/.agents/skills`
+- `~/.agents/skills`
+- `~/.openclaw/skills`
+- Bundled with install
+
+`openclaw skills list` shows what's loaded.
+
+### 2. MCP servers
+
+External processes following the [Model Context Protocol](https://modelcontextprotocol.io/). Configure in `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "github": {
+        "command": "node",
+        "args": ["~/mcp-servers/github-mcp/dist/index.js"],
+        "env": { "GITHUB_TOKEN": "..." }
+      }
+    }
+  }
+}
+```
+
+The agent gets all the GitHub MCP server's tools available alongside built-ins.
+
+### 3. Custom tools (advanced)
+
+If you can't get what you need from a skill or MCP, you can write a custom tool. This is the most flexible and highest-effort option — see the OpenClaw App SDK docs.
+
+## A useful mental model
+
+Think of the built-in tools as **the agent's hands**:
+
+- `read` is reading
+- `write/edit` is writing
+- `exec` is general-purpose action
+- `browser` is web reach
+- `canvas` is showing visual things
+- `mcp` is borrowing someone else's hands
+
+Skills add **skilled gestures**. MCP servers add **specialist hands**. The model decides which hand to use based on what you asked for.
+
+## Things to try
+
+- **Ask the agent to read its own AGENTS.md and suggest improvements.** Uses just `read`, gets you a calibration of how well it understands your operating instructions.
+- **Have it run `git diff` and summarise the changes.** Demonstrates `exec` + summary chaining.
+- **Wire a GitHub MCP server.** Lets the agent triage issues / draft PRs from your DMs. Useful and tractable.
+- **Try Live Canvas** if you're on Mac — *"Show me my calendar as a chart of meetings per day this month."*
+
+## What we are NOT going to claim
+
+We have not exhaustively benchmarked every tool. Specific tool latency, error modes, and compatibility quirks come from running the runtime in production. As we hit specifics, this page gets updated.
+
+## What to read next
+
+- [§3.4 Models](/connections/models/) — what the model brings to tool selection
+- [§4 Plugins](/plugins/) — specific tool plugins (skills + MCP) reviewed
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — tool exec security posture
+- [§5 Use cases](/use-cases/) — recipes that show tools used in anger

@@ -5,7 +5,7 @@
   "sections": {
     "overview": { "code": "S.01", "title": "Overview", "current": 4, "target": 4, "verified": 0 },
     "setup": { "code": "S.02", "title": "Setup methods", "current": 6, "target": 10, "tested": 0, "sourced": 6 },
-    "connections": { "code": "C.03", "title": "Connection categories", "current": 0, "target": 4 },
+    "connections": { "code": "C.03", "title": "Connection categories", "current": 5, "target": 5 },
     "plugins": { "code": "P.04", "title": "Plugin field notes", "current": 0, "target": 30 },
     "useCases": { "code": "U.05", "title": "Use cases / recipes", "current": 0, "target": 15 },
     "gotchas": { "code": "G.06", "title": "Security gotchas", "current": 4, "target": 4 },

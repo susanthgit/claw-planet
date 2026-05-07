@@ -1,0 +1,133 @@
+---
+title: "Channels"
+section: "Connections"
+sectionNumber: "3.2"
+description: "How messages flow in and out of OpenClaw — the 24+ messaging surfaces you can connect, what each one does well, and the security defaults that matter."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from the canonical channel index at docs.openclaw.ai/channels/index. The full list (24+ channels) is verbatim from the README. Specific notes on each channel are sourced from individual channel docs."
+lastReviewedAt: "2026-05-07"
+category: "channels"
+sources:
+  - "https://docs.openclaw.ai/channels/index"
+  - "https://github.com/openclaw/openclaw#multi-channel-inbox"
+  - "https://docs.openclaw.ai/channels/pairing"
+seeAlso:
+  - "1.2"
+  - "3.1"
+  - "4"
+  - "6.1"
+---
+
+## What channels are, in one sentence
+
+A channel is **the messaging surface that connects your real life to your agent** — Slack, WhatsApp, iMessage, Discord, etc. The Gateway holds the connection; the channel translates inbound messages into a shape the agent runtime can read, and the agent's responses back into the format the channel expects.
+
+OpenClaw supports more channels than any other agent runtime we know of — 24+ at last count.
+
+## The full list
+
+From the canonical [channels index](https://docs.openclaw.ai/channels/index):
+
+**Chat / IM:** WhatsApp · Telegram · Slack · Discord · Google Chat · Signal · Microsoft Teams · Matrix · Feishu · LINE · Mattermost · Nextcloud Talk · Synology Chat · Tlon · WeChat · QQ · WebChat · Yuanbao
+
+**iMessage variants:** iMessage (native) · BlueBubbles (more mature)
+
+**Other:** IRC · Twitch · Nostr · Zalo · Zalo Personal
+
+**Voice nodes:** macOS · iOS · Android (via [Voice Wake](https://docs.openclaw.ai/nodes/voicewake) and [Talk Mode](https://docs.openclaw.ai/nodes/talk))
+
+That's a long list. In practice, most people pair 2–3 channels and never touch the rest.
+
+## Picking your first channel
+
+If you're learning OpenClaw and want to test it works, the picking order is:
+
+| Order | Channel | Why |
+|---|---|---|
+| **1st** | **Telegram** | Bot pairing is the simplest. No workspace admin needed. Free tier good enough. |
+| **2nd** | **Discord** | Personal server is fine. Pairing's mature. Voice channels too if you want. |
+| **3rd** | **Slack** | If you have a workspace. Slightly more setup; OAuth scopes to think about. |
+| **Later** | **WhatsApp** | QR-pair via official channel; works but needs more attention. |
+| **Mac users** | **iMessage / BlueBubbles** | macOS-only host. BlueBubbles bridge is more reliable. |
+| **Specialty** | **everything else** | Add when you have a specific reason. |
+
+## What every channel shares
+
+All channels in OpenClaw inherit the same security defaults:
+
+1. **DM policy = `pairing` by default.** Unknown senders get a one-time code, not your agent. ([§6.1 check 2](/security/self-hosting-checklist/))
+2. **`allowFrom` allowlist** in `~/.openclaw/openclaw.json`. Even after pairing, only senders on the allowlist reach the agent.
+3. **Per-channel rate limits** (configurable).
+4. **Webhook signature validation** (where the channel supports it — e.g. Slack signing secret).
+
+> *Why this matters:* the friendliest "convenience hack" is to set `dmPolicy="open"` and add `"*"` to allowFrom for testing. Don't. It's the same thing as leaving your front door unlocked. The pairing flow takes 30 seconds. Use it.
+
+## Channels by use case
+
+### "I want a personal assistant in my pocket"
+
+Pair **Telegram** or **WhatsApp**. Both are mobile-native. Telegram's bot model is simpler; WhatsApp pairing via the official channel is more involved but works.
+
+### "I want a work bot in our team chat"
+
+**Slack** if you're on Slack. **Microsoft Teams** if you're on Teams. **Google Chat** if you're on Workspace. All three need workspace admin OAuth approval — clear it with whoever owns the workspace before installing.
+
+### "I want my Mac to be the agent host"
+
+**iMessage** (native or BlueBubbles) so your phone gets responses. **Voice Wake** so you can say "hey claw" without typing. The full Mac-native shape is documented at [docs.openclaw.ai/platforms/macos](https://docs.openclaw.ai/platforms/macos).
+
+### "I want a community/server bot"
+
+**Discord** is the cleanest. Public Discord channels with `dmPolicy="open"` need a fully sandboxed agent (see [§6.1 check 4](/security/self-hosting-checklist/)) — *do this carefully.*
+
+### "I want voice without a Mac"
+
+Voice nodes are macOS / iOS / Android only. On Linux, you're text-channels-only for now. See [§1.4 drawback #6](/overview/honest-drawbacks/) for the honest take.
+
+## What to know before pairing
+
+- **OAuth scopes** for Slack/Discord/Teams/Google Chat are broader than they need to be by default. Read what you're granting before clicking through. Scope minimisation is [§6.2 signal #4](/security/plugin-trust-signals/).
+- **Bot identity** — give your bot a distinct username/handle so its messages are visibly bot-tagged. Cleaner conversation flow.
+- **Allowlist before testing in public.** Even your own DM should be in `allowFrom` before you're surprised by the pairing prompt.
+
+## A walkthrough — pairing Telegram in 5 minutes
+
+1. Open Telegram, message `@BotFather`, send `/newbot`. Pick a name and a username. BotFather gives you a token.
+2. In `~/.openclaw/openclaw.json`, add:
+   ```json
+   {
+     "channels": {
+       "telegram": {
+         "token": "123456:ABC-...",
+         "dmPolicy": "pairing",
+         "allowFrom": ["@yourusername"]
+       }
+     }
+   }
+   ```
+3. Restart the daemon: `openclaw daemon restart`
+4. Find your bot in Telegram. Send any message. Get back a pairing code.
+5. Approve: `openclaw pairing approve telegram <code>`
+6. Send another message. The agent responds.
+
+Total time: 5–10 minutes. Most other channels follow a similar shape (token + allowlist + pairing).
+
+## Things to try
+
+- **Pair Telegram + Discord with the same agent**, message from both, see that the agent feels like one consistent personality. (That's the value of single-agent + workspace-files identity.)
+- **Set up Microsoft Teams + a daily 9am cron** that summarises Teams channel activity. Useful for absent-from-meetings days.
+- **Bridge IRC** if you're in a community that still uses it. OpenClaw supports it; few other agent runtimes do.
+- **Voice Wake on Mac** — say "hey claw, what's on my calendar?" and watch it work.
+
+## What we are NOT going to claim
+
+We've not paired all 24 channels ourselves. The docs source is canonical for what's *supported*; specific channel quirks (Signal's pairing flow vs Telegram's, for instance) need real-deployment validation. Each channel's own docs page is the source of truth for that channel's specifics.
+
+## What to read next
+
+- [§3.1 Index](/connections/) — patterns vs packages framing
+- [§3.3 Tools](/connections/tools/) — what the agent does (built-in tools)
+- [§3.4 Models](/connections/models/) — the brain choice
+- [§4 Plugins](/plugins/) — specific channel connector field notes (Slack et al)
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — security posture for channels
