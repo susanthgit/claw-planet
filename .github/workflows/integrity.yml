@@ -39,7 +39,7 @@ jobs:
           # /connections/*, /plugins/*, /use-cases/*, /compare/*,
           # /resources/, /faq/, /methodology/, /colophon/.
           # MUST go back to 0 (default) when P0a content is complete (Batch 10).
-          INTEGRITY_LINK_THRESHOLD: '400'
+          INTEGRITY_LINK_THRESHOLD: '600'
         run: node scripts/integrity-check.mjs
 
       - name: Voice lint (advisory)

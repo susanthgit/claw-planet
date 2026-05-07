@@ -1,0 +1,161 @@
+---
+title: "Plugin trust signals"
+section: "Security"
+sectionNumber: "6.2"
+description: "What we look for when sampling a plugin or skill before using it. The signals that separate a credible community contribution from one that should worry you."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from general OSS-supply-chain best practice + the OpenClaw skills/plugins docs. The specific application to OpenClaw skill folders + ClawHub-style marketplace is our framing — flagged where we extend beyond docs."
+lastReviewedAt: "2026-05-07"
+sources:
+  - "https://docs.openclaw.ai/tools/skills"
+  - "https://docs.openclaw.ai/cli/skills"
+  - "https://docs.openclaw.ai/cli/plugins"
+  - "https://docs.openclaw.ai/cli/mcp"
+seeAlso:
+  - "6.1"
+  - "6.3"
+  - "4"
+---
+
+## What this page does
+
+OpenClaw is extensible. Skills load from your workspace, your home directory, the install bundle, or extra-dirs you configure. MCP servers run as separate processes the Gateway talks to. Both extend what the agent can do — and both are running on your machine with your permissions.
+
+Before you install a skill or wire an MCP server, this is the gut-check. Ten signals. None alone is conclusive. Together they tell you whether to trust, audit, or skip.
+
+This is also how we assess plugins for [§4 field notes](/plugins/) — same checklist, applied to whatever we're writing about.
+
+## The 10 signals
+
+### 1. Who maintains it
+
+| Sign | What to look for | Worry level |
+|---|---|---|
+| **Org / company maintained** | GitHub org with multiple contributors, clear ownership | Low |
+| **Single well-known indie** | One person but they're a known name in the OpenClaw / agent community | Low–Medium |
+| **Single anonymous handle** | One person, anonymous, no other public projects | Medium–High |
+| **No commits in 12+ months** | Abandoned | High |
+
+> *Why this matters:* code that's actively maintained gets bug fixes when the runtime changes underneath it. Abandoned skills go stale fast. Anonymous one-off skills aren't necessarily bad but they should clear a higher bar.
+
+### 2. How long has it existed
+
+A skill that's six weeks old has had less time to get reviewed by the community than one that's been around for a year. Six weeks isn't disqualifying — but match expectations.
+
+Look at:
+- First commit date
+- Number of releases / tags
+- Whether issues get responded to (open issues from 6 months ago = bad sign; closed issues with thoughtful resolution = good sign)
+
+### 3. What does the source actually do
+
+Open it. Read it. Especially the entry points (`index.js`, `main.py`, whatever's the start). For skills: read the manifest and any `setup` script.
+
+You're looking for:
+
+- **Clear, narrow scope** — does what the README says, no more
+- **Good comments / variable names** — code written for humans to read
+- **No surprising network calls** — phoning home to a server you don't recognise is a red flag
+- **No surprising file reads** — reading `~/.ssh/` or `~/.aws/credentials` should make you stop
+
+If you can't read the language fluently, get a friend who can or skip it.
+
+### 4. What permissions does it ask for
+
+Skills and MCP servers can request access to tools (`exec`, `browser`, `read`, `write`, etc.). Compare what it asks for against what it claims to do:
+
+- *Calendar skill* asking for `exec` and `browser` and `read` and `write` — too broad, why?
+- *Calendar skill* asking just for an HTTPS endpoint to your calendar API — proportionate
+
+If the answer to "why does it need all that?" isn't obvious from the README, treat the breadth as a warning.
+
+### 5. How does it handle secrets
+
+Skills that need API keys (a GitHub skill needs a PAT, a Linear skill needs an API key) should:
+
+- **Never commit them** — they should expect env vars or workspace config
+- **Never log them** — search the source for `console.log` / `print` near where the key is used
+- **Never send them to an external service** — only to the legitimate target API
+
+A skill that posts your auth token to its own analytics service is malicious, full stop.
+
+### 6. Network call audit
+
+Grep for `fetch(`, `https.request`, `axios.`, `requests.`, etc. List every URL the skill reaches out to. Each one should be:
+
+- **The legitimate target** of what the skill claims to do (e.g. a GitHub skill calling `api.github.com`)
+- **OR** an opt-in optional service (e.g. `analytics-host.com` only if telemetry is on, default-off)
+
+If there's a hardcoded URL you don't recognise — research it before installing.
+
+### 7. Who's installed it
+
+This is informal but useful. Check:
+
+- GitHub stars (a community proxy for "have other people seen this and not reported issues")
+- Open issues / closed issues ratio
+- Discord mentions in the OpenClaw community
+- Whether anyone's written about it (blog post, video, etc.)
+
+A skill nobody else has tried before is higher-risk by definition. Not disqualifying — somebody has to be first — but worth knowing.
+
+### 8. What's the licence
+
+Open-source licences (MIT, Apache 2.0, BSD) are normal. AGPL or custom licences should make you read more carefully — both for legal reasons and because non-standard licences sometimes signal a project that's in transition or under dispute.
+
+No licence at all = "all rights reserved" by default in most jurisdictions. Don't run code that isn't licensed for you to run.
+
+### 9. Does it match the docs
+
+The skill's README claims to do X. Does the code actually do X?
+
+A surprising number of skills (in any community, not just OpenClaw) drift from their docs. Sometimes harmlessly — feature added, docs not updated. Sometimes worryingly — capability expanded beyond what was advertised.
+
+If the code does *more* than the docs say, that's a question worth asking. If the code does *less*, that's just a stale README.
+
+### 10. Test it sandboxed first
+
+Even after the first nine checks pass, **test the skill in a sandboxed session before letting `main` use it**. Set `agents.defaults.sandbox.mode: "non-main"`, install the skill, route a test channel to a non-main session, exercise the skill, watch what happens.
+
+If anything weird happens (unexpected file access, surprising network calls, errors that hint at scope creep) — uninstall and report.
+
+## A practical workflow
+
+When I install a new skill, the order is roughly:
+
+1. **Read the README + check Signals 1, 2, 7, 8** (5 minutes)
+2. **Skim the source for Signals 3, 5, 6, 9** (10–30 minutes depending on skill size)
+3. **Match Signal 4** (permissions claimed vs needed)
+4. **Install in a sandboxed test setup** (Signal 10)
+5. **Use it for a week sandboxed** before promoting to main
+
+Most skills clear this in under an hour. Some skills you install and never look at again. The discipline only matters when something goes wrong — and if you've followed it, you'll know quickly which skill caused it.
+
+## Skills that should clear a higher bar
+
+Be more cautious with skills that:
+
+- Touch secrets management (password managers, key vaults, SSH agent)
+- Access cloud accounts with broad scope (an AWS skill with `*` IAM permissions)
+- Write to your filesystem outside the workspace (anything touching `~/.ssh`, `~/.aws`, `/etc`, etc.)
+- Send anything outside your network (data exfiltration potential)
+
+A "weather skill" doesn't need this level of scrutiny. A "deploy-to-production skill" does.
+
+## What we are NOT going to claim
+
+This list isn't exhaustive. Real OSS supply-chain attacks (typosquatting, dependency confusion, build-time injection) require specialised tooling beyond this checklist — Snyk, Socket, GitHub's dependency review, etc.
+
+For most people running OpenClaw, the ten signals above filter out over 90% of the practical risk. For higher-stakes deployments, layer in proper supply-chain tooling on top.
+
+## How we apply this in [§4 Field notes](/plugins/)
+
+Every plugin field note tells you which signals we checked and what we found. The "What we checked / What we did NOT check" fields on each field note map roughly to this list. We don't audit every signal for every plugin — that would be unrealistic — but we always disclose which we did.
+
+## What to read next
+
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — the broader posture
+- [§6.3 Practical patterns](/security/practical-patterns/) — concrete patterns you'll see
+- [§4 Plugins](/plugins/) — field notes that apply this checklist
+- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — drawback #3 (community-vetted marketplace) is what this page works against

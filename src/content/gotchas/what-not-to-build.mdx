@@ -1,0 +1,158 @@
+---
+title: "What NOT to build as an agent"
+section: "Security"
+sectionNumber: "6.4"
+description: "Counter-intuitive guidance — agentic isn't always the right shape. A list of jobs that look agentic but aren't worth the cost / complexity / risk vs simpler approaches."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Opinion piece based on building agents + reading the runtime + thinking critically. Not a docs-derived position; this is editorial. Each item gives the simpler alternative explicitly."
+lastReviewedAt: "2026-05-07"
+sources:
+  - "https://docs.openclaw.ai/concepts/agent"
+  - "https://docs.openclaw.ai/concepts/agent-runtimes"
+seeAlso:
+  - "1.4"
+  - "6.1"
+  - "6.3"
+  - "5"
+---
+
+## Why this page exists
+
+Most "build an agent" content tells you what's possible. This page is the opposite — eight things that *look* agentic but probably shouldn't be agents.
+
+The pattern is consistent: when a non-agentic solution exists and works, prefer it. Agents add cost (model API), complexity (state, tools, prompts), and risk (prompt injection, runaway loops, drift). Use them when they earn it.
+
+## 1. A chatbot for your own docs
+
+**The temptation:** "Wire OpenClaw to my company wiki / personal Notion / docs site, ask it questions."
+
+**Why it's usually wrong:**
+
+- **Search already does this 95%.** Your wiki has search. Notion has search. Stripe Docs has cmd-K. The "AI chatbot for docs" pattern wins maybe 20% of the time over good search and loses the rest because it hallucinates, can't show source links cleanly, or is slower.
+- **Cost-per-query is real.** Every "where's the deploy guide?" is a $0.01–$0.05 model call. Search costs nothing.
+- **It atrophies.** Search indexes update reliably; an agent's knowledge is whatever it last saw.
+
+**Build instead:** good search (Pagefind, Algolia, Meilisearch, even ripgrep). Reserve the agent for *synthesis* across multiple docs, not lookup of single docs.
+
+## 2. An agent that books meetings
+
+**The temptation:** "Tell my agent 'find a slot with Sarah next week,' it checks both calendars, books it."
+
+**Why it's usually wrong:**
+
+- **Calendly / Cal.com does this directly** with a shared booking link. No agent needed.
+- **Cross-calendar coordination has subtle failure modes.** Time zones, holidays, your other commitments. An agent that books meetings without calling you first will eventually book wrongly. You'll spend the saved time apologising.
+- **Booking is a high-stakes write operation.** Your social capital is on the line every time.
+
+**Build instead:** a Calendly link in your email signature. Use the agent to *prep for* meetings (read the attendees' bios, summarise prior context) — that's where it earns its keep.
+
+## 3. A multi-agent system that does what one prompt could
+
+**The temptation:** "Set up a 'researcher agent' + 'writer agent' + 'editor agent' that hand work between them."
+
+**Why it's usually wrong:**
+
+- **N agents = N times the model cost** for the same job a single well-prompted call can do.
+- **Hand-off complexity.** Agents pass messages, accumulate context, miscommunicate. You're now debugging a distributed system.
+- **The single-prompt baseline is hard to beat.** Most "research, write, edit" workflows are just "give the model good instructions and ask once."
+
+**Build instead:** a single thoughtful prompt. Use multi-agent only when the agents truly do different work with different tools/personalities (e.g. *"agent A is a customer-facing support bot; agent B is an internal data analyst; they don't share context"*).
+
+## 4. A long-running agent without a budget cap
+
+**The temptation:** "Let the agent run autonomously for hours, doing background research."
+
+**Why it's usually wrong:**
+
+- **Cost explosion.** A naive autonomous loop can spend hundreds of dollars overnight on one task that didn't need it.
+- **Drift.** Long autonomous runs accumulate context, lose focus, get stuck in subtasks.
+- **No graceful checkpointing.** When you check in 6 hours later, was it useful? Hard to tell without re-reading the whole transcript.
+
+**Build instead:** time-boxed runs (max N minutes), token-budgeted runs (max M tokens), or step-bounded runs (max K iterations). Prefer "do one bounded task, write a report, stop" over "run until you find something interesting."
+
+## 5. A real-time response agent that needs sub-second latency
+
+**The temptation:** "Replace my live chat support with an agent."
+
+**Why it's usually wrong:**
+
+- **Cold-start latency** in OpenClaw is real (see [§1.4 drawback #2](/overview/honest-drawbacks/)). A response in 5 seconds for an agent with significant workspace context is normal — not great for live chat.
+- **Streaming partially helps** but customers still notice the gap.
+- **Edge cases compound.** A human chat agent handles "wait, customer is frustrated, switch tone" instantly. An agent's tone-shift requires explicit handling.
+
+**Build instead:** a triage layer (rules-based or simple keyword matching) that handles the easy 70%, hands off to an agent (or human) for the harder 30%. Set expectations: "I'll have an answer in about 30 seconds" is better than 5-second silence.
+
+## 6. An agent that writes to production without human approval
+
+**The temptation:** "Let the agent deploy / merge / push / ship."
+
+**Why it's usually wrong:**
+
+- **Mistakes are public.** A bad merge, deploy, or commit is visible. Reverting is possible but reputational damage isn't.
+- **Adversarial input becomes destructive.** [§6.3 pattern #1 prompt injection](/security/practical-patterns/) is mostly recoverable from when the agent has read-only scope. With write-to-production scope, "tell the agent to push a commit" becomes attack vector.
+- **The 95% case isn't the right benchmark.** "It works most of the time" is the wrong bar for irreversible actions.
+
+**Build instead:** the agent prepares the change (PR, draft, plan), a human approves and ships. The "human in the loop" is cheap insurance for irreversible operations.
+
+> *Note:* this isn't the same as "the agent shouldn't have any tool access." It can have lots of tools — just not the deploy/push/ship ones unless you've genuinely thought through the failure modes.
+
+## 7. A general-purpose "do anything" personal agent
+
+**The temptation:** "Let it manage my calendar, email, finances, code, notes — everything."
+
+**Why it's usually wrong:**
+
+- **The blast radius scales with scope.** A misbehaving agent with access to your finances is way worse than one with access to your shopping list.
+- **Context overload.** A jack-of-all-trades agent ends up worse at each thing than a focused one.
+- **Authentication sprawl.** Every service the agent touches is another credential to manage.
+
+**Build instead:** focused agents (multi-agent routing in OpenClaw — different agents per workspace per channel). One for code, one for "personal life logistics," one for reading. Scope each tightly.
+
+## 8. An agent inside a workflow where determinism matters
+
+**The temptation:** "Replace my CI pipeline / accounting reconciliation / data validation with an agent."
+
+**Why it's usually wrong:**
+
+- **Models are non-deterministic** (or near-non-deterministic with `temperature=0`). The same input can produce slightly different outputs, especially after model upgrades.
+- **Reproducibility breaks.** "It worked yesterday" doesn't apply.
+- **Auditability is hard.** "Why did this row reconcile differently?" — the answer is "the model decided."
+
+**Build instead:** deterministic code for deterministic problems. Use the agent for *exploring* the problem, not *executing* it. "Agent helps you write the validation rules; CI runs the rules" is the pattern.
+
+## A useful question to ask before building any agent
+
+Before you build, answer:
+
+1. **What's the simplest thing that could work?** A search box? A button? A scheduled script? An if-then rule?
+2. **What does the agent give me that the simple thing doesn't?** Synthesis? Adaptation? Natural-language interface for non-technical users?
+3. **What's the failure mode and is it acceptable?** If the agent is wrong 5% of the time, can I live with that? What's the cost when it is?
+4. **Could I run this without an LLM at all?** If yes, do that and add the LLM only where the deterministic answer falls short.
+
+If you can't answer all four with confidence, the agent is probably the wrong shape.
+
+## Where agents DO earn their keep
+
+To balance the page — agents are great for:
+
+- **Synthesis across multiple sources** that don't share a schema (read 5 docs, summarise the contradictions)
+- **Natural-language UIs for technical work** (chat-to-deploy after the engineer has approved)
+- **Long-tail tasks** that don't justify dedicated tooling (one-off data cleanup, ad-hoc reporting)
+- **Personal-style tasks** that benefit from your context (drafting in your voice, planning around your calendar quirks)
+- **Things you'd never have hired someone for** but you'd pay $0.50 for in a hurry
+
+The pattern: **agents are scribes and synthesisers, not deciders.** Keep the deciding for humans (at least until your decision-making confidence in the agent is well-earned over time).
+
+## What we are NOT going to claim
+
+This page is opinion. Reasonable people will disagree on specific entries. The point isn't "never build any of these" — it's "default to skeptical, build only when justified."
+
+If you've shipped an agent in one of these spaces and it works, lovely. We'd genuinely like to know how — open a [field-note suggestion issue](https://github.com/susanthgit/claw-planet/issues/new) and tell us. We'll feature good counter-examples.
+
+## What to read next
+
+- [§5 Use cases](/use-cases/) — agentic patterns that DO work
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — the operational posture
+- [§7 Compare](/compare/) — when OpenClaw's agent shape fits vs other shapes
+- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — the architectural drawbacks behind several of these

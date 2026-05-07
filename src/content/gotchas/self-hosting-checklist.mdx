@@ -1,0 +1,236 @@
+---
+title: "Self-hosting checklist"
+section: "Security"
+sectionNumber: "6.1"
+description: "The minimum-credible posture for putting an OpenClaw deployment somewhere it might be reached. 12 checks before you flip the switch."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from the official Security guide (docs.openclaw.ai/gateway/security), the README's 'Security model' section, and security-relevant scattered docs (sandboxing, DM policy, pairing). Each check sources its rationale. Sush will validate against an actual deployment soon; flips to tested-by-sush when he does."
+lastReviewedAt: "2026-05-07"
+sources:
+  - "https://docs.openclaw.ai/gateway/security"
+  - "https://github.com/openclaw/openclaw#security-model-important"
+  - "https://docs.openclaw.ai/gateway/sandboxing"
+  - "https://docs.openclaw.ai/channels/pairing"
+  - "https://docs.openclaw.ai/cli/doctor"
+seeAlso:
+  - "1.4"
+  - "6.2"
+  - "6.3"
+  - "2.4"
+---
+
+## Read this first
+
+The OpenClaw defaults are sensible **for a single-user laptop where only you ever message your agent**. The moment that changes — you connect a public Discord channel, you let a friend DM the bot, you put the Gateway on a VPS — those defaults need a once-over.
+
+This checklist is the minimum-credible posture before you flip the switch. Twelve items. Each links to where the underlying mechanism lives in the docs. **None of these are exotic.** You're not hardening a production system; you're just making sure the defaults match what you're actually doing.
+
+Run `openclaw doctor` after every change. It checks several of these for you.
+
+## The 12 checks
+
+### 1. Bind the Gateway to loopback only
+
+```bash
+ss -tlnp | grep 18789
+# expected: 127.0.0.1:18789  (NOT 0.0.0.0:18789)
+```
+
+If it's bound to `0.0.0.0`, it's reachable from the network. **Don't expose 18789 directly to the internet** — even with auth, the Gateway isn't designed as a public-internet-facing service. Put it behind Tailscale, Cloudflare Tunnel, or Wireguard for remote access.
+
+**Why:** the Gateway has full power over the agent. Anyone who reaches `:18789` controls your assistant. Loopback-by-default + private mesh for remote is the standard shape.
+
+**Source:** [Gateway / remote access docs](https://docs.openclaw.ai/gateway/remote)
+
+### 2. Set DM policy to `pairing` for every channel
+
+In `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "channels": {
+    "telegram": { "dmPolicy": "pairing" },
+    "slack":    { "dmPolicy": "pairing" },
+    "discord":  { "dmPolicy": "pairing" },
+    "whatsapp": { "dmPolicy": "pairing" }
+  }
+}
+```
+
+This is the default for most channels, but **verify**. `dmPolicy="open"` lets anyone DM your agent (after they're in `allowFrom`). With `pairing`, unknown senders get a one-time code and don't reach the agent until you approve them.
+
+**Why:** untrusted DM input is the most common path adversarial input takes. Pairing makes it explicit — every new sender requires your "yes."
+
+**Source:** [Channel pairing docs](https://docs.openclaw.ai/channels/pairing) · [README "Security defaults (DM access)"](https://github.com/openclaw/openclaw#security-defaults-dm-access)
+
+### 3. Never use `"*"` in `allowFrom`
+
+```json
+// BAD
+"channels": { "discord": { "allowFrom": ["*"] } }
+
+// GOOD
+"channels": { "discord": { "allowFrom": ["myhandle#1234", "trusteduser#5678"] } }
+```
+
+`"*"` plus `dmPolicy="open"` is the explicit "anyone can DM the agent" combination. If you want a public-facing bot, the architecture for that is different — sandbox + rate limits + scoped tools — and worth doing a separate design pass.
+
+**Why:** the README says it explicitly: *"Public inbound DMs require an explicit opt-in."* Honour that opt-in framing — never grant it casually.
+
+**Source:** [README "Security defaults"](https://github.com/openclaw/openclaw#security-defaults-dm-access)
+
+### 4. Turn on sandbox for non-`main` sessions
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "sandbox": {
+        "mode": "non-main",
+        "backend": "docker"
+      }
+    }
+  }
+}
+```
+
+The default is `mode: "off"` — tools run on the host. That's fine when it's just you (`main` session), risky for any session reachable from outside. Setting `mode: "non-main"` runs everything except your direct interactive session in a Docker sandbox.
+
+**Why:** the README explicitly says *"the agent has full access when it is just you"*. Without sandbox, an adversarial DM could call `exec` with malicious input on your host. Docker as a backend is well-tested; SSH and OpenShell are alternatives.
+
+**Source:** [Sandboxing docs](https://docs.openclaw.ai/gateway/sandboxing) · [README "Security model"](https://github.com/openclaw/openclaw#security-model-important)
+
+### 5. Audit the tool policy for non-main sessions
+
+Default sandbox tool allowlist (from the README):
+
+> `bash`, `process`, `read`, `write`, `edit`, `sessions_list`, `sessions_history`, `sessions_send`, `sessions_spawn`
+
+Default deny: `browser`, `canvas`, `nodes`, `cron`, `discord`, `gateway`.
+
+This is sensible for most cases. Check that your additions don't punch holes — if you've enabled `browser` for non-main sessions, you've given internet access to potentially adversarial input.
+
+**Source:** [Sandbox vs tool policy vs elevated](https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated)
+
+### 6. Run `openclaw doctor` after every config change
+
+```bash
+openclaw doctor
+```
+
+The diagnostic command surfaces risky / misconfigured DM policies, missing config, and other deployment health issues. **Run it after every config change.** If it complains, fix before going further.
+
+**Why:** it catches the easy mistakes. Your future self will thank you.
+
+**Source:** [Doctor CLI](https://docs.openclaw.ai/cli/doctor)
+
+### 7. Keep secrets out of the workspace git repo
+
+Your workspace at `~/.openclaw/workspace` should be backed up to a private git repo (the docs explicitly recommend this). But your **credentials** at `~/.openclaw/credentials/` and **auth profiles** at `~/.openclaw/agents/<id>/agent/auth-profiles.json` should NOT be in that repo.
+
+The `.gitignore` starter from the docs:
+
+```
+.DS_Store
+.env
+**/*.key
+**/*.pem
+**/secrets*
+```
+
+Add to it as needed. **Never** commit a workspace folder that contains a `credentials/` subdirectory.
+
+**Source:** [Workspace docs](https://docs.openclaw.ai/concepts/agent-workspace) · [Auth credential semantics](https://docs.openclaw.ai/auth-credential-semantics)
+
+### 8. Keep your model API keys least-privilege
+
+If you're using OAuth (OpenAI / ChatGPT/Codex), this is mostly automatic. If you're using API keys, scope them:
+
+- **Anthropic API key:** create a separate key per project so you can rotate one without affecting others.
+- **OpenAI API key:** same — and consider rate limits per key.
+- **Google AI Studio key:** these are often easy-grab; treat with care.
+
+If a key leaks (committed to the wrong repo, posted in a debug log), you want to be able to rotate it without touching anything else.
+
+**Source:** [Concepts: OAuth](https://docs.openclaw.ai/concepts/oauth)
+
+### 9. Don't run `openclaw` as root
+
+The Gateway should run as a regular user. Specifically:
+
+- On macOS: your user account, via `launchd`
+- On Linux: a dedicated user (e.g. `claw`), via `systemd --user`
+- Never via `sudo openclaw ...`
+
+If you find yourself wanting root, pause and figure out why. It's almost always wrong — either a permissions bug to fix, or a sign you're trying to do something the runtime doesn't expect.
+
+**Source:** [Daemon CLI](https://docs.openclaw.ai/cli/daemon)
+
+### 10. Limit what the agent can `exec`
+
+The `exec` tool runs shell commands. By default, on `main` sessions, it can run anything your user can. Two strategies to scope this:
+
+- **Sandbox non-main sessions** (Check #4) — already covered.
+- **Tool policy** for `main` if you want to lock yourself down (e.g. deny `exec` outright if your agent never needs it).
+
+Some users go further and put the whole Gateway inside a Docker container ([§2.7 Docker](/setup/docker/)) so even `main` session is contained.
+
+**Source:** [Tool policy](https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated)
+
+### 11. Audit MCP servers before adding them
+
+MCP servers extend the agent's tool surface. Before installing one:
+
+- **Read the source.** It's running on your machine with your permissions.
+- **Check who maintains it.** Anonymous one-off repos are higher-risk than well-maintained projects.
+- **Understand what it can do.** A "GitHub MCP" with a personal access token is a different threat surface than a "weather MCP" with no auth.
+
+OpenClaw's MCP layer doesn't sandbox MCPs by default — they're external processes the Gateway talks to. Treat them like any external dependency.
+
+**Source:** [MCP CLI](https://docs.openclaw.ai/cli/mcp)
+
+### 12. Review your channel allowlists quarterly
+
+Set a calendar reminder. Every three months:
+
+- Review `allowFrom` lists per channel — are people on the list still active? Is anyone in there you don't recognise?
+- Rotate one API key (just to keep the rotation muscle alive).
+- Run `openclaw doctor` and address everything it flags.
+
+This isn't paranoia — it's hygiene. Like backing up. You'll thank yourself the time it actually matters.
+
+## Quick "before you go public" gut-check
+
+If you're about to:
+
+- Add a public Discord/Slack channel
+- Open a DM to someone you don't know well
+- Put the Gateway on the internet
+- Expose anything via Cloudflare Tunnel / Tailscale Funnel publicly
+
+…re-run this checklist top to bottom. **Do not** trust that "default safe" applies once you've changed defaults.
+
+## Common mistakes
+
+| Mistake | Why it bites | Fix |
+|---|---|---|
+| `dmPolicy="open"` + `"*"` in allowFrom for "easier testing" | Anyone who finds your bot can DM it | Switch to `pairing` even for testing — pair yourself once, done |
+| `sandbox.mode: "off"` + bot in a public channel | Adversarial input runs on your host | Set `mode: "non-main"`, use Docker backend |
+| Workspace committed to public GitHub | Secrets / personal info exposed | `.gitignore` `credentials/`; use private repo |
+| Same Anthropic API key everywhere | Key leak takes everything down | One key per project; rotate quarterly |
+| `openclaw` running as root | Tool exec has root | systemd --user; never sudo |
+| Forgetting to run `doctor` after edits | Mistakes accumulate silently | Make it a habit; consider a pre-commit hook |
+
+## What we are NOT going to claim
+
+We have not adversarially tested an OpenClaw deployment. The checks above are derived from official security docs, the README's security section, and standard best practice for self-hosted agent runtimes. **Real penetration testing is a different exercise** and not something this site provides.
+
+If you're deploying OpenClaw in a context where security is professionally your responsibility (work, customer-facing, regulated environment), follow this checklist plus your organisation's standard hardening practices. Don't treat this list as exhaustive.
+
+## What to read next
+
+- [§6.2 Plugin trust signals](/security/plugin-trust-signals/) — what we look for when sampling plugins for [§4](/plugins/)
+- [§6.3 Practical patterns](/security/practical-patterns/) — common classes of issue you'll meet
+- [§6.4 What NOT to build as an agent](/security/what-not-to-build/) — counter-intuitive guidance
+- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — the architectural drawbacks this checklist works around
