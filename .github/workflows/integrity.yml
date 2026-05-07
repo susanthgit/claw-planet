@@ -1,0 +1,44 @@
+name: Integrity check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (no Pagefind — just for link audit)
+        run: npm run build:no-search
+
+      - name: Audit verification states
+        run: node scripts/audit-verification-states.mjs
+
+      - name: Audit claims (counts + internal links)
+        env:
+          # Ratcheted threshold during P0a build — placeholder home links to
+          # /overview/ /setup/ /plugins/* etc. that ship in Batches 5–8.
+          # MUST go back to 0 (default) when P0a content is complete.
+          INTEGRITY_LINK_THRESHOLD: '60'
+        run: node scripts/integrity-check.mjs
+
+      - name: Voice lint (advisory)
+        run: node scripts/voice-lint.mjs
