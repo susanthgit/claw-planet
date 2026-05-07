@@ -1,0 +1,191 @@
+---
+title: "Pi-hosted always-on home agent"
+section: "Use cases"
+sectionNumber: "5.4"
+description: "A Raspberry Pi 5 sitting on your desk, running OpenClaw 24/7, doing daily check-ins and small workflow tasks. The cheapest credible 'I have an agent' setup."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Recipe combines the Pi setup walkthrough + always-on patterns. Sush has a Pi 5 8GB on his shelf and will run this recipe end-to-end soon. Power and uptime numbers are inferred from Pi 5 specs."
+lastReviewedAt: "2026-05-07"
+estimatedTimeMinutes: 90
+pairsWith:
+  - "2.6"
+sources:
+  - "https://docs.openclaw.ai/cli/daemon"
+  - "https://docs.openclaw.ai/automation/cron-jobs"
+  - "https://github.com/openclaw/openclaw#install-recommended"
+seeAlso:
+  - "2.6"
+  - "5.1"
+  - "3.4"
+---
+
+## What you'll have at the end
+
+A **Raspberry Pi 5 with 8GB of RAM** running an OpenClaw Gateway 24/7, paired with Telegram and one or two other channels, doing:
+
+- 9am daily summary (your calendar + overnight news + reminders)
+- 10pm wind-down (review of the day, things to remember tomorrow)
+- Always-on for ad-hoc questions
+- Total cost: **~$130 in hardware, ~$2/month in electricity, ~$5–15/month in model API calls**
+
+This is the cheapest credible setup that *just runs* without your laptop. It's the "set and forget" recipe.
+
+## Why this recipe matters
+
+A laptop-hosted agent has one inconvenient property: when your laptop sleeps, the agent goes silent. For an always-on assistant — daily morning briefs, late-night reminders, response to incoming messages while you're away — you want a separate always-on host.
+
+A Pi 5 is the cheapest way to get there. Lower power than a NUC, smaller than a mini-PC, easier to set up than an Azure VM, and at $130 all-in it's roughly the price of dinner for two in a nice restaurant.
+
+## What you need
+
+- A Raspberry Pi 5 with 8GB RAM (4GB works but tight)
+- The full Pi shopping list from [§2.6](/setup/raspberry-pi/) (~$130 if you buy fresh)
+- Hello-world ([§5.1](/use-cases/hello-world-laptop/)) working on a laptop first — useful as a reference and fallback
+- An hour and a half (most of it is OS install + Pi setup; the agent config takes 20 minutes)
+
+## Step 1 — Build and set up the Pi
+
+Follow [§2.6 Raspberry Pi setup](/setup/raspberry-pi/) all the way through. By the end of that page you'll have:
+
+- Pi 5 running Raspberry Pi OS Lite 64-bit on ethernet
+- Node 24 + OpenClaw installed
+- `systemd --user` daemon enabled, `loginctl linger` on
+- `openclaw doctor` clean
+- A test message via `openclaw agent --message ...` working
+
+Don't move on until the Pi can independently respond to a CLI message. If it can't, debug there before adding channels.
+
+## Step 2 — Pair Telegram (or your channel of choice)
+
+```bash
+openclaw channels add telegram
+```
+
+Walk through pairing the same as you did on the laptop. The Pi has a separate workspace from your laptop — different bot, different SOUL.md, different identity. That's fine; treat the Pi-agent as a sibling rather than a replica.
+
+> **A choice worth pondering:** do you want the Pi-agent to share workspace with your laptop-agent (one consistent agent across two hosts) or be its own thing (two separate agents with different personas)? Most people start with the latter and move to the former later if they want continuity. Multi-gateway setup is documented at [docs.openclaw.ai/gateway/multiple-gateways](https://docs.openclaw.ai/gateway/multiple-gateways).
+
+## Step 3 — Edit USER.md and SOUL.md for "always-on" persona
+
+The Pi-agent is best at always-on, low-stakes tasks. SOUL.md should reflect that:
+
+```markdown
+# SOUL.md
+
+You are Beacon, the always-on assistant for Sush. You live on a Pi.
+
+## Communication style
+- Brief by default. The Pi version is for quick check-ins, not deep work.
+- Time-sensitive things first: "It's 9am, here's your day."
+- No emoji unless I use one first.
+
+## What you do well
+- Daily morning briefs
+- Late-night wind-downs
+- Quick lookups
+- "Remind me at..."
+- Reading recent messages from connected channels
+
+## What you defer to my laptop-agent for
+- Deep code work
+- Long-form writing
+- Complex multi-step tasks (the laptop-agent has more headroom)
+
+## Boundaries
+- Never modify files outside ~/.openclaw/workspace/.
+- Never share secrets.
+- If a task seems heavyweight, suggest I run it on the laptop instead.
+```
+
+This division of labour — Pi for quick stuff, laptop for heavy stuff — keeps the agent identity coherent without overworking the Pi.
+
+## Step 4 — Set up the morning brief cron
+
+```bash
+openclaw cron add \
+  --name "morning-brief" \
+  --schedule "0 9 * * *" \
+  --task "Send a morning brief to Telegram. Include: (1) the day's calendar if you can read it, (2) any reminders I asked about, (3) one interesting thing from the past 24 hours of Hacker News or my RSS feeds. Keep under 300 words. Use the time format I prefer (HH:MM 24-hour)."
+```
+
+If you've wired up a calendar MCP or an RSS skill, the agent has the tools to do this. If not, it'll do its best with what it has — which on day 1 might be just "good morning, here's a friendly reminder you wanted."
+
+## Step 5 — Set up the wind-down cron
+
+```bash
+openclaw cron add \
+  --name "wind-down" \
+  --schedule "0 22 * * *" \
+  --task "Wind-down message to Telegram. (1) What got done today based on my messages? (2) What's outstanding? (3) Any reminders for tomorrow morning? Keep under 200 words. End with a one-line bedtime nudge if it's a screen-time-curfew kind of day."
+```
+
+You can keep iterating on the cron task strings. AGENTS.md is also a fine place to put the longer template — the cron task can be "Use the wind-down template in AGENTS.md."
+
+## Step 6 — Set up reminders capability
+
+The agent needs to actually remember reminders you ask for. The simplest pattern: AGENTS.md has a "Pending reminders" section, the agent reads + writes to it.
+
+In AGENTS.md:
+
+```markdown
+## Pending reminders
+
+(I edit this section in response to "remind me to X" requests. Format:
+- [ ] YYYY-MM-DD HH:MM | what | who/where to nudge
+
+I clear completed items.)
+
+- [ ] 2026-05-08 15:00 | check the deploy logs | Telegram
+- [ ] 2026-05-09 09:00 | call the dentist | Telegram
+```
+
+In the wind-down task, ask the agent to remind itself "what reminders are due tomorrow?" — it reads AGENTS.md, surfaces them in the wind-down message.
+
+## Step 7 — Connect a second channel (optional)
+
+If you want WhatsApp or iMessage on the Pi too:
+
+```bash
+openclaw channels add whatsapp
+# walk through QR pairing with WhatsApp Business Cloud
+```
+
+The Pi-agent is now reachable from multiple channels. Same identity from each.
+
+## Power, uptime, and what to expect
+
+Once running, the Pi:
+
+- **Power:** ~5W average, peaks ~12W. NZ retail electricity = ~$2/month.
+- **Uptime:** I'd expect 99%+ excluding deliberate restarts (OS updates, etc.). Schedule reboots monthly via cron.
+- **Heat:** Active cooler keeps it well below throttling temp.
+- **Failure modes:** SD card death (use a good A2 card, back up workspace to private git), power blip (a $20 mini-UPS handles this), router death (UPS the router too).
+
+## Things to try once it works
+
+- **Add Hacker News skill** — agent reads the top 10 each morning, summarises only the ones relevant to your interests
+- **Add a "morning briefing" RSS digest** — your favourite blogs, summarised
+- **Voice integration** via Voice Wake on a nearby Mac — say "hey Beacon, what's on my day?" and get a verbal answer
+- **Local model experiment** — for one week, swap out Claude with `ollama/llama3.2:3b` running on the Pi. Notice the latency + quality difference. Decide whether to keep or roll back.
+
+## What we are NOT going to claim
+
+The Pi will work. The exact cron schedule keys, calendar integration paths, and model failover specifics need real testing. Sush has the hardware on his shelf and will run this. The recipe will get more specific (with timing) once he does.
+
+## Common pitfalls (Pi-specific)
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Cron doesn't fire | TZ mismatch | Set explicit TZ in `openclaw.json` |
+| Pi reboots randomly | Power supply underspec | Use the official 27W; cheap chargers cause this |
+| First-of-day message slow | Cold-start | Reduce SOUL.md/AGENTS.md size; add `--keep-warm` if available |
+| Workspace lost | SD card died | Restore from private git; switch to NVMe |
+| Daemon dies after Pi rebooted for OS updates | linger not enabled or systemd unit dropped | Re-enable: `loginctl enable-linger $USER` |
+
+## What to read next
+
+- [§2.6 Raspberry Pi setup](/setup/raspberry-pi/) — the underlying install
+- [§5.5 Self-hosted RAG over personal docs](/use-cases/rag-personal-docs/) (planned) — adds memory engine
+- [§3.4 Models](/connections/models/) — for the local-vs-API model decision
+- [§5.1 Hello-world](/use-cases/hello-world-laptop/) — the laptop sibling

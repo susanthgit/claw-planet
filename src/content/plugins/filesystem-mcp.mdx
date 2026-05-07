@@ -1,0 +1,138 @@
+---
+title: "Filesystem MCP"
+section: "Plugins"
+sectionNumber: "4.1"
+description: "The MCP server that gives the agent access to a file tree outside the workspace. Most-installed MCP across the agent community. Plain field note — what we checked, what we didn't, what to watch for."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Field note assembled from public Filesystem MCP source + community deployment patterns. Sush has not yet wired Filesystem MCP into his OpenClaw install. Promotes to tested-by-sush when he runs it through his Pi or Mac with a real file tree."
+lastReviewedAt: "2026-05-07"
+canonicalRef: "filesystem-mcp"
+category: "MCP server / tool extension"
+checked:
+  - "install path"
+  - "default scope"
+  - "configuration shape"
+  - "documented permissions"
+notChecked:
+  - "performance under heavy file-tree workload"
+  - "behaviour with symlinks pointing outside scope"
+  - "edge cases on Windows path conventions"
+riskProfile: "Broad filesystem access if scope is too wide"
+riskLevel: "medium"
+maintainerHealth: "active across MCP community"
+sources:
+  - "https://docs.openclaw.ai/cli/mcp"
+  - "https://modelcontextprotocol.io/"
+  - "https://github.com/modelcontextprotocol/servers"
+seeAlso:
+  - "3.3"
+  - "6.1"
+  - "6.2"
+---
+
+## What this plugin is
+
+**Filesystem MCP** is an MCP server that gives the agent a set of tools for reading, writing, listing, and editing files **outside the workspace**. It's the most-installed MCP server across the agent community because almost every agentic workflow eventually wants to touch real project files.
+
+It's not OpenClaw-specific — it's a [standard MCP server](https://github.com/modelcontextprotocol/servers) that any MCP-compatible host (Claude Desktop, Cline, OpenClaw via the `mcp` bridge) can use. We're documenting it here because it's the **single most useful first MCP** to wire up.
+
+## What it gives the agent
+
+When loaded, the agent gets these tools:
+
+- `fs_read` — read a file
+- `fs_write` — write a file
+- `fs_list` — list directory contents
+- `fs_search` — pattern-search across files
+- `fs_edit` — surgical edits (find/replace style)
+- `fs_delete` — delete a file (often gated)
+
+These layer alongside OpenClaw's built-in `read`/`write`/`edit`/`exec` ([§3.3 Tools](/connections/tools/)). The difference: built-ins default to the workspace; Filesystem MCP can be scoped to **any directory you allow it**.
+
+## Why you'd use it
+
+OpenClaw's built-in `read`/`write`/`edit` are scoped to the workspace by default. Useful for "edit my SOUL.md" / "read my AGENTS.md." Less useful for "go look at that project I'm working on at `~/projects/foo`."
+
+Filesystem MCP solves that. Configure it with one or more allowed roots:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "filesystem": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/sush/projects"],
+        "allowedPaths": ["/Users/sush/projects"]
+      }
+    }
+  }
+}
+```
+
+Now the agent can read/write/edit anything under `/Users/sush/projects/` but nothing outside.
+
+## Real example
+
+You're working on the claw-planet repo. You want the agent to triage open issues:
+
+> "Read all the open GitHub issues in the claw-planet repo, group by topic, and write a triage summary to `~/projects/claw-planet/TRIAGE.md`."
+
+Without Filesystem MCP: agent can read the GitHub issues (via GitHub MCP if you have it) but can't write to `~/projects/claw-planet/`. It can output the markdown to chat and you copy-paste.
+
+With Filesystem MCP scoped to `~/projects/`: agent reads issues, writes the file directly. You review, commit.
+
+## What we checked
+
+- **Install path** — `npx -y @modelcontextprotocol/server-filesystem <root>` is the canonical run command
+- **Default scope** — server takes its allowed root(s) as command-line args; no implicit broader access
+- **Configuration shape** — fits the standard OpenClaw MCP config block
+- **Documented permissions** — write/delete operations are allowed by default within scope; some implementations gate `fs_delete` behind explicit confirmation
+
+## What we did NOT check
+
+- **Performance under heavy workloads** — listing a million-file directory, searching across a deep tree, etc. Anecdotally fine for normal project trees; needs benchmarking for repos with very large file counts.
+- **Symlink behaviour** — does the server resolve symlinks pointing outside the allowed scope? Implementation-specific. If you have symlinks crossing security boundaries, audit before use.
+- **Windows path edge cases** — `\` vs `/`, drive letters, UNC paths. The server is cross-platform but Windows quirks aren't all documented.
+
+## Risk profile
+
+**Medium.** The risk shape is *if you scope it too widely, the agent has broad filesystem access*. Two scenarios where this matters:
+
+1. **Adversarial input via channels.** If your agent is reachable from any channel ([§3.2](/connections/channels/)) and Filesystem MCP is scoped to your home directory, prompt injection could exfiltrate `~/.ssh/id_rsa` or similar. **Mitigation:** scope tightly. `~/projects/` not `~/`.
+
+2. **Confused agent.** Agents make mistakes. An agent told to "clean up old files" with broad delete permissions can do real damage. **Mitigation:** scope tightly. Don't give `fs_delete` tools where you wouldn't trust a junior intern with `rm -rf`.
+
+> *Why this matters:* the Filesystem MCP doesn't have a "preview before writing" mode. Every `fs_write` and `fs_edit` happens immediately. The blast radius is exactly your allowed scope.
+
+## Maintainer health
+
+The reference Filesystem MCP server lives in [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers), maintained by the MCP project (Anthropic-led, broad community contributions). Active commits, responsive issues, multiple releases.
+
+Other implementations exist (community forks, language-specific reimplementations). For your first install, use the reference one.
+
+## Where it sits in the catalog
+
+| Field | Value |
+|---|---|
+| **Category** | MCP server / tool extension |
+| **Layer** | Tools ([§3.3](/connections/tools/)) |
+| **Install method** | OpenClaw MCP config block |
+| **Built-in alternative** | Workspace-scoped `read`/`write`/`edit` (less powerful, safer scope) |
+| **License** | MIT |
+| **Languages supported** | The reference server is JavaScript/TypeScript |
+
+## Things to try
+
+- **Install with tight scope first.** Allow just one project directory, not your whole home.
+- **Pair with a code-summarisation skill** to build "agent that reads my repo and explains what changed since last week."
+- **Combine with GitHub MCP** for the issue-triage example above.
+- **Test the scope.** Ask the agent to read a file *outside* the allowed scope. Verify it fails cleanly with a permission error, not silently succeeds.
+
+## What we are NOT going to claim
+
+We have not run Filesystem MCP through OpenClaw end-to-end yet. Specific OpenClaw + Filesystem MCP integration quirks (config parsing edge cases, error message clarity, MCP version compat) need a real run.
+
+## Independent field note · not a certification
+
+This is an editorial note, not an audit. We're not affiliated with the Filesystem MCP maintainers or with Anthropic / the MCP project. If we got something wrong, [open an issue](https://github.com/susanthgit/claw-planet/issues/new) and we'll edit honestly.

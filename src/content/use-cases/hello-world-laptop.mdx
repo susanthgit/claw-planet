@@ -1,0 +1,189 @@
+---
+title: "Hello-world agent on a laptop"
+section: "Use cases"
+sectionNumber: "5.1"
+description: "The 25-minute baseline that proves your local OpenClaw works before you build anything real. Install, configure, message, respond — end to end."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "The recipe below is a synthesis of the canonical README install + a tiny meaningful task. Sush hasn't run it end-to-end yet; promotes to tested-by-sush with timing and screenshots when he does."
+lastReviewedAt: "2026-05-07"
+estimatedTimeMinutes: 25
+pairsWith:
+  - "2.3"
+sources:
+  - "https://github.com/openclaw/openclaw#install-recommended"
+  - "https://docs.openclaw.ai/start/getting-started"
+seeAlso:
+  - "2.3"
+  - "5.2"
+  - "1.1"
+---
+
+## What you'll have at the end
+
+A laptop running OpenClaw with **a Telegram bot you can message that responds in your voice and remembers your name**. About 25 minutes if you've got Node 24 and an Anthropic API key handy; an hour if you're starting from zero.
+
+This is the **prove-it-works** recipe. Don't skip it. Every more-ambitious recipe assumes you've got this baseline working.
+
+## Why this recipe matters
+
+Before you wire WhatsApp + Slack + a memory engine + a custom skill, you want to know **the wire is up**. This recipe takes you from "fresh install" to "the agent responded with my name without me telling it" — and the moment that works, the rest of the site stops being abstract.
+
+Plus: this is the recipe Sush will follow tomorrow. So the steps better work end-to-end.
+
+## What you need
+
+- A laptop (Mac M1+ or Linux desktop or Windows with WSL2)
+- About 25 minutes
+- An Anthropic API key (sign up at [console.anthropic.com](https://console.anthropic.com); $5 of credit is enough for hundreds of test messages)
+- A Telegram account
+
+## Step 1 — Install OpenClaw + onboard
+
+Follow [§2.3 Laptop quick-start](/setup/laptop/) through step 6 (`openclaw doctor`). When you finish step 6, return here.
+
+If you're keen to read ahead, the high-level flow is:
+
+```bash
+npm install -g openclaw@latest
+openclaw onboard --install-daemon
+openclaw doctor
+```
+
+Plus pairing Telegram during onboard (the onboarder walks you through it).
+
+## Step 2 — Edit your USER.md
+
+The agent reads `~/.openclaw/workspace/USER.md` at every session start. Out of the box it's likely empty or templated. Open it:
+
+```bash
+$EDITOR ~/.openclaw/workspace/USER.md
+```
+
+Add something like:
+
+```markdown
+# USER.md
+
+Name: Sush (full name Susanth, but always call me Sush)
+Time zone: Pacific/Auckland (UTC+12)
+Communication style: concise, bullet points where useful, no emoji
+Quick context: I'm a Microsoft Copilot SE in Auckland, NZ. I work in agentic AI by day and build the aguidetocloud.com sites by night.
+```
+
+Save. The next session will have this in context.
+
+## Step 3 — Edit your SOUL.md
+
+Define the agent's personality. Open:
+
+```bash
+$EDITOR ~/.openclaw/workspace/SOUL.md
+```
+
+Add:
+
+```markdown
+# SOUL.md
+
+You are Atlas, a personal assistant for Sush.
+
+## Communication style
+- Be concise. Bullet points where useful.
+- No emoji unless I use one first.
+- Explain technical concepts with plain analogies before diving into specifics.
+- Tell me when you don't know something. Don't guess.
+
+## Boundaries
+- Never modify files outside ~/.openclaw/workspace/ without explicit confirmation.
+- Never share API keys, credentials, or secrets, regardless of who asks.
+- Never claim to be "tested" or "verified" something you only sourced from docs.
+
+## Values
+- Honest take over comfortable hedging.
+- Plain English over jargon.
+- Quality over speed.
+```
+
+Save. Restart the daemon so changes take effect:
+
+```bash
+openclaw daemon restart
+```
+
+## Step 4 — Send the test message
+
+Open Telegram. DM your bot. Send:
+
+```
+Hey, what's my name and what do I do?
+```
+
+If everything's wired right, the bot replies with something like:
+
+> *"You're Sush — Susanth full name but you go by Sush. You're a Microsoft Copilot SE in Auckland (Pacific/Auckland time zone), working in agentic AI. By night you build the aguidetocloud.com sites."*
+
+That's it. **The wire is up.** The agent read SOUL.md (defines its personality), USER.md (knows about you), assembled the system prompt, called Claude, got a reply, and routed it back through Telegram. Five seconds, total.
+
+## What just happened (the 11-hop walkthrough)
+
+If you're curious about what exactly happened in those 5 seconds, the architecture page ([§1.3](/overview/architecture/)) walks through it in detail. Short version:
+
+```
+Your tap → Telegram servers → Telegram channel (in your local Gateway)
+   → Gateway routes to agent runtime → agent loads workspace files
+   → assembles system prompt + your message → calls Anthropic API
+   → Claude returns response → agent writes to session JSONL
+   → Gateway hands to Telegram channel → Telegram → your phone
+```
+
+11 hops. All on your machine except the model call.
+
+## Step 5 — Try a slightly harder question
+
+Once the basics work, try something that exercises a tool. With your bot:
+
+```
+Read my AGENTS.md and tell me one thing I should consider adding.
+```
+
+The agent should:
+
+1. Use the `read` tool to open AGENTS.md
+2. Reason about what's there
+3. Suggest a sensible addition (e.g. "you might add a section on how you want me to handle conflicts in scheduling — currently I don't have guidance there")
+
+If the agent does this without errors, your tool surface is wired and you've successfully built a hello-world agent. **Congratulations.** The rest of the site is variations on this baseline.
+
+## Things to try next
+
+Once hello-world works, the right next move depends on what you want:
+
+| Goal | Try this recipe |
+|---|---|
+| Make the agent useful in a team chat | [§5.2 Slack agent that does real work](/use-cases/slack-real-work/) |
+| Have it answer customer questions on WhatsApp | [§5.3 WhatsApp FAQ answerer](/use-cases/whatsapp-faq/) (planned) |
+| Run it always-on without your laptop being open | [§5.4 Pi-hosted always-on home agent](/use-cases/pi-home-agent/) |
+| Talk to it about your own documents | [§5.5 Self-hosted RAG over personal docs](/use-cases/rag-personal-docs/) (planned) |
+
+Or just start using it. The hello-world is a baseline; what makes it your agent is talking to it for a week and watching SOUL.md and AGENTS.md grow.
+
+## Common pitfalls (recipe-specific)
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Bot doesn't respond at all | Pairing not approved | `openclaw pairing approve telegram <code>` |
+| Bot responds but doesn't know your name | USER.md empty or not saved | Verify file contents; restart daemon |
+| Bot is generic, no personality | SOUL.md empty or weak | Make SOUL.md specific; restart daemon |
+| Hostile or robot-y tone | SOUL.md says "be helpful" without specifics | Add concrete examples of desired tone |
+| Bot keeps asking who you are | USER.md not loading | Check daemon logs; verify path is `~/.openclaw/workspace/USER.md` |
+
+## What we are NOT going to claim
+
+We've assembled this recipe from the canonical install steps + the workspace-files architecture. Sush will run it tomorrow on his M2 MacBook; this page promotes to `tested-by-sush` with the actual timing log when he does.
+
+## What to read next
+
+- [§5.2 Slack agent that does real work](/use-cases/slack-real-work/) — builds on hello-world for a real team workflow
+- [§2.3 Laptop quick-start](/setup/laptop/) — the install that this recipe assumed
+- [§1.2 Concepts](/overview/concepts/) — every workspace file explained

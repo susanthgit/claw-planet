@@ -1,0 +1,208 @@
+---
+title: "WhatsApp FAQ answerer"
+section: "Use cases"
+sectionNumber: "5.3"
+description: "An always-on agent that handles inbound WhatsApp FAQs for a small business. Pairs with paired-DM-policy + memory for repeat customers."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Recipe synthesised from WhatsApp channel docs + memory engine docs + small-business FAQ patterns. Sush hasn't run it; promotes when he does."
+lastReviewedAt: "2026-05-07"
+estimatedTimeMinutes: 90
+pairsWith:
+  - "3.2"
+  - "3.5"
+sources:
+  - "https://docs.openclaw.ai/channels/whatsapp"
+  - "https://docs.openclaw.ai/concepts/memory"
+seeAlso:
+  - "5.2"
+  - "3.2"
+  - "6.1"
+---
+
+## What you'll have at the end
+
+A WhatsApp number that, when customers message it, **answers their FAQ in plain language using your knowledge base** — and remembers past customers so repeat questions get answered with continuity. About 90 minutes if you've got hello-world ([§5.1](/use-cases/hello-world-laptop/)) running.
+
+This is the "small business, no chatbot platform" recipe. Useful for a freelancer, a tutor, a small studio, a consulting practice — anyone who fields the same questions repeatedly and wants the agent to take the first cut.
+
+## Why this recipe matters
+
+Most "AI chatbot" products are SaaS — you pay $50–500/month, you put your knowledge in their UI, you live with their privacy posture. This recipe is the **self-hosted, your-data-on-your-machine** version. Same outcome (FAQ answered automatically), no SaaS dependency, no subscription, your customers' messages don't leave your network unless they go to your model provider.
+
+Trade-off: you maintain it. SaaS chatbots are turn-key; this is your responsibility.
+
+## What you need
+
+- Hello-world working ([§5.1](/use-cases/hello-world-laptop/))
+- A WhatsApp Business account (different from personal WhatsApp; needed for the official channel)
+- A knowledge base — could be a single FAQ markdown file, could be a Notion export, could be your existing website's FAQ page
+- About 90 minutes (most of it is the WhatsApp Business setup)
+
+## Step 1 — Set up WhatsApp Business + the channel
+
+WhatsApp Business has its own onboarding distinct from personal WhatsApp. You'll either:
+
+- **Use WhatsApp Business Cloud API** (Meta-hosted, requires a verified business; better long-term)
+- **Use BlueBubbles-style bridging** (informal, can use your personal WhatsApp; not for production-public)
+
+For a small business, the official Cloud API is the right path. Follow [docs.openclaw.ai/channels/whatsapp](https://docs.openclaw.ai/channels/whatsapp) — it walks through the Meta onboarding and the OpenClaw pairing.
+
+Once paired:
+
+```bash
+openclaw channels list
+# whatsapp: paired (number: +64xxxxxxxxxx)
+```
+
+## Step 2 — Configure DM policy
+
+This is the most important security step in this recipe. WhatsApp FAQ-bot is *public-facing* — random people will message it.
+
+```json
+{
+  "channels": {
+    "whatsapp": {
+      "dmPolicy": "open",
+      "allowFrom": ["*"],
+      "rateLimits": {
+        "perSenderPerHour": 20,
+        "perSenderPerDay": 100
+      }
+    }
+  }
+}
+```
+
+This is one of the few times we recommend `dmPolicy="open"` + `"*"` — for a public FAQ bot, that's the desired behaviour. **But** make sure:
+
+1. **Sandbox is on for non-main sessions** ([§6.1 check 4](/security/self-hosting-checklist/)). Public input → adversarial-input-likely.
+2. **Rate limits are set** (above) — limits abuse + caps your model API spend.
+3. **Tool policy denies dangerous tools** for non-main sessions — `exec`, `browser`, `write` outside scope, etc.
+
+Without these three, you've handed the agent's full power to anyone who finds your number. With them, you've handed a scoped FAQ-answering capability to anyone — which is what you want.
+
+## Step 3 — Load the knowledge base
+
+The agent's knowledge base lives in the workspace. Put your FAQ content in `~/.openclaw/workspace/faq/`:
+
+```
+faq/
+  pricing.md
+  services.md
+  how-we-work.md
+  scheduling.md
+  policies.md
+```
+
+Each file is markdown with the questions/answers in your own voice. The agent will read these to answer customer questions.
+
+For a slightly more sophisticated setup, use **QMD memory** ([§3.5](/connections/memory/)) — it indexes the markdown semantically so the agent finds the right answer faster:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "memory": {
+        "engine": "qmd",
+        "indexPaths": ["~/.openclaw/workspace/faq/"]
+      }
+    }
+  }
+}
+```
+
+## Step 4 — Edit AGENTS.md to give it the FAQ bot persona
+
+```markdown
+## WhatsApp FAQ behaviour
+
+You handle inbound WhatsApp DMs from customers asking about my services.
+
+When someone messages you:
+1. Look up the answer in ~/.openclaw/workspace/faq/ (or QMD memory).
+2. If you find it, answer in plain language. Quote prices/dates/specifics directly.
+3. If you don't know — say so explicitly. Offer to take a message and I'll reply.
+4. Never invent details (dates, prices, capabilities) that aren't in the FAQ.
+5. If they ask something the FAQ covers but they want detail beyond what's there, offer to take a message.
+
+Tone:
+- Warm, professional, concise.
+- No corporate jargon.
+- Match their formality level — if they say "yo, do you do X?" reply casual; if they say "Hello, I am inquiring about your services," reply polite.
+
+When you take a message:
+- Format: NEW MSG FROM <name/number> at <time>: <message + your handoff context>
+- Save to ~/.openclaw/workspace/messages.md
+- Confirm to the customer: "I've passed this to <my-name>. They'll reply within X hours."
+```
+
+Save AGENTS.md.
+
+## Step 5 — Set up the message-review cron
+
+The customer's "I'll reply within X hours" requires you to actually see the new messages. Cron the agent to summarise pending messages once a day to your own DM:
+
+```bash
+openclaw cron add \
+  --name "customer-message-digest" \
+  --schedule "30 8 * * *" \
+  --task "Read ~/.openclaw/workspace/messages.md. DM me on Telegram with new messages from the last 24 hours. Format: 'X new customer messages: <list>'. After DMing, archive the messages to ~/.openclaw/workspace/messages-archive/<YYYY-MM-DD>.md."
+```
+
+Now you get a daily digest of inbound customer questions. Reply by hand to the ones the bot couldn't answer.
+
+## Step 6 — Test as a customer
+
+Pretend to be a customer. From a different phone (or borrow a friend's), message your business number with FAQ questions:
+
+- "Do you do remote sessions?"
+- "What does your pricing look like?"
+- "Are you available next Wednesday at 3pm?"
+
+Verify each one:
+
+- Gets a sensible answer if the FAQ covers it
+- Gets "I'll pass this on" if it doesn't
+- Falls into messages.md correctly when handed off
+
+If anything goes wrong, edit AGENTS.md (or the FAQ markdown) and re-test.
+
+## What this looks like in practice
+
+Day 1 — set up. Test with friends. Tweak.
+
+Day 7 — you've answered ~10 real customer questions, ~3 of which the bot couldn't handle and you replied to via the cron digest. Bot accuracy is improving as you tune the FAQ.
+
+Day 30 — bot handles ~85% of inbound questions. The 15% you handle manually are the genuinely-novel ones. You spend less time on FAQ, more time on real work.
+
+This isn't a magic-AI win; it's a small operational lift that frees up real hours.
+
+## Things to try beyond the basics
+
+- **Booking integration.** Wire a calendar MCP. When a customer asks "are you free Wednesday at 3pm?" the bot checks your calendar and offers slots if free.
+- **Per-customer memory.** Use Honcho or QMD scoped per phone number — repeat customers get continuity ("oh hi, you asked about pricing last week, did you go ahead with that?").
+- **Multiple business numbers.** Multi-agent routing — different bots for different businesses, same Gateway.
+- **Voice notes transcription.** WhatsApp voice notes → Whisper transcription → agent answers. (Requires more setup; deferred to a future recipe.)
+
+## What we are NOT going to claim
+
+WhatsApp Business onboarding has changed multiple times in recent years. The exact Meta steps aren't reproduced here because they drift fast — verify against [WhatsApp Business Cloud API docs](https://developers.facebook.com/docs/whatsapp/cloud-api) before you start. The OpenClaw pairing side is straightforward once you've got the Meta side sorted.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Pairing fails | WhatsApp Business not verified | Complete Meta business verification first |
+| Bot answers wrong things | FAQ markdown out of date | Update FAQ; restart daemon |
+| Customer messages don't appear | DM policy still pairing | Switch to `dmPolicy="open"` for THIS channel only |
+| Bot is too generic | AGENTS.md persona too generic | Make tone instructions specific |
+| Cost spikes overnight | No rate limit, single user spamming | Add rate limits per sender |
+| `messages.md` grows huge | Archive cron not firing | Verify cron is registered + running |
+
+## What to read next
+
+- [§5.2 Slack agent that does real work](/use-cases/slack-real-work/) — internal-team analogue of this
+- [§5.5 RAG over personal docs](/use-cases/rag-personal-docs/) (planned) — same shape, but for personal knowledge base
+- [§3.5 Memory](/connections/memory/) — for the QMD setup
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — public-DM-bot hardening

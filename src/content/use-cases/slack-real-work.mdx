@@ -1,0 +1,217 @@
+---
+title: "Slack agent that does real work"
+section: "Use cases"
+sectionNumber: "5.2"
+description: "A Slack bot that reads your team's standup channel, writes a daily summary, and answers questions about what was discussed. Memory-driven; not a toy."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Recipe synthesised from OpenClaw Slack channel docs + standard agentic-summary patterns. Sush has not yet wired this into a real Slack workspace; promotes to tested-by-sush when run."
+lastReviewedAt: "2026-05-07"
+estimatedTimeMinutes: 60
+pairsWith:
+  - "3.2"
+  - "5.1"
+sources:
+  - "https://docs.openclaw.ai/channels/slack"
+  - "https://docs.openclaw.ai/automation/cron-jobs"
+seeAlso:
+  - "5.1"
+  - "3.2"
+  - "6.1"
+---
+
+## What you'll have at the end
+
+A Slack bot that **reads your team's standup channel, posts a daily summary every morning at 9am, and can answer ad-hoc questions about what was discussed**. About 60 minutes once you've got hello-world ([§5.1](/use-cases/hello-world-laptop/)) working.
+
+This is the recipe that takes the agent from "useful for me alone" to "useful for my team."
+
+## Why this recipe matters
+
+Standup summaries are the tractable version of the bigger question — "can the agent be a useful team mate?" If you can answer that with "yes, here's the daily summary that everyone reads," you've earned the agent's place in the team's workflow.
+
+It also exercises three OpenClaw mechanisms together: **channels** (Slack), **automation** (cron), and **memory** (the agent remembers what was said). That's a useful capability cluster to have working.
+
+## What you need
+
+- Hello-world working ([§5.1](/use-cases/hello-world-laptop/))
+- A Slack workspace where you have admin rights or can get an admin to approve a bot
+- About 60 minutes (most of it is the OAuth dance + initial config)
+
+## Step 1 — Pair the Slack channel
+
+If you didn't pair Slack during onboarding, do it now:
+
+```bash
+openclaw channels add slack
+```
+
+This walks you through:
+
+- Creating a Slack app in the workspace (you'll need admin or admin-blessing)
+- OAuth scopes (the onboarder asks for the *minimum* — see [§6.2 signal #4](/security/plugin-trust-signals/))
+- Pairing — the bot gets added to channels you allow
+
+Once paired, verify:
+
+```bash
+openclaw channels list
+# expected: slack: paired (workspace: yourworkspace)
+```
+
+## Step 2 — Configure the standup channel
+
+In your `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "channels": {
+    "slack": {
+      "dmPolicy": "pairing",
+      "allowFrom": ["@your-handle"],
+      "allowChannels": ["#standup"]
+    }
+  }
+}
+```
+
+`allowChannels` is your way of scoping the agent: only `#standup` will reach it (other channels' messages don't even get processed). This is the [§6.1](/security/self-hosting-checklist/) hygienic shape.
+
+## Step 3 — Edit AGENTS.md to give it standup context
+
+Your AGENTS.md is where you put operating instructions. Add:
+
+```markdown
+## Slack standup behaviour
+
+You read the #standup channel. People post:
+- "Yesterday I worked on X"
+- "Today I'll work on Y"
+- "Blocker: Z"
+- Sometimes ad-hoc updates throughout the day
+
+When summarising:
+- Group by team member.
+- Surface blockers prominently.
+- Note who's heads-down on what.
+- Don't editorialise — quote where useful.
+- Skip social chatter (lunch plans, etc.).
+
+Daily summary format:
+\`\`\`
+# Standup summary — YYYY-MM-DD
+
+## Yesterday's progress
+- @person: [headline + 1-line context]
+
+## Today's plan
+- @person: [headline]
+
+## Blockers (live)
+- @person: [blocker — what's needed to unblock]
+
+## Notes
+- [anything significant that didn't fit above]
+\`\`\`
+```
+
+Save AGENTS.md. The agent reads this every session.
+
+## Step 4 — Set up the daily cron
+
+OpenClaw's cron lets you schedule runs. Add a cron job:
+
+```bash
+openclaw cron add \
+  --name "daily-standup-summary" \
+  --schedule "0 9 * * 1-5" \
+  --task "Read the last 24 hours of #standup and post a summary to #standup. Use the standup format from AGENTS.md."
+```
+
+This runs at 9am Mon–Fri (assuming your daemon's time zone matches). Verify:
+
+```bash
+openclaw cron list
+```
+
+## Step 5 — Manual test before letting it loose
+
+Don't wait until 9am to find out it's broken. Trigger the cron manually:
+
+```bash
+openclaw cron run daily-standup-summary
+```
+
+The agent should:
+
+1. Read recent #standup messages (using its Slack tools)
+2. Group by person, extract blockers
+3. Format per AGENTS.md
+4. Post to #standup
+
+Read what it posts. **Edit AGENTS.md** if the summary's shape isn't quite right — that's how you tune behaviour. Re-run the cron after each edit.
+
+## Step 6 — Add the "ask the bot" capability
+
+Beyond the daily summary, your team should be able to DM the bot questions like:
+
+> *"What did Sarah say about the deploy yesterday?"*
+
+For this to work well, the agent needs **memory**. The default builtin engine works for short windows (a few days); for longer recall, set up [§3.5 QMD memory](/connections/memory/) so the agent has semantic search over historical messages.
+
+Configuration sketch:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "memory": {
+        "engine": "qmd",
+        "indexChannels": ["slack#standup"]
+      }
+    }
+  }
+}
+```
+
+(Verify exact keys against [memory-qmd docs](https://docs.openclaw.ai/concepts/memory-qmd) — the field is in flux.)
+
+After enabling, the agent will index #standup messages it sees. Ask it about past conversations and it'll find the relevant turns.
+
+## What it looks like in practice
+
+Day 1 — you set this up, manually trigger the cron once. Verify the summary lands.
+
+Day 2 — 9am, the summary posts automatically. Your team reacts to it ("good summary," "you missed the bit about the Postgres migration"). You note the gap; tweak AGENTS.md.
+
+Day 7 — the summaries are good. People ask the bot questions throughout the day. The bot answers from memory. Standup-as-meeting becomes lighter because the standup-as-async-channel works.
+
+Day 30 — you forget the bot exists because it just runs. That's success.
+
+## Things to try beyond the basics
+
+- **Cross-channel summaries.** Add `#deploys`, `#incidents`. Summarise across all three.
+- **Per-person digests.** "DM me my own summary every morning" — different cron, different format.
+- **Trigger on incident.** Hooks instead of cron — when a message contains "🔥 incident", the bot pages the on-call.
+- **Sentiment / blocker alerting.** If 3+ people post a blocker on the same topic in a week, the bot DMs the team lead.
+
+## What we are NOT going to claim
+
+This recipe is sourced from official Slack channel + cron docs and standard agent patterns. Sush hasn't run it; the exact config keys above (especially `allowChannels`, `memory.indexChannels`) need verification against the live runtime. Once Sush runs it, this page updates with corrections + actual session transcripts.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Cron runs but doesn't read messages | Slack scopes too narrow | Re-pair with `channels:history` scope |
+| Summary is generic / unhelpful | AGENTS.md guidance too vague | Be more specific in the format spec |
+| Bot summarises social chat | "Skip social chatter" not strong enough | Add explicit examples of what to skip |
+| Memory recall is fuzzy | Built-in engine, not QMD | Switch to QMD for cross-day recall |
+| 9am summary fires at wrong time | Daemon TZ vs Slack TZ mismatch | Set TZ explicitly in cron schedule |
+
+## What to read next
+
+- [§5.3 WhatsApp FAQ answerer](/use-cases/whatsapp-faq/) (planned) — similar shape for customer-facing
+- [§5.4 Pi-hosted always-on home agent](/use-cases/pi-home-agent/) — host this on a Pi instead of your laptop
+- [§3.5 Memory](/connections/memory/) — for the recall capability
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — Slack-specific hardening

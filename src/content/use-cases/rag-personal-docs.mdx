@@ -1,0 +1,193 @@
+---
+title: "Self-hosted RAG over personal docs"
+section: "Use cases"
+sectionNumber: "5.5"
+description: "An agent that answers questions about your own documents — meeting notes, journal entries, project docs. QMD memory + a local or hosted model."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Recipe combines QMD memory engine docs + standard RAG patterns. Sush has not yet stood this up against his own docs; promotes when he does."
+lastReviewedAt: "2026-05-07"
+estimatedTimeMinutes: 75
+pairsWith:
+  - "3.5"
+  - "5.4"
+sources:
+  - "https://docs.openclaw.ai/concepts/memory-qmd"
+  - "https://docs.openclaw.ai/concepts/memory-search"
+seeAlso:
+  - "3.5"
+  - "5.1"
+  - "5.4"
+---
+
+## What you'll have at the end
+
+An agent you can ask questions like *"What did we discuss in the April retro?"* or *"What's the open question I noted in the Friday meeting?"* — and it pulls the answer from your personal markdown notes. About 75 minutes assuming hello-world ([§5.1](/use-cases/hello-world-laptop/)) is working.
+
+This is the **personal RAG** recipe — the agent gets semantic search over your knowledge, can find things you'd struggle to find yourself, and (importantly) the docs never leave your machine.
+
+## Why this recipe matters
+
+You probably have hundreds of pages of personal notes — meeting summaries, journal entries, project docs, idea drafts. They're hard to search effectively because keyword search misses semantic intent ("what did the team decide about Postgres?" doesn't match "we'll go with Postgres" if you wrote it that way).
+
+A good RAG agent over your own docs solves that. And — critically — it can run **entirely on your machine**. No SaaS, no docs uploaded to OpenAI's training. Your notes stay yours.
+
+## What you need
+
+- Hello-world working ([§5.1](/use-cases/hello-world-laptop/))
+- A folder of personal docs in markdown format. Most people have this somewhere (Obsidian vault, Notion export, a `~/notes/` directory)
+- About 75 minutes
+- Decide: hosted model (faster, costs API) or local Ollama (slower, free, fully offline)
+
+## Step 1 — Pick and gather your docs
+
+Three common shapes:
+
+| Source | Action |
+|---|---|
+| **Obsidian vault** | Already markdown; just point QMD at the vault path |
+| **Notion** | Export to markdown (File → Export). One folder per page |
+| **Apple Notes / Bear / etc.** | Export to markdown via tools like `bear-export` or copy-paste |
+| **Random `~/notes/`** | Already markdown, ready to go |
+
+Put them somewhere stable, e.g. `~/docs/personal/`. We'll point QMD here. Don't put secrets here — anything indexed is in the agent's memory.
+
+## Step 2 — Configure QMD memory
+
+Edit `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "memory": {
+        "engine": "qmd",
+        "indexPaths": ["~/docs/personal/"],
+        "indexInterval": "1h"
+      }
+    }
+  }
+}
+```
+
+The `indexInterval` tells QMD to re-scan and re-index every hour, picking up new docs you've added. For static archives, `"24h"` or even `"7d"` is fine.
+
+Restart the daemon: `openclaw daemon restart`.
+
+## Step 3 — Verify the index built
+
+```bash
+openclaw memory status
+```
+
+Expected output: a count of indexed chunks, last-indexed timestamp, etc. If the count is zero, check the `indexPaths` and the index logs (`openclaw logs --grep memory`).
+
+## Step 4 — Update AGENTS.md
+
+```markdown
+## Personal docs RAG
+
+You have semantic search over my personal docs at ~/docs/personal/ via QMD memory.
+
+When I ask questions about past meetings, decisions, ideas, or projects:
+1. Search memory first.
+2. Quote the relevant passage with the doc filename.
+3. If multiple relevant snippets, summarise the consensus + flag any contradictions.
+4. If the search returns nothing relevant, say so — don't fabricate.
+
+When you find an answer, format:
+\`\`\`
+From <doc-filename> on <date if in frontmatter>:
+> "<exact quote>"
+
+[your synthesis if useful]
+\`\`\`
+
+Preferences:
+- Quote rather than paraphrase by default.
+- If a doc contradicts itself across versions, surface the contradiction.
+- Never combine information from unrelated docs into a single conclusion without naming sources.
+```
+
+This makes the agent a **citation-first** answerer rather than a "synthesise and lose the source" answerer — which is what you want for a RAG over your own work.
+
+## Step 5 — Try real questions
+
+```
+"What did we discuss in the April retro?"
+"What's the open question from the Friday standup?"
+"What's the password reset flow we landed on?"
+"What's the Q3 OKR I wrote about?"
+```
+
+For each, verify:
+
+- The agent finds the right document
+- Quotes the right passage
+- Doesn't invent details
+
+If quality is poor, look at:
+
+- **Index coverage** — is the right doc actually indexed? (`openclaw memory status` + `openclaw memory list`)
+- **Chunk size** — too large = imprecise retrieval; too small = loses context. Tune via QMD config
+- **Query phrasing** — try the same question multiple ways
+
+## Step 6 — Decide on model: hosted vs local
+
+For RAG specifically, model choice is consequential:
+
+**Hosted (Claude/GPT/Gemini):** smarter synthesis, fewer hallucinations, faster. Costs $0.01–0.10 per question depending on doc size + model.
+
+**Local (Ollama Llama 3.x):** $0/question, fully offline, your docs never leave your machine. Trade-off: noticeably worse synthesis on complex queries, slower (especially on a Pi).
+
+For most people: hosted by default, local for the times you specifically want full privacy or are offline.
+
+```bash
+# Hosted (default)
+# already configured: agents.defaults.model = "anthropic/claude-3-5-sonnet"
+
+# Local Ollama
+ollama pull llama3.1:8b  # or 3b on a Pi
+# then in openclaw.json:
+{ "agents": { "defaults": { "model": "ollama/llama3.1:8b" } } }
+```
+
+## What this looks like in practice
+
+Day 1 — index your docs. Try ten questions. Fix the obvious gaps.
+
+Day 7 — you ask the agent first when you can't remember something. It finds the answer in your own writing about 70% of the time.
+
+Day 30 — your habit is changed. You write better notes (because the agent rewards good notes). You stop losing things in your archive.
+
+This isn't a productivity-bro pitch; it's a tractable improvement in your own knowledge access.
+
+## Things to try beyond the basics
+
+- **Daily index of new notes.** When you write a new note, the agent indexes it within an hour, and tomorrow's questions find it.
+- **Cross-reference suggestion.** Ask the agent: "What docs in my archive relate to a given topic?" — useful for "I remember writing about X, but where?"
+- **Periodic "what have I forgotten?" cron.** Once a week, the agent picks 3 random old notes and surfaces them. Fights archive amnesia.
+- **Search with metadata.** If your docs have YAML frontmatter (title, date, tags), QMD can index those — search "what's the most recent doc about X" via metadata.
+
+## What we are NOT going to claim
+
+The QMD config keys above (especially `indexPaths` and `indexInterval`) need verification against the live runtime — schemas drift. The exact memory-search query patterns also need real testing to know what works well.
+
+What we *can* say with confidence: semantic search over your own docs is genuinely useful, and self-hosting it (vs uploading to a SaaS) is straightforward with this stack.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Index empty after setup | Path doesn't exist or wrong format | Verify `~/docs/personal/` has markdown files; check logs |
+| Bad retrievals | Chunk size too large / small | Tune QMD chunk config |
+| Bot fabricates citations | AGENTS.md isn't strict enough | Add "If no quote, say so explicitly" in the persona |
+| Local model hallucinates more | Smaller models are weaker | Use hosted model for synthesis; local for retrieval-only |
+| Index doesn't update with new docs | `indexInterval` too long | Drop to `"15m"` or trigger manually |
+
+## What to read next
+
+- [§3.5 Memory](/connections/memory/) — full QMD docs link
+- [§5.4 Pi-hosted home agent](/use-cases/pi-home-agent/) — pair with this for "RAG on Pi"
+- [§5.1 Hello-world](/use-cases/hello-world-laptop/) — the baseline this assumes
+- [§6.3 Practical patterns → memory poisoning](/security/practical-patterns/) — RAG-specific risk
