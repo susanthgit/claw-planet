@@ -147,3 +147,51 @@ main.main {
   letter-spacing: var(--ls-wide);
 }
 .open-section-link:hover { color: var(--claw-hover); border-bottom-color: var(--claw-hover); }
+
+
+/* ============================================================
+   PRINT CSS — for "study reference" use case
+   Hide chrome, widen content, expose URLs after links.
+   ============================================================ */
+
+@media print {
+  html, body { background: white !important; color: black !important; }
+  body::before { display: none !important; }
+  .header, .sidebar, .margin-col, footer.site-footer, .skip-link,
+  .theme-toggle, .header-meta, .search-row, .open-section-link,
+  .prev-next, .related, .entry-foot { display: none !important; }
+  .page { display: block !important; max-width: 100% !important; padding: 0 !important; }
+  main.main { padding: 0 !important; max-width: 100% !important; min-width: 0 !important; }
+  .entry-page { max-width: 100% !important; }
+  .entry-page h1 { font-size: 24pt !important; }
+  .prose :global(h2), .prose h2 { font-size: 16pt !important; break-after: avoid; }
+  .prose :global(h3), .prose h3 { font-size: 13pt !important; break-after: avoid; }
+  .prose :global(p), .prose p { font-size: 11pt !important; line-height: 1.45; }
+  .prose :global(pre), .prose pre {
+    background: #f4f4f4 !important;
+    border: 1px solid #ddd !important;
+    color: #333 !important;
+    font-size: 9pt !important;
+    page-break-inside: avoid;
+  }
+  .prose :global(blockquote), .prose blockquote {
+    background: transparent !important;
+    border-left: 2px solid #888 !important;
+    color: #444 !important;
+  }
+  .prose :global(table), .prose table { font-size: 9pt !important; page-break-inside: avoid; }
+  .prose :global(a)::after, .prose a::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+    word-break: break-all;
+  }
+  .prose :global(a[href^="#"])::after, .prose a[href^="#"]::after { content: ""; }
+  .heading-anchor, .prose :global(.heading-anchor) { display: none !important; }
+  .verif-note { border-left: 2px solid #888 !important; background: transparent !important; }
+  .crumb { color: #666 !important; }
+  .entry-meta { color: #666 !important; }
+  .sources { page-break-inside: avoid; }
+  .sources a { color: #333 !important; }
+  .sources a::after { content: "" !important; }
+}

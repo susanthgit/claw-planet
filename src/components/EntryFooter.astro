@@ -1,0 +1,153 @@
+---
+/**
+ * EntryFooter — shared bottom-of-entry block: prev/next nav + related entries.
+ * Used by every section's [slug].astro page.
+ */
+export interface PrevNextItem {
+  title: string;
+  sectionNumber: string;
+  href: string;
+}
+export interface RelatedItem {
+  title: string;
+  sectionNumber: string;
+  sectionName: string;
+  href: string;
+}
+export interface Props {
+  prev: PrevNextItem | null;
+  next: PrevNextItem | null;
+  related: RelatedItem[];
+}
+const { prev, next, related } = Astro.props;
+---
+
+{(prev || next) && (
+  <nav class="prev-next" aria-label="Previous and next entries in this section">
+    <div class="pn-cell pn-prev">
+      {prev && (
+        <a href={prev.href}>
+          <span class="pn-label">← previous</span>
+          <span class="pn-title"><span class="pn-num">§ {prev.sectionNumber}</span> {prev.title}</span>
+        </a>
+      )}
+    </div>
+    <div class="pn-cell pn-next">
+      {next && (
+        <a href={next.href}>
+          <span class="pn-label">next →</span>
+          <span class="pn-title"><span class="pn-num">§ {next.sectionNumber}</span> {next.title}</span>
+        </a>
+      )}
+    </div>
+  </nav>
+)}
+
+{related.length > 0 && (
+  <section class="related" aria-label="Related entries">
+    <h3>Related entries</h3>
+    <ul>
+      {related.map(r => (
+        <li>
+          <a href={r.href}>
+            <span class="related-num">§ {r.sectionNumber}</span>
+            <span class="related-title">{r.title}</span>
+            <span class="related-section">in {r.sectionName}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .prev-next {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 36px 0 28px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+  }
+  .pn-cell {
+    min-height: 60px;
+  }
+  .pn-cell.pn-next { text-align: right; }
+  .pn-cell a {
+    display: block;
+    padding: 12px 16px;
+    border: 1px solid var(--rule-faint);
+    text-decoration: none;
+    transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+  }
+  .pn-cell a:hover {
+    border-color: var(--claw);
+    background: var(--claw-tint);
+  }
+  .pn-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .pn-title {
+    display: block;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.35;
+    font-weight: 500;
+  }
+  .pn-num {
+    font-family: var(--mono);
+    color: var(--claw);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  @media (max-width: 640px) {
+    .prev-next { grid-template-columns: 1fr; }
+    .pn-cell.pn-next { text-align: left; }
+  }
+
+  .related {
+    margin: 28px 0 16px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .related h3 {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .related ul { list-style: none; padding: 0; margin: 0; }
+  .related li { padding: 4px 0; font-size: 13px; }
+  .related a {
+    color: var(--ink);
+    text-decoration: none;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .related a:hover { color: var(--claw); }
+  .related a:hover .related-section { color: var(--claw); }
+  .related-num {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .related-title { font-weight: 500; }
+  .related-section {
+    color: var(--ink-faint);
+    font-size: 12px;
+    font-style: italic;
+  }
+</style>

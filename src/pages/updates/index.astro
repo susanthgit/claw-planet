@@ -3,44 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import SectionHead from '@components/SectionHead.astro';
 import SectionBlurb from '@components/SectionBlurb.astro';
 import UpdateRow from '@components/UpdateRow.astro';
-
-const updates = [
-  {
-    date: '2026-05-07',
-    tag: 'NEWS',
-    title: 'Claw Planet goes live',
-    href: '/',
-    meta: 'Soft launch with §1 Overview, §2 Setup, §3 Connections, §4 Plugins, §5 Use cases, §6 Security, §7 Compare. All entries sourced-only until Sush actually runs OpenClaw end-to-end.',
-  },
-  {
-    date: '2026-05-07',
-    tag: 'NEWS',
-    title: 'Sourced OpenClaw primitive map (46 primitives) shipped',
-    href: 'https://github.com/susanthgit/claw-planet/blob/main/src/data/openclaw-primitives.json',
-    meta: 'Every concept page is grounded in this map. 7 workspace files, 7 architecture concepts, 7 channels, 7 built-in tools, 5 memory engines, 4 security primitives, 4 automation, 3 OUR umbrella terms (flagged).',
-  },
-  {
-    date: '2026-04-28',
-    tag: 'NEWS',
-    title: 'OpenClaw Discord crosses comfortable size',
-    href: 'https://discord.gg/clawd',
-    meta: 'Active community space — both maintainers and users. Worth joining if you are running OpenClaw seriously.',
-  },
-  {
-    date: '2026-04-15',
-    tag: 'RELEASE',
-    title: 'OpenClaw documents 24+ supported channels',
-    href: 'https://docs.openclaw.ai/channels/index',
-    meta: 'WhatsApp, Telegram, Slack, Discord, Google Chat, Signal, iMessage, BlueBubbles, IRC, Microsoft Teams, Matrix, Feishu, LINE, Mattermost, Nextcloud Talk, Nostr, Synology Chat, Tlon, Twitch, Zalo, Zalo Personal, WeChat, QQ, WebChat, Yuanbao. Plus voice nodes on macOS/iOS/Android.',
-  },
-  {
-    date: '2026-04-01',
-    tag: 'NEWS',
-    title: 'MCP servers cross 200 published',
-    href: 'https://github.com/modelcontextprotocol/servers',
-    meta: 'OpenClaw can use any MCP server through its mcp bridge. Skills are a separate plugin mechanism — both are tools to the agent, but they\'re different things to install and trust.',
-  },
-];
+import { updates } from '@data/updates';
 ---
 
 <BaseLayout

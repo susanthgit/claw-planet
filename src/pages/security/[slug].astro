@@ -1,12 +1,20 @@
 ---
+/**
+ * Auto-generated from scripts/regen-slug-pages.mjs.
+ * Edit the template, then re-run that script. Don't edit this file directly.
+ */
 import BaseLayout from '@layouts/BaseLayout.astro';
+import EntryFooter from '@components/EntryFooter.astro';
 import { getCollection, render } from 'astro:content';
+import { sectionConfig, getPrevNext, getReadingTime, getSchemaOrgArticle, getRelated } from '@utils/entry-helpers';
+
+const cfg = sectionConfig['security'];
 
 export async function getStaticPaths() {
   const all = await getCollection('gotchas');
   return all
-    .filter(e => e.data.section === 'Security' && e.data.status === 'published')
-    .map(entry => ({
+    .filter((e) => e.data.section === 'Security' && e.data.status === 'published')
+    .map((entry) => ({
       params: { slug: entry.id.replace(/\.mdx?$/, '') },
       props: { entry },
     }));
@@ -15,13 +23,42 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 
-const stateLabels: Record<string, string> = {
+const sectionPairs = [
+  ['explainers', '/overview/', 'Overview'],
+  ['setups', '/setup/', 'Setup'],
+  ['connections', '/connections/', 'Connections'],
+  ['plugins', '/plugins/', 'Plugins'],
+  ['use-cases', '/use-cases/', 'Use cases'],
+  ['gotchas', '/security/', 'Security'],
+  ['compares', '/compare/', 'Compare'],
+];
+const allCollections = await Promise.all(
+  sectionPairs.map(async ([col, href, name]) => ({
+    entries: (await getCollection(col)).filter((e) => e.data.status === 'published'),
+    sectionHref: href,
+    sectionName: name,
+  }))
+);
+
+const sameSectionEntries = allCollections.find(c => c.sectionHref === cfg.href).entries;
+const { prev, next } = getPrevNext(sameSectionEntries, entry.id, cfg.href);
+const related = getRelated({ entry, allEntries: allCollections, maxResults: 3 });
+const readingTime = getReadingTime(entry.body);
+const slugBase = entry.id.replace(/\.mdx?$/, '');
+const entryUrl = new URL(`${cfg.href}${slugBase}/`, Astro.site).toString();
+const schemaJsonLd = getSchemaOrgArticle({
+  entry,
+  url: entryUrl,
+  sectionName: cfg.sectionName,
+});
+
+const stateLabels = {
   'tested-by-sush': '● TESTED BY US',
   'tested-by-contributor': '● TESTED BY CONTRIBUTOR',
   'sourced-only': '● SOURCED ONLY',
   'planned': '● PLANNED',
 };
-const stateClassMap: Record<string, string> = {
+const stateClassMap = {
   'tested-by-sush': 'verif-t',
   'tested-by-contributor': 'verif-t',
   'sourced-only': 'verif-s',
@@ -29,11 +66,17 @@ const stateClassMap: Record<string, string> = {
 };
 const stateLabel = stateLabels[entry.data.verificationState] ?? '';
 const stateClass = stateClassMap[entry.data.verificationState] ?? '';
+
+const entryFile = `src/content/gotchas/${entry.id}`;
+const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`;
 ---
 
 <BaseLayout
   title={`§ ${entry.data.sectionNumber} ${entry.data.title}`}
   description={entry.data.description}
+  entryFile={entryFile}
+  lastUpdated={entry.data.lastReviewedAt}
+  schemaJsonLd={schemaJsonLd}
 >
   <article class="entry-page">
     <header class="entry-header">
@@ -41,12 +84,14 @@ const stateClass = stateClassMap[entry.data.verificationState] ?? '';
         <a href="/security/">§ 6 Security</a>
         <span>/</span>
         <span class="num">§ {entry.data.sectionNumber}</span>
+        {readingTime && <span class="reading-time">· {readingTime}</span>}
       </div>
       <h1>{entry.data.title}</h1>
       <p class="lede">{entry.data.description}</p>
       <div class="entry-meta">
         <span class={`verif ${stateClass}`}>{stateLabel}</span>
         <span class="meta-stat">last reviewed <strong>{entry.data.lastReviewedAt}</strong></span>
+        {entry.data.lastTestedAt && <span class="meta-stat">last tested <strong>{entry.data.lastTestedAt}</strong></span>}
       </div>
       {entry.data.verificationNote && (
         <div class="verif-note">
@@ -63,15 +108,28 @@ const stateClass = stateClassMap[entry.data.verificationState] ?? '';
       <section class="sources">
         <h3>Sources</h3>
         <ul>
-          {entry.data.sources.map(src => (
+          {entry.data.sources.map((src) => (
             <li><a href={src} target="_blank" rel="noopener">{src}</a></li>
           ))}
         </ul>
       </section>
     )}
 
+    {entry.data.seeAlso && entry.data.seeAlso.length > 0 && (
+      <section class="see-also-block">
+        <h3>See also</h3>
+        <ul>
+          {entry.data.seeAlso.map((ref) => (
+            <li><a href={`#sec-${ref.split('.')[0]}`}>§ {ref}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <EntryFooter prev={prev} next={next} related={related} />
+
     <footer class="entry-foot">
-      <a href={`https://github.com/susanthgit/claw-planet/edit/main/src/content/gotchas/${entry.id}`} target="_blank" rel="noopener">edit this page on GitHub →</a>
+      <a href={editHref} target="_blank" rel="noopener">edit this page on GitHub →</a>
       <a href="https://github.com/susanthgit/claw-planet/issues/new" target="_blank" rel="noopener">dispute or correct →</a>
     </footer>
   </article>
@@ -79,47 +137,234 @@ const stateClass = stateClassMap[entry.data.verificationState] ?? '';
 
 <style>
   .entry-page { max-width: 760px; }
-  .entry-header { border-bottom: 1px solid var(--rule); padding-bottom: 28px; margin-bottom: 32px; }
-  .crumb { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-bottom: 16px; display: flex; gap: 8px; align-items: center; letter-spacing: var(--ls-wide); }
+
+  .entry-header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 28px;
+    margin-bottom: 32px;
+  }
+  .crumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    letter-spacing: var(--ls-wide);
+    flex-wrap: wrap;
+  }
   .crumb a { color: var(--ink-mute); text-decoration: none; }
   .crumb a:hover { color: var(--claw); }
   .crumb .num { color: var(--claw); font-weight: 600; }
-  .entry-page h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; color: var(--ink); margin-bottom: 12px; }
-  .lede { font-size: 17px; color: var(--ink-mid); line-height: 1.55; max-width: 640px; margin-bottom: 18px; }
-  .entry-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; color: var(--ink-mute); }
+  .crumb .reading-time { color: var(--ink-faint); }
+
+  .entry-page h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--ink-mid);
+    line-height: 1.55;
+    max-width: 640px;
+    margin-bottom: 18px;
+  }
+  .entry-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
   .meta-stat strong { color: var(--ink); font-weight: 600; }
-  .verif { padding: 3px 10px; border-radius: var(--radius-pill); border-width: 1px; border-style: solid; letter-spacing: var(--ls-wide); font-weight: 600; }
+
+  .verif {
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    border-width: 1px;
+    border-style: solid;
+    letter-spacing: var(--ls-wide);
+    font-weight: 600;
+  }
   .verif.verif-t { color: var(--olive); border-color: var(--olive); background: var(--olive-soft); }
   .verif.verif-s { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
   .verif.verif-e { color: var(--claw); border-color: var(--claw); background: var(--claw-tint); }
-  .verif-note { margin-top: 18px; padding: 12px 16px; border-left: 3px solid var(--amber); background: var(--amber-soft); font-size: 13.5px; color: var(--ink-mid); line-height: 1.55; }
+
+  .verif-note {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    font-size: 13.5px;
+    color: var(--ink-mid);
+    line-height: 1.55;
+  }
   .verif-note strong { color: var(--ink); font-weight: 600; }
-  .prose :global(h2) { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 36px 0 12px; color: var(--ink); padding-bottom: 6px; border-bottom: 1px solid var(--rule-faint); }
-  .prose :global(h3) { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin: 28px 0 8px; color: var(--ink); }
-  .prose :global(h4) { font-size: 15px; font-weight: 700; margin: 20px 0 6px; color: var(--ink); }
-  .prose :global(p) { margin: 12px 0; line-height: var(--lh-normal); color: var(--ink); }
-  .prose :global(ul), .prose :global(ol) { margin: 12px 0 12px 24px; line-height: var(--lh-normal); }
+
+  .prose :global(h2) {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 36px 0 12px;
+    color: var(--ink);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-faint);
+    position: relative;
+  }
+  .prose :global(h3) {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 28px 0 8px;
+    color: var(--ink);
+    position: relative;
+  }
+  .prose :global(.heading-anchor) {
+    margin-left: 8px;
+    color: var(--ink-faint);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+    font-weight: 500;
+  }
+  .prose :global(h2:hover) .heading-anchor,
+  .prose :global(h3:hover) .heading-anchor,
+  .prose :global(h2 .heading-anchor:focus),
+  .prose :global(h3 .heading-anchor:focus) {
+    opacity: 1;
+    color: var(--claw);
+  }
+  .prose :global(p) {
+    margin: 12px 0;
+    line-height: var(--lh-normal);
+    color: var(--ink);
+  }
+  .prose :global(ul), .prose :global(ol) {
+    margin: 12px 0 12px 24px;
+    line-height: var(--lh-normal);
+  }
   .prose :global(li) { margin: 4px 0; color: var(--ink); }
   .prose :global(strong) { color: var(--ink); font-weight: 700; }
   .prose :global(em) { color: var(--ink-mid); }
-  .prose :global(a) { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 2px; }
+  .prose :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
   .prose :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
-  .prose :global(blockquote) { margin: 18px 0; padding: 12px 18px; border-left: 3px solid var(--claw); background: var(--claw-tint); font-style: italic; color: var(--ink-mid); }
+
+  .prose :global(blockquote) {
+    margin: 18px 0;
+    padding: 12px 18px;
+    border-left: 3px solid var(--claw);
+    background: var(--claw-tint);
+    font-style: italic;
+    color: var(--ink-mid);
+  }
   .prose :global(blockquote p) { margin: 4px 0; }
-  .prose :global(code) { font-family: var(--mono); font-size: 13px; background: var(--paper-warm); padding: 1px 6px; border-radius: 3px; color: var(--ink); }
-  .prose :global(pre) { font-family: var(--mono); font-size: 12.5px; background: var(--canvas); border: 1px solid var(--rule-faint); padding: 14px 18px; overflow-x: auto; line-height: 1.5; margin: 16px 0; }
-  .prose :global(pre code) { background: transparent; padding: 0; }
-  .prose :global(table) { margin: 18px 0; border-collapse: collapse; font-size: 13.5px; width: 100%; }
+
+  .prose :global(code) {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .prose :global(pre) {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--canvas);
+    border: 1px solid var(--rule-faint);
+    padding: 14px 18px;
+    overflow-x: auto;
+    line-height: 1.5;
+    margin: 16px 0;
+    position: relative;
+  }
+  .prose :global(pre code) {
+    background: transparent;
+    padding: 0;
+  }
+
+  .prose :global(table) {
+    margin: 18px 0;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    width: 100%;
+  }
   .prose :global(thead) { border-bottom: 2px solid var(--rule); }
-  .prose :global(th) { text-align: left; padding: 8px 12px; font-weight: 600; color: var(--ink); }
-  .prose :global(td) { padding: 8px 12px; border-bottom: 1px solid var(--rule-faint); color: var(--ink-mid); line-height: 1.5; vertical-align: top; }
-  .sources { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--rule-faint); }
-  .sources h3 { font-family: var(--mono); font-size: 10.5px; letter-spacing: var(--ls-widest); text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; font-weight: 700; }
-  .sources ul { list-style: none; margin: 0; padding: 0; }
-  .sources li { padding: 4px 0; font-size: 13px; }
-  .sources a { color: var(--ink-mid); font-family: var(--mono); font-size: 12.5px; word-break: break-all; text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .prose :global(th) {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .prose :global(td) {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rule-faint);
+    color: var(--ink-mid);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+
+  .sources, .see-also-block {
+    margin-top: 36px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .sources h3, .see-also-block h3 {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .sources ul, .see-also-block ul {
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .sources li, .see-also-block li {
+    padding: 4px 0;
+    font-size: 13px;
+  }
+  .sources a {
+    color: var(--ink-mid);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    word-break: break-all;
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+  }
   .sources a:hover { color: var(--claw); border-color: var(--claw); }
-  .entry-foot { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--rule-faint); display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; flex-wrap: wrap; gap: 12px; }
-  .entry-foot a { color: var(--ink-mute); text-decoration: none; }
+  .see-also-block a { color: var(--ink-mid); text-decoration: none; font-weight: 600; }
+  .see-also-block a:hover { color: var(--claw); }
+
+  .entry-foot {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule-faint);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .entry-foot a {
+    color: var(--ink-mute);
+    text-decoration: none;
+  }
   .entry-foot a:hover { color: var(--claw); }
 </style>

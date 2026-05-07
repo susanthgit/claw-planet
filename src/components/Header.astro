@@ -1,7 +1,20 @@
 ---
 /**
  * Header — sticky top bar with brand, search, meta, theme toggle.
+ *
+ * Accepts optional props from BaseLayout:
+ * - entryFile: path of the source MDX file (for the per-page edit-on-GitHub deep link)
+ * - lastUpdated: date string (YYYY-MM-DD) shown next to the green dot
  */
+export interface Props {
+  entryFile?: string;
+  lastUpdated?: string;
+}
+const { entryFile, lastUpdated } = Astro.props;
+const editHref = entryFile
+  ? `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`
+  : 'https://github.com/susanthgit/claw-planet';
+const dateText = lastUpdated ?? '2026-05-08';
 ---
 
 <header class="header">
@@ -23,13 +36,13 @@
     </a>
 
     <label class="search-row">
-      <input type="search" placeholder="Search the reference (concepts · plugins · setup · gotchas)…" aria-label="Search the reference" />
+      <input type="search" id="cp-search-trigger" placeholder="Search the reference (concepts · plugins · setup · gotchas)…" aria-label="Search the reference" readonly />
       <span class="kbd">⌘K</span>
     </label>
 
     <div class="header-meta">
-      <span class="meta-item meta-updated"><span class="dot">●</span> last updated 2026-05-07</span>
-      <a class="meta-item" href="https://github.com/susanthgit/claw-planet" target="_blank" rel="noopener">edit on GitHub</a>
+      <span class="meta-item meta-updated"><span class="dot">●</span> last updated {dateText}</span>
+      <a class="meta-item" href={editHref} target="_blank" rel="noopener">edit on GitHub</a>
       <a class="meta-item" href="/colophon/">colophon</a>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

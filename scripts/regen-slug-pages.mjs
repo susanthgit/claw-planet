@@ -1,4 +1,26 @@
----
+/**
+ * One-off: write src/pages/<section>/[slug].astro for all 7 sections
+ * from a single template, ensuring they stay in sync.
+ *
+ * Run: node scripts/regen-slug-pages.mjs
+ */
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+const sections = [
+  { dir: 'overview',    collection: 'explainers',  sectionData: 'Overview',    contentPath: 'src/content/explainers',   crumbHref: '/overview/',    breadcrumb: '§ 1 Overview' },
+  { dir: 'setup',       collection: 'setups',      sectionData: 'Setup',       contentPath: 'src/content/setups',       crumbHref: '/setup/',       breadcrumb: '§ 2 Setup' },
+  { dir: 'connections', collection: 'connections', sectionData: 'Connections', contentPath: 'src/content/connections',  crumbHref: '/connections/', breadcrumb: '§ 3 Connections' },
+  { dir: 'plugins',     collection: 'plugins',     sectionData: 'Plugins',     contentPath: 'src/content/plugins',      crumbHref: '/plugins/',     breadcrumb: '§ 4 Plugins' },
+  { dir: 'use-cases',   collection: 'use-cases',   sectionData: 'Use cases',   contentPath: 'src/content/use-cases',    crumbHref: '/use-cases/',   breadcrumb: '§ 5 Use cases' },
+  { dir: 'security',    collection: 'gotchas',     sectionData: 'Security',    contentPath: 'src/content/gotchas',      crumbHref: '/security/',    breadcrumb: '§ 6 Security' },
+  { dir: 'compare',     collection: 'compares',    sectionData: 'Compare',     contentPath: 'src/content/compares',     crumbHref: '/compare/',     breadcrumb: '§ 7 Compare' },
+];
+
+const template = (s) => `---
 /**
  * Auto-generated from scripts/regen-slug-pages.mjs.
  * Edit the template, then re-run that script. Don't edit this file directly.
@@ -8,14 +30,14 @@ import EntryFooter from '@components/EntryFooter.astro';
 import { getCollection, render } from 'astro:content';
 import { sectionConfig, getPrevNext, getReadingTime, getSchemaOrgArticle, getRelated } from '@utils/entry-helpers';
 
-const cfg = sectionConfig['connections'];
+const cfg = sectionConfig['${s.dir}'];
 
 export async function getStaticPaths() {
-  const all = await getCollection('connections');
+  const all = await getCollection('${s.collection}');
   return all
-    .filter((e) => e.data.section === 'Connections' && e.data.status === 'published')
+    .filter((e) => e.data.section === '${s.sectionData}' && e.data.status === 'published')
     .map((entry) => ({
-      params: { slug: entry.id.replace(/\.mdx?$/, '') },
+      params: { slug: entry.id.replace(/\\.mdx?$/, '') },
       props: { entry },
     }));
 }
@@ -44,8 +66,8 @@ const sameSectionEntries = allCollections.find(c => c.sectionHref === cfg.href).
 const { prev, next } = getPrevNext(sameSectionEntries, entry.id, cfg.href);
 const related = getRelated({ entry, allEntries: allCollections, maxResults: 3 });
 const readingTime = getReadingTime(entry.body);
-const slugBase = entry.id.replace(/\.mdx?$/, '');
-const entryUrl = new URL(`${cfg.href}${slugBase}/`, Astro.site).toString();
+const slugBase = entry.id.replace(/\\.mdx?$/, '');
+const entryUrl = new URL(\`\${cfg.href}\${slugBase}/\`, Astro.site).toString();
 const schemaJsonLd = getSchemaOrgArticle({
   entry,
   url: entryUrl,
@@ -67,12 +89,12 @@ const stateClassMap = {
 const stateLabel = stateLabels[entry.data.verificationState] ?? '';
 const stateClass = stateClassMap[entry.data.verificationState] ?? '';
 
-const entryFile = `src/content/connections/${entry.id}`;
-const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`;
+const entryFile = \`${s.contentPath}/\${entry.id}\`;
+const editHref = \`https://github.com/susanthgit/claw-planet/edit/main/\${entryFile}\`;
 ---
 
 <BaseLayout
-  title={`§ ${entry.data.sectionNumber} ${entry.data.title}`}
+  title={\`§ \${entry.data.sectionNumber} \${entry.data.title}\`}
   description={entry.data.description}
   entryFile={entryFile}
   lastUpdated={entry.data.lastReviewedAt}
@@ -81,7 +103,7 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
   <article class="entry-page">
     <header class="entry-header">
       <div class="crumb">
-        <a href="/connections/">§ 3 Connections</a>
+        <a href="${s.crumbHref}">${s.breadcrumb}</a>
         <span>/</span>
         <span class="num">§ {entry.data.sectionNumber}</span>
         {readingTime && <span class="reading-time">· {readingTime}</span>}
@@ -89,7 +111,7 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
       <h1>{entry.data.title}</h1>
       <p class="lede">{entry.data.description}</p>
       <div class="entry-meta">
-        <span class={`verif ${stateClass}`}>{stateLabel}</span>
+        <span class={\`verif \${stateClass}\`}>{stateLabel}</span>
         <span class="meta-stat">last reviewed <strong>{entry.data.lastReviewedAt}</strong></span>
         {entry.data.lastTestedAt && <span class="meta-stat">last tested <strong>{entry.data.lastTestedAt}</strong></span>}
       </div>
@@ -120,7 +142,7 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
         <h3>See also</h3>
         <ul>
           {entry.data.seeAlso.map((ref) => (
-            <li><a href={`#sec-${ref.split('.')[0]}`}>§ {ref}</a></li>
+            <li><a href={\`#sec-\${ref.split('.')[0]}\`}>§ {ref}</a></li>
           ))}
         </ul>
       </section>
@@ -368,3 +390,15 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
   }
   .entry-foot a:hover { color: var(--claw); }
 </style>
+`;
+
+async function main() {
+  for (const s of sections) {
+    const dir = path.join(ROOT, 'src', 'pages', s.dir);
+    const file = path.join(dir, '[slug].astro');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(file, template(s));
+    console.log(`wrote: src/pages/${s.dir}/[slug].astro`);
+  }
+}
+main().catch(e => { console.error(e); process.exit(1); });

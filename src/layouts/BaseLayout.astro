@@ -3,10 +3,10 @@
  * BaseLayout — root layout for every page.
  *
  * Provides:
- * - HTML head with meta + Google Fonts + favicon
+ * - HTML head with meta + self-hosted fonts (Inter + JetBrains Mono via @fontsource) + favicon
  * - Pre-paint theme script (no flash of wrong theme)
- * - Skip-link
- * - Header (with theme toggle)
+ * - Schema.org JSON-LD per page (when provided)
+ * - Skip-link, header (with theme toggle + per-page edit-on-GitHub link)
  * - Page grid: Sidebar | Main | MarginCol
  * - Footer with independence + Microsoft disclosure
  */
@@ -15,6 +15,13 @@ import Sidebar from '@components/Sidebar.astro';
 import MarginCol from '@components/MarginCol.astro';
 import Footer from '@components/Footer.astro';
 import '@styles/global.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/600.css';
 
 export interface Props {
   title: string;
@@ -23,6 +30,10 @@ export interface Props {
   ogImage?: string;
   noIndex?: boolean;
   bodyClass?: string;
+  entryFile?: string;
+  lastUpdated?: string;
+  schemaJsonLd?: string;
+  margin?: { tocItems?: { id: string; text: string; level: number }[] };
 }
 
 const {
@@ -32,6 +43,10 @@ const {
   ogImage,
   noIndex = false,
   bodyClass = '',
+  entryFile,
+  lastUpdated,
+  schemaJsonLd,
+  margin,
 } = Astro.props;
 
 const fullTitle = title === 'Claw Planet'
@@ -68,11 +83,6 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <!-- Google Fonts: Inter + JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-
   <!-- Open Graph / social -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content={canonicalUrl} />
@@ -85,19 +95,24 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   <meta name="twitter:title" content={fullTitle} />
   <meta name="twitter:description" content={description} />
   {ogImage && <meta name="twitter:image" content={new URL(ogImage, Astro.site).toString()} />}
+
+  <!-- RSS feed for /updates/ -->
+  <link rel="alternate" type="application/rss+xml" title="Claw Planet — Updates" href="/updates/feed.xml" />
+
+  {schemaJsonLd && <script type="application/ld+json" set:html={schemaJsonLd} />}
 </head>
 
 <body class={bodyClass}>
   <a href="#main" class="skip-link">Skip to main content</a>
 
-  <Header />
+  <Header entryFile={entryFile} lastUpdated={lastUpdated} />
 
   <div class="page">
     <Sidebar />
     <main id="main" class="main" tabindex="-1">
       <slot />
     </main>
-    <MarginCol />
+    <MarginCol tocItems={margin?.tocItems} />
   </div>
 
   <Footer />

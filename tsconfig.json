@@ -11,7 +11,8 @@
       "@content/*": ["src/content/*"],
       "@data/*": ["src/data/*"],
       "@styles/*": ["src/styles/*"],
-      "@lib/*": ["src/lib/*"]
+      "@lib/*": ["src/lib/*"],
+      "@utils/*": ["src/utils/*"]
     }
   },
   "include": [".astro/types.d.ts", "**/*"],
