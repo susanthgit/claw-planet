@@ -23,7 +23,7 @@ OpenClaw doesn't ship a glossy architecture poster. The official docs describe e
 
 Read this once. After that, every other page on the site refers back to a piece of this diagram (often by §-number).
 
-> **Important:** this diagram describes the **single-agent default**. Multi-agent setups (different agents per channel, or per project) are a layered config on top of what's below. See [§2.7 Multi-agent routing](/setup/multi-agent/) when that ships.
+> **Important:** this diagram describes the **single-agent default**. Multi-agent setups (different agents per channel, or per project) are a layered config on top of what's below. See §2.7 Multi-agent routing (when that ships).
 
 ## The five layers
 
@@ -121,7 +121,7 @@ Three things to notice:
 ## What the diagram doesn't show
 
 - **Sandbox boundaries.** When you turn on `agents.defaults.sandbox.mode: "non-main"`, non-`main` sessions get isolated (Docker default). The diagram above shows the `main` session shape; sandboxed sessions wrap parts of it.
-- **Multi-agent routing.** Multiple agents per Gateway, each with its own workspace and sessions. We'll cover that in [§2.8 Production patterns](/setup/production/) when it ships.
+- **Multi-agent routing.** Multiple agents per Gateway, each with its own workspace and sessions. We'll cover that in §2.8 Production patterns (when it ships).
 - **Voice nodes.** macOS / iOS / Android voice apps connect to the Gateway via [Bonjour discovery](https://docs.openclaw.ai/gateway/bonjour) — they're channels, just on different transports.
 - **Live Canvas.** A `canvas` tool that the agent can drive to render visual artefacts. macOS-first, iOS in beta. It's a special tool from the model's perspective.
 

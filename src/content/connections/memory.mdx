@@ -39,7 +39,7 @@ The context the model can see in the **current session's prompt window**. Includ
 
 - The current message
 - Recent turns of the current session
-- Workspace bootstrap files (SOUL.md, AGENTS.md, USER.md, etc. — see [§1.2 Concepts](/overview/concepts/concepts/))
+- Workspace bootstrap files (SOUL.md, AGENTS.md, USER.md, etc. — see [§1.2 Concepts](/overview/concepts/))
 - Memory snippets injected by the [active memory system](https://docs.openclaw.ai/concepts/active-memory)
 
 Active memory is **constrained by the model's context window**. Claude 3.5 Sonnet has 200K tokens; GPT-4o has 128K. Big numbers but they fill faster than you'd think — a long conversation plus heavy workspace files plus injected memory plus a long tool result can hit the limit.
@@ -58,7 +58,7 @@ What the agent **persists between sessions**. Three engines, pick one or mix:
 
 ### Built-in (the default)
 
-The simplest engine. Memory lives in the workspace, mainly inside **AGENTS.md** (which the runtime treats as "operating instructions + memory" — see [§1.2 Concepts](/overview/concepts/concepts/)).
+The simplest engine. Memory lives in the workspace, mainly inside **AGENTS.md** (which the runtime treats as "operating instructions + memory" — see [§1.2 Concepts](/overview/concepts/)).
 
 The agent updates AGENTS.md by writing to it (with permissions). Things accumulate over time:
 
@@ -141,7 +141,7 @@ We haven't run all three memory engines in production. Specific capacity limits,
 
 ## What to read next
 
-- [§1.2 Concepts](/overview/concepts/concepts/) — workspace files (where built-in memory lives) and compaction
+- [§1.2 Concepts](/overview/concepts/) — workspace files (where built-in memory lives) and compaction
 - [§3.3 Tools](/connections/tools/) — `read` and `write` are how memory gets touched
 - [§6.3 Practical patterns](/security/practical-patterns/) — memory poisoning (pattern #4)
 - [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — drawback #2 (cold start) is partially a memory issue

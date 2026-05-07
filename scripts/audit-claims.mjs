@@ -27,7 +27,7 @@ const COVERAGE_TO_DIR = {
   useCases: 'use-cases',
   gotchas: 'gotchas',
   compares: 'compares',
-  faq: 'faq',
+  // faq, updates, resources are single-page surfaces (src/pages/*) — no content collection. Counts maintained manually in coverage.json.
 };
 
 async function countMdx(dir) {
