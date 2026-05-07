@@ -39,12 +39,11 @@
       if (uiLoaded) return;
       uiLoaded = true;
       try {
-        // Pagefind builds an `_pagefind/pagefind-ui.js` ESM bundle into dist
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = '/_pagefind/pagefind-ui.css';
+        css.href = '/pagefind/pagefind-ui.css';
         document.head.appendChild(css);
-        const mod = await import('/_pagefind/pagefind-ui.js');
+        const mod = await import('/pagefind/pagefind-ui.js');
         pagefindUI = new mod.PagefindUI({
           element: mount,
           showImages: false,
