@@ -1,0 +1,36 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+import CatalogTable from '@components/CatalogTable.astro';
+import { getCollection } from 'astro:content';
+
+const allCompares = await getCollection('compares');
+const compareEntries = allCompares
+  .filter(e => e.data.section === 'Compare' && e.data.status === 'published')
+  .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
+
+const catalogEntries = compareEntries.map(e => ({
+  num: e.data.sectionNumber,
+  title: e.data.title,
+  href: `/compare/${e.id.replace(/\.mdx?$/, '')}/`,
+  description: e.data.description,
+  state: e.data.verificationState,
+  date: e.data.lastReviewedAt,
+}));
+
+const verbCount = `${compareEntries.length} matchup${compareEntries.length === 1 ? '' : 's'}`;
+---
+
+<BaseLayout
+  title="§ 7 Compare"
+  description="OpenClaw compared to its neighbours — MCP-based stacks, Claude Code, framework approaches. Where each wins, where each loses, when to switch."
+>
+  <SectionHead num="7" title="Compare" verb={verbCount} />
+  <SectionBlurb>
+    OpenClaw vs the alternatives. Same axes per matchup — capability, cost, lock-in, maturity, where
+    it leads, where it lags. Currently one deep matchup live (vs MCP-based stacks); more matchups
+    (vs Claude Code, vs LangChain) ship as Sush gains direct experience comparing.
+  </SectionBlurb>
+  <CatalogTable entries={catalogEntries} />
+</BaseLayout>

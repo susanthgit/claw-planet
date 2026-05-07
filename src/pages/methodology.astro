@@ -1,0 +1,175 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Methodology"
+  description="How Claw Planet works editorially — verification states, field-note pattern, voice rules, dispute mechanism, source-of-truth disciplines."
+>
+  <article class="prose-page">
+    <header>
+      <h1>Methodology</h1>
+      <p class="lede">
+        How this site works editorially. What we do and don't claim. The disciplines that make the
+        verification states + field notes credible.
+      </p>
+    </header>
+
+    <h2 id="verification-states">Verification states</h2>
+    <p>
+      Every applicable page (setup methods, plugin field notes, use-case recipes) declares a
+      <strong>verification state</strong> visibly. There are four:
+    </p>
+    <table>
+      <thead><tr><th>State</th><th>Meaning</th><th>What it means for you</th></tr></thead>
+      <tbody>
+        <tr><td><strong>tested-by-sush</strong></td><td>Sush ran it. Date + version + hardware noted.</td><td>You can follow with confidence; we know it works.</td></tr>
+        <tr><td><strong>tested-by-contributor</strong></td><td>Someone else ran it; PR/issue linked.</td><td>Verified, but not by us. Cross-reference with the linked PR.</td></tr>
+        <tr><td><strong>sourced-only</strong></td><td>Compiled from official + community docs; we have NOT run it.</td><td>Sensible likely-correct path; verify before relying on in production.</td></tr>
+        <tr><td><strong>planned</strong></td><td>Stub — does NOT appear in top nav until promoted.</td><td>Not yet ready. Don't follow.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Right now most pages are <code>sourced-only</code> because Sush is just starting his OpenClaw
+      run. As he runs setups + recipes, pages flip to <code>tested-by-sush</code> with the actual
+      session log + date.
+    </p>
+
+    <h2 id="field-notes">Field notes (not reviews)</h2>
+    <p>
+      Plugin pages in <a href="/plugins/">§4</a> are titled "Field note" not "Review." Lighter
+      editorial stance than a verdict-band scorecard. Each field note declares:
+    </p>
+    <ul>
+      <li>What we checked (e.g. "install path · default scope · documented permissions")</li>
+      <li>What we did NOT check (e.g. "performance under heavy load · symlink edge cases")</li>
+      <li>Whether we ran it (verification state badge)</li>
+      <li>Risk profile + level</li>
+      <li>Maintainer health</li>
+      <li>Sources used (linked)</li>
+      <li>A dispute link to a GitHub issue template</li>
+    </ul>
+    <p>
+      <strong>"Field note" not "review" because:</strong> we don't grade plugins on a 1–10 scale or
+      assign verdict bands. We describe what we found. That's lighter, more honest, and reduces legal
+      exposure to plugin-author pushback.
+    </p>
+
+    <h2 id="dispute">Dispute mechanism</h2>
+    <p>
+      Every entry has an "edit this page on GitHub" link and a "dispute or correct this entry" link.
+      If we got something wrong, the right path is a GitHub issue or PR. We respond to corrections
+      from plugin authors and from readers. We don't gate corrections behind editorial pride.
+    </p>
+
+    <h2 id="voice">Voice rules</h2>
+    <p>
+      Plain English. Honest take. Examples + scenarios + comparisons + "why this matters" for
+      important concepts. A locked list of forbidden words is checked by
+      <a href="https://github.com/susanthgit/claw-planet/blob/main/scripts/voice-lint.mjs">voice-lint
+      in CI</a> — see that file for the full list, which includes typical marketing-speak signals
+      around novelty, capability, and superlatives.
+    </p>
+    <p>
+      Why a fixed list: each one is a marketing-speak signal. The site fails its purpose if it
+      reads like marketing. The lint runs on every push; advisory mode for general content, strict
+      mode for roadmap docs.
+    </p>
+
+    <h2 id="sources">Sources &amp; citations</h2>
+    <p>
+      Every page that makes factual claims links to its sources. Most sources are
+      <a href="https://docs.openclaw.ai">docs.openclaw.ai</a>,
+      <a href="https://github.com/openclaw/openclaw">github.com/openclaw/openclaw</a>, or scoped
+      community resources (Adversa, BCG CIO brief, etc.). Where we synthesise across sources, we say
+      so.
+    </p>
+
+    <h2 id="primitive-map">Sourced primitive map</h2>
+    <p>
+      Before any content page was written, we built
+      <a href="https://github.com/susanthgit/claw-planet/blob/main/src/data/openclaw-primitives.json">
+      <code>src/data/openclaw-primitives.json</code></a> — 46 primitives grounded in real source URLs.
+      Every concept page derives from this map. If we use an umbrella term that isn't in OpenClaw
+      docs (e.g. "Connections" as our category for channels+tools+models+memory), it's flagged with
+      <code>officialSource: null</code> so readers know it's our framing, not OpenClaw's.
+    </p>
+    <p>
+      <strong>Why this matters:</strong> a tech-savvy OpenClaw reader spots invented or fuzzy
+      primitives quickly. The primitive map is the source-of-truth that keeps us honest.
+    </p>
+
+    <h2 id="independence">Independence</h2>
+    <p>
+      Claw Planet is an independent guide by Sush.
+      <strong>Not affiliated with or endorsed by OpenClaw, ClawHub, or any plugin author</strong>
+      unless explicitly stated. Sush works at Microsoft — Microsoft makes Azure. We cover Azure
+      where it's a sensible OpenClaw option; we don't favour it because of who pays the bills.
+      Microsoft disclosure is inline at the top of any page that discusses MS-related deployments
+      (<a href="/setup/azure/">§2.5 Azure</a> is the main one).
+    </p>
+    <p>
+      No paid tier. No email walls. No telemetry. No affiliate links unless explicitly disclosed.
+      <a href="https://github.com/susanthgit/claw-planet">Repo</a> is open under MIT for code, CC BY
+      4.0 for content where applicable.
+    </p>
+
+    <h2 id="cadence">Cadence</h2>
+    <p>
+      No schedule. Sush ships when there's something worth shipping. Watching
+      <a href="https://github.com/susanthgit/claw-planet">the repo</a> on GitHub is the way to see
+      changes as they land.
+    </p>
+
+    <h2 id="ratchet">Quality ratchet</h2>
+    <p>
+      Every push runs voice-lint, audit-claims (counts must match catalog), audit-verification-states
+      (every applicable page must have a state), and integrity-check (broken-link count must stay
+      below threshold). The threshold ratchets down as content lands. The site doesn't drift quality
+      down silently.
+    </p>
+
+    <h2 id="what-we-dont-do">What we don't do</h2>
+    <ul>
+      <li><strong>Formal scorecards</strong> with verdict bands (e.g. "8/10, Recommended"). Field notes only.</li>
+      <li><strong>CVE tracking</strong>. <a href="/security/">§6 security</a> is patterns, not a vulnerability database.</li>
+      <li><strong>Vendor-sponsored content.</strong> Ever.</li>
+      <li><strong>"Get started" / "Try now" CTAs.</strong> The site is reading-shape, not selling-shape.</li>
+      <li><strong>Email capture.</strong> No popup. No newsletter wall.</li>
+    </ul>
+
+    <h2 id="what-we-do">What we do</h2>
+    <ul>
+      <li><strong>Plain English.</strong> Even for technical concepts.</li>
+      <li><strong>Honest verification states.</strong> Sourced-only is the default until we run it.</li>
+      <li><strong>Cross-links forward and back.</strong> Every entry links to prerequisites + next steps.</li>
+      <li><strong>"Why this matters"</strong> blocks for important concepts.</li>
+      <li><strong>"Things to try"</strong> sections for action.</li>
+      <li><strong>Sourced everywhere.</strong> Hover any link; it goes to a real source.</li>
+    </ul>
+
+    <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--rule-faint); font-family: var(--mono); font-size: 12px; color: var(--ink-faint);">
+      Last reviewed 2026-05-07. <a href="https://github.com/susanthgit/claw-planet/edit/main/src/pages/methodology.astro" target="_blank" rel="noopener" style="color: var(--ink-mute);">edit on GitHub →</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose-page { max-width: 760px; }
+  .prose-page header { padding-bottom: 28px; margin-bottom: 28px; border-bottom: 1px solid var(--rule); }
+  .prose-page h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; color: var(--ink); margin-bottom: 12px; }
+  .lede { font-size: 17px; color: var(--ink-mid); line-height: 1.55; max-width: 640px; }
+  .prose-page h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 32px 0 12px; color: var(--ink); padding-bottom: 4px; border-bottom: 1px solid var(--rule-faint); }
+  .prose-page p { margin: 12px 0; line-height: var(--lh-normal); color: var(--ink); }
+  .prose-page ul, .prose-page ol { margin: 12px 0 12px 24px; line-height: var(--lh-normal); }
+  .prose-page li { margin: 4px 0; color: var(--ink); }
+  .prose-page strong { color: var(--ink); font-weight: 700; }
+  .prose-page em { color: var(--ink-mid); }
+  .prose-page a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 2px; }
+  .prose-page a:hover { color: var(--claw); text-decoration-color: var(--claw); }
+  .prose-page code { font-family: var(--mono); font-size: 13px; background: var(--paper-warm); padding: 1px 6px; border-radius: 3px; }
+  .prose-page table { margin: 18px 0; border-collapse: collapse; font-size: 13.5px; width: 100%; }
+  .prose-page thead { border-bottom: 2px solid var(--rule); }
+  .prose-page th { text-align: left; padding: 8px 12px; font-weight: 600; color: var(--ink); }
+  .prose-page td { padding: 8px 12px; border-bottom: 1px solid var(--rule-faint); color: var(--ink-mid); line-height: 1.5; vertical-align: top; }
+</style>

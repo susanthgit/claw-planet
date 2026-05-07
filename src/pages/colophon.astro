@@ -1,0 +1,128 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Colophon"
+  description="Stack, editorial rules, licences, disclosures. The technical and operational notes for Claw Planet."
+>
+  <article class="prose-page">
+    <header>
+      <h1>Colophon</h1>
+      <p class="lede">
+        How the site is built, what it's licensed under, and the small details that don't fit in
+        methodology but matter when you're inspecting a craft project.
+      </p>
+    </header>
+
+    <h2>Stack</h2>
+    <ul>
+      <li><strong>Framework:</strong> <a href="https://astro.build" target="_blank" rel="noopener">Astro 5</a> + MDX + React 18 (islands only)</li>
+      <li><strong>Search:</strong> <a href="https://pagefind.app" target="_blank" rel="noopener">Pagefind</a> — wired in build, UI to ship in P0b polish</li>
+      <li><strong>Hosting:</strong> <a href="https://pages.cloudflare.com" target="_blank" rel="noopener">Cloudflare Pages</a> via custom REST API deploy script (wrangler is broken on win32-arm64)</li>
+      <li><strong>Type system:</strong> TypeScript strict mode + Zod-validated content frontmatter</li>
+      <li><strong>CI:</strong> GitHub Actions — auto-deploy on push to main + integrity check on every PR</li>
+      <li><strong>Domain:</strong> <code>claw.aguidetocloud.com</code>, Cloudflare-proxied CNAME to <code>claw-planet.pages.dev</code></li>
+      <li><strong>SSL cert:</strong> Google CA via Cloudflare Pages</li>
+    </ul>
+
+    <h2>Typography</h2>
+    <ul>
+      <li><strong>Body + UI:</strong> <a href="https://rsms.me/inter/" target="_blank" rel="noopener">Inter</a> (Google Fonts CDN, weights 400 / 500 / 600 / 700)</li>
+      <li><strong>Mono:</strong> <a href="https://www.jetbrains.com/lp/mono/" target="_blank" rel="noopener">JetBrains Mono</a> (Google Fonts CDN, weights 400 / 500 / 600)</li>
+      <li><strong>Stylistic set:</strong> Inter <code>ss01</code> for refined alt characters</li>
+    </ul>
+
+    <h2>Design system</h2>
+    <ul>
+      <li><strong>Brand colour:</strong> OpenClaw red <code>#FF2626</code> (light) / <code>#FF4747</code> (dark, slightly softened to reduce retinal strain on dark backgrounds)</li>
+      <li><strong>Logo:</strong> Bracket Mark <code>[*]</code> — square brackets in ink, asterisk in OpenClaw red. Reads as "footnote · annotation · code reference."</li>
+      <li><strong>Light + dark modes:</strong> via <code>[data-theme]</code> attribute with system-preference default + localStorage persistence. No flash of wrong theme on first load (pre-paint script).</li>
+      <li><strong>Layout:</strong> 3-column page grid (sidebar TOC · main reading · margin notes). Responsive collapse below 1280px (margin column hides) and 880px (sidebar hides).</li>
+      <li><strong>Texture:</strong> faint graph-paper grid background at 30–50% opacity</li>
+      <li><strong>Section numbering:</strong> § 1 through § 10. Sub-numbering (§ 2.3, § 6.1) for entries within sections.</li>
+    </ul>
+
+    <h2>Repo + source</h2>
+    <ul>
+      <li><strong>GitHub:</strong> <a href="https://github.com/susanthgit/claw-planet" target="_blank" rel="noopener">susanthgit/claw-planet</a></li>
+      <li><strong>Edit on GitHub</strong> link on every entry page footer</li>
+      <li><strong>Dispute or correct</strong> link via GitHub issue template</li>
+    </ul>
+
+    <h2>Licences</h2>
+    <ul>
+      <li><strong>Code:</strong> MIT</li>
+      <li><strong>Content:</strong> <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> where applicable. Quote, repurpose, translate freely with attribution.</li>
+      <li><strong>OpenClaw brand assets</strong> (logo, name, "EXFOLIATE!" tagline) are property of the OpenClaw project. Used here under fair use as journalism / commentary.</li>
+    </ul>
+
+    <h2>Independence + Microsoft disclosure</h2>
+    <p>
+      <strong>Claw Planet is an independent guide by Sush.</strong> Not affiliated with or endorsed
+      by OpenClaw, ClawHub, or any plugin author unless explicitly stated.
+    </p>
+    <p>
+      Sush works at Microsoft — Microsoft makes Azure. We cover Azure where it's a sensible OpenClaw
+      option; we don't favour it because of who pays the bills. Inline disclosure on Azure-related
+      pages (<a href="/setup/azure/">§ 2.5 Azure</a>).
+    </p>
+    <p>
+      No paid tier. No email walls. No telemetry. No affiliate links.
+    </p>
+
+    <h2>Cosmos</h2>
+    <p>
+      Claw Planet is part of the <a href="https://aguidetocloud.com" target="_blank" rel="noopener">aguidetocloud.com</a> cosmos.
+      Sister sites:
+    </p>
+    <ul>
+      <li><a href="https://agents.aguidetocloud.com" target="_blank" rel="noopener">Agentic Planet</a> — cockpit-style field guide for the broader agentic AI space</li>
+      <li><a href="https://learn.aguidetocloud.com" target="_blank" rel="noopener">Learn</a> — the parent learning portal</li>
+    </ul>
+    <p>
+      Each planet has its own visual system, voice, and physics. They don't follow a shared cosmos
+      grid; they share the brand-family voice (plain English, honest take) and the deploy
+      infrastructure pattern.
+    </p>
+
+    <h2>Build status</h2>
+    <p>
+      Live at <a href="https://claw.aguidetocloud.com">claw.aguidetocloud.com</a>. Soft-launch
+      posture (recently flipped from <code>noindex</code> to public). Voice lint clean,
+      verification-state audit clean, integrity check passing.
+    </p>
+
+    <h2>Acknowledgements</h2>
+    <p>
+      Thanks to the OpenClaw maintainers for the docs, the Discord community for grounding, and the
+      MCP project for the protocol that lets all this fit together. This site is editorial
+      commentary on real work done by real teams; the work is theirs.
+    </p>
+
+    <h2>Errata</h2>
+    <p>
+      When we fix a substantial error (factual, not typo), we note it on the relevant entry and in
+      <a href="/updates/">§ 8 Updates</a>. We don't quietly silently revise.
+    </p>
+
+    <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--rule-faint); font-family: var(--mono); font-size: 12px; color: var(--ink-faint);">
+      Last reviewed 2026-05-07. <a href="https://github.com/susanthgit/claw-planet/edit/main/src/pages/colophon.astro" target="_blank" rel="noopener" style="color: var(--ink-mute);">edit on GitHub →</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose-page { max-width: 760px; }
+  .prose-page header { padding-bottom: 28px; margin-bottom: 28px; border-bottom: 1px solid var(--rule); }
+  .prose-page h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; color: var(--ink); margin-bottom: 12px; }
+  .lede { font-size: 17px; color: var(--ink-mid); line-height: 1.55; max-width: 640px; }
+  .prose-page h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 32px 0 12px; color: var(--ink); padding-bottom: 4px; border-bottom: 1px solid var(--rule-faint); }
+  .prose-page p { margin: 12px 0; line-height: var(--lh-normal); color: var(--ink); }
+  .prose-page ul { margin: 12px 0 12px 24px; line-height: var(--lh-normal); }
+  .prose-page li { margin: 4px 0; color: var(--ink); }
+  .prose-page strong { color: var(--ink); font-weight: 700; }
+  .prose-page a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 2px; }
+  .prose-page a:hover { color: var(--claw); text-decoration-color: var(--claw); }
+  .prose-page code { font-family: var(--mono); font-size: 13px; background: var(--paper-warm); padding: 1px 6px; border-radius: 3px; }
+</style>

@@ -1,0 +1,71 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+import UpdateRow from '@components/UpdateRow.astro';
+
+const updates = [
+  {
+    date: '2026-05-07',
+    tag: 'NEWS',
+    title: 'Claw Planet goes live',
+    href: '/',
+    meta: 'Soft launch with §1 Overview, §2 Setup, §3 Connections, §4 Plugins, §5 Use cases, §6 Security, §7 Compare. All entries sourced-only until Sush actually runs OpenClaw end-to-end.',
+  },
+  {
+    date: '2026-05-07',
+    tag: 'NEWS',
+    title: 'Sourced OpenClaw primitive map (46 primitives) shipped',
+    href: 'https://github.com/susanthgit/claw-planet/blob/main/src/data/openclaw-primitives.json',
+    meta: 'Every concept page is grounded in this map. 7 workspace files, 7 architecture concepts, 7 channels, 7 built-in tools, 5 memory engines, 4 security primitives, 4 automation, 3 OUR umbrella terms (flagged).',
+  },
+  {
+    date: '2026-04-28',
+    tag: 'NEWS',
+    title: 'OpenClaw Discord crosses comfortable size',
+    href: 'https://discord.gg/clawd',
+    meta: 'Active community space — both maintainers and users. Worth joining if you are running OpenClaw seriously.',
+  },
+  {
+    date: '2026-04-15',
+    tag: 'RELEASE',
+    title: 'OpenClaw documents 24+ supported channels',
+    href: 'https://docs.openclaw.ai/channels/index',
+    meta: 'WhatsApp, Telegram, Slack, Discord, Google Chat, Signal, iMessage, BlueBubbles, IRC, Microsoft Teams, Matrix, Feishu, LINE, Mattermost, Nextcloud Talk, Nostr, Synology Chat, Tlon, Twitch, Zalo, Zalo Personal, WeChat, QQ, WebChat, Yuanbao. Plus voice nodes on macOS/iOS/Android.',
+  },
+  {
+    date: '2026-04-01',
+    tag: 'NEWS',
+    title: 'MCP servers cross 200 published',
+    href: 'https://github.com/modelcontextprotocol/servers',
+    meta: 'OpenClaw MCP bridge means every MCP server is also an OpenClaw skill. The catalog grows fast.',
+  },
+];
+---
+
+<BaseLayout
+  title="§ 8 Updates"
+  description="Hand-curated watchlist of OpenClaw + agent-runtime news. Releases, advisories, community moves. Not a CVE feed; high-signal items only."
+>
+  <SectionHead num="8" title="Updates we're watching" verb={`${updates.length} entries · curated weekly`} />
+  <SectionBlurb>
+    Hand-curated. <strong>Not a CVE feed</strong> and not a release tracker. High-signal items only —
+    things that change how you would run OpenClaw, what you would build, or what to be aware of.
+    Each item has a date, type, and source link. Last updated <strong>2026-05-07</strong>.
+  </SectionBlurb>
+
+  <div class="updates-list">
+    {updates.map(u => <UpdateRow {...u} />)}
+  </div>
+
+  <div class="cross-refs">
+    <strong>also:</strong>
+    <a href="https://github.com/susanthgit/claw-planet">repo</a>
+    <a href="https://discord.gg/clawd">OpenClaw Discord</a>
+    <a href="/resources/">curated external sources</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .updates-list { border-top: 1px solid var(--rule-faint); margin-top: 16px; }
+</style>

@@ -1,0 +1,120 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+
+const faq = [
+  {
+    num: '10.1',
+    q: 'Is OpenClaw production-ready in 2026?',
+    a: 'It depends on what you mean by production. Single-user always-on (your personal assistant): yes. Multi-tenant SaaS: with significant DIY work — multi-agent routing helps but auth/scale/RBAC are your problem. Team deployment for 5–50 people: possible but you are the sysadmin, not the ops vendor. See <a href="/overview/honest-drawbacks/">§1.4 honest drawbacks #1</a> for the single-user-shape constraint.',
+  },
+  {
+    num: '10.2',
+    q: 'Should I use OpenClaw or just MCP + Claude Desktop?',
+    a: 'Different shapes for different needs. Persistence + plugin marketplace + 24+ channels are the OpenClaw advantages. Lower setup floor + IDE-native UX are the MCP-host advantages. Most thoughtful people use both for different jobs. <a href="/compare/openclaw-vs-mcp-stacks/">§7.1</a> has the deep comparison.',
+  },
+  {
+    num: '10.3',
+    q: 'How much does running an OpenClaw agent cost?',
+    a: 'Three cost lines: hosting (laptop = $0 marginal, Pi 5 = ~$2/month electricity, Hetzner VM = ~$15/month, Azure VM = ~$30/month), model API calls ($1–25/month for typical personal use depending on model), optional governance services (Honcho memory, etc. — depends). See <a href="/setup/hardware-matrix/">§2.1 hardware matrix</a> for the cost-per-setup table.',
+  },
+  {
+    num: '10.4',
+    q: 'Can I run OpenClaw on a Raspberry Pi 4?',
+    a: 'Yes, with constraints. The 8GB Pi 4 is fine for runtime + hosted-API model. The 4GB Pi 4 is tight (you will feel cold-start lag, cannot run local models comfortably). Pi 5 with 8GB is the recommended starter box at $130 all-in. See <a href="/setup/raspberry-pi/">§2.6</a> for the full Pi setup.',
+  },
+  {
+    num: '10.5',
+    q: 'How do I keep adversarial users from hijacking my bot?',
+    a: 'Defaults are sensible (DM policy = pairing, sandbox = off, etc.). The moment you connect a public channel or open DM to people you do not know, run through <a href="/security/self-hosting-checklist/">§6.1 the 12 checks</a>. Particularly: turn on sandbox for non-main sessions, never set <code>dmPolicy="open"</code> + <code>"*"</code> in allowFrom without thinking, and run <code>openclaw doctor</code> after every config change.',
+  },
+  {
+    num: '10.6',
+    q: 'How is this site different from the official OpenClaw docs?',
+    a: 'Official docs are exhaustive and authoritative. We are editorial — opinionated, plain-English, with verification states declaring what we have actually run. Both have their place. We cross-link liberally to docs; you will often follow a "see official docs at <a href="https://docs.openclaw.ai">docs.openclaw.ai</a>" link out of our pages.',
+  },
+  {
+    num: '10.7',
+    q: 'Will OpenClaw be around in 18 months?',
+    a: 'Honest answer: probably yes given current adoption + active maintenance + active Discord. But the brand "Claw Planet" is intentionally about <em>self-hosted persistent agent runtimes</em> — if OpenClaw fades or merges with something else, this site adapts to whatever takes its place. The principles (workspace files, multi-channel, persistent identity, sandbox-in-non-main, sourced-only honesty) outlive any specific runtime.',
+  },
+  {
+    num: '10.8',
+    q: 'Why is this site logo a bracket-asterisk?',
+    a: 'Because <code>[*]</code> reads as "footnote" / "annotation" / "code reference" — which is what this site IS. We are footnotes on OpenClaw, not OpenClaw itself. Plus the asterisk happens to be the OpenClaw red. Boring story; consistent answer.',
+  },
+];
+---
+
+<BaseLayout
+  title="§ 10 FAQ"
+  description="Real questions Sush had when starting with OpenClaw. Answered honestly. Currently 8 entries; grows as more questions show up."
+>
+  <SectionHead num="10" title="FAQ" verb={`${faq.length} entries · the questions Sush actually had`} />
+  <SectionBlurb>
+    Real questions, honest answers. If your question is not here,
+    <a href="https://github.com/susanthgit/claw-planet/issues/new">open an issue</a> — we add things
+    that come up more than once.
+  </SectionBlurb>
+
+  <dl class="faq-list">
+    {faq.map(item => (
+      <div class="faq-entry" id={`faq-${item.num.replace('.', '-')}`}>
+        <dt><span class="faq-num">§ {item.num}</span> {item.q}</dt>
+        <dd set:html={item.a}></dd>
+      </div>
+    ))}
+  </dl>
+
+  <div class="cross-refs">
+    <strong>see also:</strong>
+    <a href="/overview/concepts/">§1.2 concepts</a>
+    <a href="/overview/honest-drawbacks/">§1.4 honest drawbacks</a>
+    <a href="/security/">§6 security</a>
+    <a href="/methodology/">methodology</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .faq-list { margin-top: 24px; }
+  .faq-entry {
+    padding: 22px 0;
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .faq-entry dt {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .faq-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claw);
+    margin-right: 8px;
+    font-weight: 600;
+    letter-spacing: var(--ls-wide);
+  }
+  .faq-entry dd {
+    color: var(--ink-mid);
+    line-height: var(--lh-normal);
+    max-width: 760px;
+  }
+  .faq-entry dd :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+  }
+  .faq-entry dd :global(a:hover) {
+    color: var(--claw);
+    text-decoration-color: var(--claw);
+  }
+  .faq-entry dd :global(code) {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+</style>

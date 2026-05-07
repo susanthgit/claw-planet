@@ -1,0 +1,112 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+
+const resources = [
+  {
+    category: 'Official',
+    items: [
+      { name: 'OpenClaw documentation', url: 'https://docs.openclaw.ai', why: 'Source of truth for every concept, schema, and CLI command. Some pages dense; we plain-English the gnarly ones in §1.' },
+      { name: 'OpenClaw GitHub repo', url: 'https://github.com/openclaw/openclaw', why: 'README is the canonical install + supported-channels list. Skim every release note.' },
+      { name: 'OpenClaw documentation index (llms.txt)', url: 'https://docs.openclaw.ai/llms.txt', why: 'Machine-readable doc index. Useful for navigating the docs programmatically.' },
+      { name: 'docs.openclaw.ai install/docker', url: 'https://docs.openclaw.ai/install/docker', why: 'Canonical Docker recipe — verify against this before using §2.7.' },
+    ],
+  },
+  {
+    category: 'Community',
+    items: [
+      { name: 'OpenClaw Discord', url: 'https://discord.gg/clawd', why: 'Where the maintainers and serious users hang out. Worth joining if you are running OpenClaw.' },
+      { name: 'GitHub issues', url: 'https://github.com/openclaw/openclaw/issues', why: 'Triage your bug-or-feature questions here. Good closed-issue archive.' },
+      { name: 'Awesome OpenClaw (community curated)', url: 'https://github.com/openclaw/openclaw#highlights', why: 'Watch for community-curated lists of skills, recipes, deployments. Use the trust signals from §6.2 before installing anything.' },
+    ],
+  },
+  {
+    category: 'MCP / agent-runtime context',
+    items: [
+      { name: 'Model Context Protocol', url: 'https://modelcontextprotocol.io/', why: 'The protocol OpenClaw mcp tool speaks. Useful background for §3.3 Tools.' },
+      { name: 'Reference MCP servers', url: 'https://github.com/modelcontextprotocol/servers', why: '200+ MCP servers you can wire into OpenClaw. Filesystem, GitHub, Slack, Postgres, browser, etc.' },
+      { name: 'Agentic Planet (sister site)', url: 'https://agents.aguidetocloud.com', why: 'Cockpit-style field guide to the broader agentic AI space. MCP scorecards, vendor takes, recipes.' },
+    ],
+  },
+  {
+    category: 'Reading on agent design',
+    items: [
+      { name: 'Anthropic on building effective agents', url: 'https://www.anthropic.com/research/building-effective-agents', why: 'The reference essay on when agents earn their keep. Pairs with §6.4 What NOT to build.' },
+      { name: 'Simon Willison on LLM tooling', url: 'https://simonwillison.net/tags/llm-tool-use/', why: 'Practical, opinionated, technically grounded.' },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="§ 9 Resources"
+  description="Curated external resources — OpenClaw official docs, community spaces, MCP context, reading on agent design. Linked, not duplicated."
+>
+  <SectionHead num="9" title="Resources" verb="curated external · linked, not duplicated" />
+  <SectionBlurb>
+    The good stuff written elsewhere. We do not repeat what others have done well — we link, with a
+    one-line note about why each source is worth your time. If you think we are missing something
+    important, <a href="https://github.com/susanthgit/claw-planet/issues/new">tell us</a>.
+  </SectionBlurb>
+
+  {resources.map(group => (
+    <section class="res-group">
+      <h2>{group.category}</h2>
+      <ul>
+        {group.items.map(item => (
+          <li>
+            <a href={item.url} target="_blank" rel="noopener" class="res-name">{item.name}</a>
+            <span class="res-why">{item.why}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  <div class="cross-refs">
+    <strong>also:</strong>
+    <a href="/methodology/">methodology</a>
+    <a href="/updates/">updates we are watching</a>
+    <a href="https://github.com/susanthgit/claw-planet">claw-planet on GitHub</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .res-group { margin: 32px 0; }
+  .res-group h2 {
+    font-family: var(--sans);
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    letter-spacing: var(--ls-snug);
+    color: var(--ink);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-faint);
+    margin-bottom: 14px;
+  }
+  .res-group ul { list-style: none; padding: 0; margin: 0; }
+  .res-group li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule-faint);
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 16px;
+    align-items: baseline;
+  }
+  .res-group .res-name {
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+  }
+  .res-group .res-name:hover { color: var(--claw); border-color: var(--claw); }
+  .res-group .res-why {
+    color: var(--ink-mute);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  @media (max-width: 720px) {
+    .res-group li { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>

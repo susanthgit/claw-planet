@@ -1,0 +1,97 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="404 — page not found"
+  description="That route doesn't exist on Claw Planet. Try the contents in the sidebar, or go home."
+  noIndex={true}
+>
+  <article class="not-found">
+    <div class="big-404">404</div>
+    <h1>That page doesn't exist on Claw Planet.</h1>
+    <p class="lede">
+      Either the URL is mistyped, the page hasn't shipped yet (a lot of <a href="/methodology/">P0a
+      cross-references</a> still point at routes shipping later), or we removed it. Sorry about that.
+    </p>
+
+    <div class="suggestions">
+      <h2>Try these instead:</h2>
+      <ul>
+        <li><a href="/">Home</a> — the index of all sections</li>
+        <li><a href="/overview/what-is-openclaw/">§ 1.1 What is OpenClaw, plainly</a> — start here if you're new</li>
+        <li><a href="/setup/laptop/">§ 2.3 Laptop quick-start</a> — install in 25 minutes</li>
+        <li><a href="/use-cases/hello-world-laptop/">§ 5.1 Hello-world recipe</a> — first thing to try</li>
+        <li><a href="/security/self-hosting-checklist/">§ 6.1 Self-hosting checklist</a> — 12 hardening checks</li>
+        <li><a href="/faq/">§ 10 FAQ</a> — common questions</li>
+      </ul>
+    </div>
+
+    <div class="tell-us">
+      <p>
+        If you got here from a link inside Claw Planet,
+        <a href="https://github.com/susanthgit/claw-planet/issues/new" target="_blank" rel="noopener">tell us
+        which page sent you</a> — we'll fix the broken link.
+      </p>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .not-found { max-width: 700px; padding-top: 40px; }
+  .big-404 {
+    font-family: var(--mono);
+    font-size: 96px;
+    font-weight: 700;
+    color: var(--claw);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    margin-bottom: 12px;
+  }
+  .not-found h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .not-found .lede {
+    font-size: 17px;
+    color: var(--ink-mid);
+    line-height: 1.55;
+    margin-bottom: 32px;
+  }
+  .suggestions {
+    padding: 22px 24px;
+    background: var(--canvas);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--claw);
+    margin-bottom: 24px;
+  }
+  .suggestions h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+  .suggestions ul { list-style: none; padding: 0; margin: 0; }
+  .suggestions li { padding: 6px 0; }
+  .suggestions a {
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+  }
+  .suggestions a:hover { color: var(--claw); border-color: var(--claw); }
+  .tell-us {
+    font-size: 14px;
+    color: var(--ink-mute);
+    line-height: 1.55;
+  }
+  .tell-us a { color: var(--ink-mid); }
+  .tell-us a:hover { color: var(--claw); }
+</style>

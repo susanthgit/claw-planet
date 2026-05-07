@@ -1,0 +1,205 @@
+---
+title: "OpenClaw vs MCP-based stacks"
+section: "Compare"
+sectionNumber: "7.1"
+description: "OpenClaw is a self-hosted persistent agent runtime. MCP-based stacks are a different shape — host application + protocol + servers. Where each wins, where each loses, when to switch."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "This is a deep architectural comparison sourced from OpenClaw docs + MCP spec + documented MCP-based hosts (Claude Desktop, Cline, etc.). Sush has used MCP-based stacks; he has not yet run OpenClaw end-to-end. The architectural reading is grounded; specific deployment-experience claims need real runs."
+lastReviewedAt: "2026-05-07"
+against: "MCP-based stacks (Claude Desktop, Cline, Goose, etc.)"
+depth: "deep"
+sources:
+  - "https://docs.openclaw.ai/concepts/agent"
+  - "https://docs.openclaw.ai/concepts/architecture"
+  - "https://github.com/openclaw/openclaw"
+  - "https://modelcontextprotocol.io/"
+seeAlso:
+  - "1.1"
+  - "1.4"
+  - "3.3"
+  - "5.1"
+---
+
+## What this comparison is
+
+This is the comparison that matters most when you're deciding what shape of agent stack to invest in. Both **OpenClaw** and **MCP-based stacks** (Claude Desktop, Cline, Goose, etc.) let you wire LLMs to tools and channels. The architectural difference under the hood is real and has consequences for what each is good at.
+
+If you read nothing else: **OpenClaw is a runtime; MCP is a protocol.** The "MCP-based stack" is a host application that speaks the protocol to plugin servers. They're not actually competing for the same job — they're often complementary.
+
+## TL;DR table
+
+| Dimension | OpenClaw | MCP-based stack |
+|---|---|---|
+| **Primary shape** | Self-hosted Gateway daemon + persistent agent | Host app (often desktop) + MCP protocol + plugin servers |
+| **Where state lives** | Workspace files on disk + memory engine | Host app's session (mostly ephemeral) |
+| **Persistence across sessions** | First-class (SOUL.md, AGENTS.md, sessions JSONL) | Limited — depends on host |
+| **Channel surface** | 24+ channels (WhatsApp, Slack, iMessage, etc.) | Whatever the host supports (often the host itself) |
+| **Tool model** | Built-in tools + skills + MCP bridge | All tools come from MCP servers |
+| **Setup complexity** | Higher (daemon, channels, workspace, model auth) | Lower (install host, install MCP servers) |
+| **Always-on capability** | Native (it's a daemon) | Depends — desktop hosts only run when app is open |
+| **Multi-channel reach** | Yes — same agent across WhatsApp + Slack + Discord | No — host is one channel surface (often the host UI) |
+| **Best for** | Personal/small-team always-on assistant; workflow automation | Single-machine developer workflows; trying many tools |
+| **Cost** | Hardware + model API | Host (often free) + model API |
+| **Lock-in** | Low — workspace files are markdown, portable | Low — MCP is a standard, servers are interchangeable |
+
+## The architectural difference (the thing to understand)
+
+### MCP-based stack shape
+
+```
+┌─────────────────────────────────┐
+│     Host app (e.g. Cline)       │
+│   ┌──────────────────────────┐  │
+│   │  Conversation UI         │  │
+│   │  Session state (memory)  │  │
+│   │  Model client            │  │
+│   └──────┬───────────────────┘  │
+│          │  MCP protocol         │
+│          ▼                       │
+│   ┌──────────────────────────┐  │
+│   │  MCP servers              │  │
+│   │  - filesystem            │  │
+│   │  - github                │  │
+│   │  - browser               │  │
+│   └──────────────────────────┘  │
+└─────────────────────────────────┘
+   Models accessed via API
+   Persistence ≈ host's session storage
+   Channel = the host UI
+```
+
+The **host app** is the thing you talk to. Persistent? Maybe — depends on the host. Cross-channel? Maybe — depends on the host.
+
+### OpenClaw shape
+
+```
+┌──────────────────────────────────────────────────┐
+│     Gateway daemon (OpenClaw)                    │
+│                                                  │
+│   24 channels ──┐                                │
+│      Slack      │                                │
+│   WhatsApp ─────┼─►  Agent runtime              │
+│      etc.       │       │                        │
+│                 │       ├─► Built-in tools       │
+│                 │       ├─► Skills (workspace)   │
+│                 │       └─► MCP bridge ─►servers │
+│                 │                                │
+│   Workspace files on disk (SOUL/AGENTS/USER...)  │
+│   Sessions JSONL on disk (per session)           │
+│   Memory engine (built-in / Honcho / QMD)        │
+└──────────────────────────────────────────────────┘
+   Models accessed via API
+   Persistence is FIRST-CLASS (it's the whole shape)
+   Channels are FIRST-CLASS (24+ supported)
+```
+
+The **Gateway daemon** is what runs. You don't talk to *it* directly — you message a channel, the channel hands the message to the Gateway, the Gateway routes to the agent.
+
+## Where OpenClaw wins
+
+### 1. Always-on, cross-channel
+
+A daemon process responding to messages across WhatsApp + Slack + iMessage + Discord *simultaneously*, using the same agent identity. This is the killer use case. MCP-based stacks don't do this — the host app is the channel.
+
+> *Concrete example:* same agent answers a Slack DM at 9am, an iMessage from your partner at noon, a WhatsApp message from your accountant at 4pm. Same memory. Same personality. One daemon. ([§5 Use cases](/use-cases/))
+
+### 2. Persistent identity
+
+`SOUL.md` + `AGENTS.md` + `USER.md` give the agent a stable identity that survives reboots, crashes, channel switches. Most MCP-based stacks have lighter persistence — what's in the conversation is what the model sees, and once you close the host, the conversation might or might not survive.
+
+### 3. Automation surface (cron, hooks, standing orders)
+
+OpenClaw has [scheduled tasks, hooks, standing orders, task flow](https://docs.openclaw.ai/automation/) as first-class concepts. Useful for *agentic workflows* — daily summaries, periodic check-ins, event-triggered runs. Most MCP hosts don't have this.
+
+### 4. The workspace-files identity model
+
+Plain markdown files you can edit with `vim` and put in git. Inspectable, version-controlled, portable. Unique to OpenClaw — most agent platforms hide identity behind opaque profile config.
+
+## Where MCP-based stacks win
+
+### 1. Lower setup floor
+
+`brew install cline` (or similar) and you have an agent. OpenClaw asks you to think about a daemon, channels, workspace, model auth before you can say hello. For "I want to try agents," MCP-based stacks are friendlier.
+
+### 2. Wider tool community (right now)
+
+The MCP server universe is bigger than OpenClaw's bundled-skills universe today. Filesystem, GitHub, Slack, Stripe, Linear, Figma, Browserbase, browser, Postgres, etc. — there's a server for almost everything. OpenClaw bridges to MCP via `mcp` ([§3.3](/connections/tools/)), so this is a partial advantage — you can use MCP servers from OpenClaw too. But the MCP-host community is more mature.
+
+### 3. Developer-IDE-style workflows
+
+Cline, Aider, Claude Code, etc. are designed for "developer in their IDE coding alongside an agent." That's a specific UX shape that OpenClaw isn't optimised for. If your need is "agent helps me write code in my repo," a developer-IDE-style MCP host is closer to what you want.
+
+### 4. Single-machine privacy
+
+A desktop MCP host runs entirely on your machine — no daemon listening, no port. Some prefer the lower attack surface for that reason.
+
+## When to use each (decision sketch)
+
+```
+Are you building agent workflows that run when YOU aren't there?
+  ├─ Yes → OpenClaw
+  └─ No → continue
+       │
+       Do you want one agent across multiple messaging channels?
+         ├─ Yes → OpenClaw
+         └─ No → continue
+              │
+              Are you a developer wanting AI in your IDE?
+                ├─ Yes → MCP-based stack (Cline, Claude Code, Aider)
+                └─ No → continue
+                     │
+                     Just trying agentic AI for the first time?
+                       ├─ Yes → MCP-based stack (lower friction)
+                       └─ No → OpenClaw (you have specific needs)
+```
+
+## They're complementary
+
+A common shape: **OpenClaw for the always-on channel-facing agent, plus a developer-IDE MCP host for coding work**. They don't compete; they cover different needs.
+
+OpenClaw can use MCP servers (via the `mcp` tool — see [§3.3](/connections/tools/)), so any tool you've built or installed for an MCP host can flow into OpenClaw too. Investment in MCP servers isn't lost if you adopt OpenClaw.
+
+## Honest drawbacks of each
+
+### OpenClaw drawbacks
+
+See [§1.4 Honest drawbacks](/overview/honest-drawbacks/) for the full list. Highlights:
+
+1. **Operational floor** — running a daemon, managing channels, handling auth at scale.
+2. **Single-user shape** — multi-user means multi-agent routing complexity.
+3. **Cold start latency** — workspace files load every session.
+4. **Voice features platform-uneven** — macOS / iOS / Android only.
+
+### MCP-based stack drawbacks
+
+1. **Limited persistence** — depends on host; most are session-bound.
+2. **Channel-bound** — host app IS the channel for most setups.
+3. **Always-on requires the host running** — close the app, agent is silent.
+4. **Multi-machine continuity** — typically nothing; you'd export config.
+5. **Less first-class memory** — most MCP hosts don't have a memory engine equivalent to OpenClaw's QMD/Honcho/built-in.
+
+## The migration question
+
+**Coming from MCP-based stacks to OpenClaw:** mostly straightforward. Your MCP servers carry over (OpenClaw's `mcp` tool can use them). What you'd add: workspace files, channel pairings, daemon setup. What you'd lose: the "I just open the app and it's there" UX.
+
+**Coming from OpenClaw to MCP-based stacks:** harder for always-on workflows. Your channel pairings don't carry. Your persistent agent identity doesn't translate cleanly. Your cron jobs disappear.
+
+## What we are NOT going to claim
+
+We have not benchmarked latency, reliability, or feature breadth in head-to-head testing. Specific quality-of-implementation differences between OpenClaw's runtime and any specific MCP-based host need real testing against current versions. The architectural reading is grounded; specific verdicts (OpenClaw is faster / Cline is more reliable) need real data.
+
+## Honest take
+
+If you're Sush — Microsoft Copilot SE, multi-channel-savvy, wants always-on assistant for personal/family logistics across phone/laptop/Pi — **OpenClaw is the right shape**. The persistence and channel multiplexing are the headline features.
+
+If you're a dev who lives in their IDE writing code — **stick with Cline / Claude Code / similar**. The IDE-native UX is genuinely better for coding work than messaging-an-agent.
+
+Most thoughtful people use both for different jobs. That's the sane shape, not a tribal one.
+
+## What to read next
+
+- [§1.1 What is OpenClaw, plainly](/overview/what-is-openclaw/) — orientation
+- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — full drawback list
+- [§5 Use cases](/use-cases/) — the always-on workflows that benefit OpenClaw
+- [§3.3 Tools](/connections/tools/) — MCP bridge details
