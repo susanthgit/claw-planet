@@ -1,0 +1,125 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Banner from '@components/Banner.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+
+// Cosmos map — inlined for now. Phase 4 will vendor planets.json into claw-planet
+// and read from manifest; until then this is hardcoded with the same fields.
+// Source of truth: aguidetocloud-revamp/data/planets.toml.
+const cosmosMap = [
+  { slug: 'earth',    name: 'A Guide to Cloud', url: 'https://www.aguidetocloud.com/',         tagline: 'the home — certs, tools, mind maps' },
+  { slug: 'guided',   name: 'Guided',            url: 'https://www.aguidetocloud.com/guided/', tagline: 'cert prep that doesn\'t gatekeep — $9, not $79' },
+  { slug: 'cmd',      name: 'CMD',               url: 'https://cmd.aguidetocloud.com/',         tagline: 'Microsoft jargon decoder · plus error codes' },
+  { slug: 'shift',    name: 'Shift',             url: 'https://shift.aguidetocloud.com/',       tagline: 'how AI is changing real jobs, role by role' },
+  { slug: 'plainai',  name: 'Plain AI',          url: 'https://plainai.aguidetocloud.com/',     tagline: 'museum of AI, in plain English' },
+  { slug: 'agentic',  name: 'Agentic',           url: 'https://agents.aguidetocloud.com/',      tagline: 'cockpit field guide for techies building with agents' },
+  { slug: 'claw',     name: 'Claw',              url: 'https://claw.aguidetocloud.com/',         tagline: 'plain-English study reference for OpenClaw (you are here)', here: true },
+];
+---
+
+<BaseLayout
+  title="About — Claw Planet"
+  description="A plain-English study reference for the OpenClaw agent runtime. Why this exists, who's behind it, the verification-states legend, and the voice rules."
+  ogImage="/og/home.png"
+>
+  <Banner />
+
+  <SectionHead num="0.1" title="What this is" />
+  <SectionBlurb>
+    A plain-English study reference for the OpenClaw agent runtime. Written by someone learning
+    OpenClaw in public. Audience is tech-savvy practitioners catching up on the runtime —
+    Sush himself plus people like him. Senior engineers, IT pros, infra people. Density allowed,
+    marketing voice not allowed.
+  </SectionBlurb>
+
+  <SectionHead num="0.2" title="Why this exists" />
+  <SectionBlurb>
+    Most OpenClaw content online is one of: <strong>official docs</strong> (exhaustive, dense,
+    no opinion), <strong>AI-generated SEO tutorials</strong> (worthless), <strong>vendor blogs</strong>
+    (NemoClaw pitch, not unbiased), <strong>HN/Reddit threads</strong> (lottery), or
+    <strong>academic security papers</strong> (impractical). There's no plain-English, opinionated,
+    honest-take, study-shaped reference. Claw Planet is that — written by someone learning the
+    runtime in public, with verification states made visible.
+  </SectionBlurb>
+
+  <SectionHead num="0.3" title="Important — Claw Planet is not OpenClaw" />
+  <SectionBlurb>
+    <strong>OpenClaw</strong> is the runtime — the open-source agent project, with its own repo,
+    community, and releases. <strong>Claw Planet</strong> (this site) is a doc site that <em>teaches</em>
+    OpenClaw. The two are related but they are not the same thing. Don't conflate them. We are
+    independent of the upstream project — corrections welcome from anyone, including the
+    maintainers, with the same dispute mechanism.
+  </SectionBlurb>
+
+  <SectionHead num="0.4" title="Verification states (the legend)" verb="every applicable page declares one" />
+  <SectionBlurb>
+    Each page or field note declares one verification state, shown in the margin column:
+    <ul style="margin-top: var(--space-2); padding-left: var(--space-5);">
+      <li><strong>SOURCED</strong> — citation only, Sush hasn't personally tested. Linked to upstream docs / repo / vendor blog.</li>
+      <li><strong>TESTED-BY-SUSH</strong> — Sush has run the example or installed the thing. The evidence is fresh.</li>
+      <li><strong>WITNESSED</strong> — Sush has seen this work in production (his own setup or a customer's). Highest signal.</li>
+    </ul>
+    Pages will flip from sourced → tested-by-sush as Sush works through the install paths and
+    recipes. The legend stays current; we don't backfill claims we haven't verified.
+  </SectionBlurb>
+
+  <SectionHead num="0.5" title="The voice rules" />
+  <SectionBlurb>
+    <ul>
+      <li><strong>Plain English.</strong> Forbidden words are enforced in CI: <em>frontier · ecosystem · agentic capability · in layman's terms · AI-powered · robust · scalable · holistic · synergies · game changer · mission-critical · moat · differentiator · flagship</em>.</li>
+      <li><strong>Always explain with examples · scenarios · comparisons.</strong> Definitions alone are not enough.</li>
+      <li><strong>Always answer "why does this matter"</strong> for important concepts. If we can't, we leave the section empty rather than padding.</li>
+      <li><strong>Honest take.</strong> If a feature is buggy, brittle, or undocumented, the page says so. Field notes carry a dispute link — readers can raise that a note conflicts with their experience, with context.</li>
+      <li><strong>Quality over speed.</strong> No marketing voice, no urgency push, no email walls.</li>
+      <li><strong>Sush is also a learner here.</strong> The site is for <em>him</em> first, then everyone who finds it useful. That's the order.</li>
+    </ul>
+  </SectionBlurb>
+
+  <SectionHead num="0.6" title="Who built this" />
+  <SectionBlurb>
+    Built by <strong>Sush (Susanth Sutheesh)</strong>, Copilot Solution Engineer at Microsoft New
+    Zealand. 18+ years in IT — infra admin background, not a developer by training. Still feels
+    like the curious intern on every new product. <em>What overflows lands here.</em>
+    <br /><br />
+    <strong>Microsoft does not sponsor, review, or approve Claw Planet.</strong> This is personal
+    volunteer work, written outside work hours, on personal hosting. The takes here are
+    independent — not Microsoft's official position.
+  </SectionBlurb>
+
+  <SectionHead num="0.7" title="Where this sits in the cosmos" verb="7 worlds · own atmospheres · shared belief" />
+  <SectionBlurb>
+    Claw is one of seven sites in the <strong>A Guide to Cloud</strong> family. Each planet has its
+    own atmosphere — own font, palette, voice register, tech stack. The only universal rules across
+    the cosmos are <em>quality, value, usability, honesty, don't collide, and a strict firewall
+    between free and paid surfaces</em>.
+    <ul class="cosmos-map" style="list-style: none; padding-left: 0; margin: var(--space-3) 0; display: flex; flex-direction: column; gap: var(--space-2);">
+      {cosmosMap.map((p) => (
+        <li>
+          <strong style="font-family: var(--font-mono);">
+            {p.slug === 'earth' ? '🌍' : p.slug === 'guided' ? '🌑' : '🪐'} {p.name}
+          </strong>
+          {p.here ? (
+            <span> — you are here</span>
+          ) : (
+            <span> — <a href={p.url} rel="noopener">{p.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a> — {p.tagline}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+    Read the <a href="https://learn.aguidetocloud.com/reference/cosmos-philosophy/" rel="noopener">cosmos philosophy</a>
+    if that frame intrigues you.
+  </SectionBlurb>
+
+  <SectionHead num="0.8" title="How to disagree / correct us" />
+  <SectionBlurb>
+    Each field note has a <strong>dispute link</strong> — click it to raise that a note conflicts
+    with your experience, with context. The Bracket Mark logo <code>[*]</code> is the disagree-here
+    icon throughout the site — it reads as <em>footnote · annotation · reference · code</em>, which
+    is the posture of every page here.
+    <br /><br />
+    Pull requests welcome at
+    <a href="https://github.com/susanthgit/claw-planet">github.com/susanthgit/claw-planet</a>.
+    Updates are public, with date and reason.
+  </SectionBlurb>
+</BaseLayout>
