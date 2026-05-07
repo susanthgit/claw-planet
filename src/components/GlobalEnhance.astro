@@ -1,0 +1,229 @@
+---
+/**
+ * GlobalEnhance — runtime enhancements that apply to every page.
+ * - Code copy buttons on every <pre>
+ * - Keyboard shortcuts: j/k = prev/next, gg = home, ? = help
+ *
+ * Loaded by BaseLayout, runs after DOMContentLoaded.
+ */
+---
+
+<div id="cp-help-modal" class="help-modal" hidden role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+  <button class="help-backdrop" id="cp-help-backdrop" aria-label="Close help"></button>
+  <div class="help-panel">
+    <div class="help-head">
+      <span class="help-title">Keyboard shortcuts</span>
+      <button class="help-close" id="cp-help-close" aria-label="Close">esc</button>
+    </div>
+    <table class="help-table">
+      <tr><td><kbd>⌘</kbd> + <kbd>K</kbd> · <kbd>/</kbd></td><td>open search</td></tr>
+      <tr><td><kbd>j</kbd></td><td>next entry (within section)</td></tr>
+      <tr><td><kbd>k</kbd></td><td>previous entry</td></tr>
+      <tr><td><kbd>g</kbd> <kbd>h</kbd></td><td>go to home</td></tr>
+      <tr><td><kbd>g</kbd> <kbd>m</kbd></td><td>go to methodology</td></tr>
+      <tr><td><kbd>?</kbd></td><td>show this help</td></tr>
+      <tr><td><kbd>esc</kbd></td><td>close any modal</td></tr>
+    </table>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    function isInput(target) {
+      const tag = target.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
+    }
+
+    /* === code copy buttons === */
+    function addCopyButtons() {
+      const blocks = document.querySelectorAll('.prose pre');
+      blocks.forEach((pre) => {
+        if (pre.querySelector('.cp-copy-btn')) return;
+        const btn = document.createElement('button');
+        btn.className = 'cp-copy-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Copy code');
+        btn.textContent = 'copy';
+        pre.appendChild(btn);
+        btn.addEventListener('click', async () => {
+          const code = pre.querySelector('code');
+          const text = code ? code.innerText : pre.innerText;
+          try {
+            await navigator.clipboard.writeText(text);
+            btn.textContent = 'copied';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1500);
+          } catch (e) {
+            btn.textContent = 'failed';
+            setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+          }
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', addCopyButtons);
+    } else {
+      addCopyButtons();
+    }
+
+    /* === keyboard shortcuts === */
+    const helpModal = document.getElementById('cp-help-modal');
+    const helpBackdrop = document.getElementById('cp-help-backdrop');
+    const helpClose = document.getElementById('cp-help-close');
+
+    function showHelp() {
+      if (!helpModal) return;
+      helpModal.hidden = false;
+      helpModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function hideHelp() {
+      if (!helpModal) return;
+      helpModal.hidden = true;
+      helpModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    if (helpBackdrop) helpBackdrop.addEventListener('click', hideHelp);
+    if (helpClose) helpClose.addEventListener('click', hideHelp);
+
+    let lastG = 0;
+    document.addEventListener('keydown', (e) => {
+      if (isInput(e.target)) return;
+      // ? = help
+      if (e.key === '?') {
+        e.preventDefault();
+        showHelp();
+        return;
+      }
+      // esc closes help (search modal handles its own esc)
+      if (e.key === 'Escape' && helpModal && !helpModal.hidden) {
+        e.preventDefault();
+        hideHelp();
+        return;
+      }
+      // g + letter
+      if (e.key === 'g') {
+        lastG = Date.now();
+        return;
+      }
+      if (Date.now() - lastG < 1000) {
+        if (e.key === 'h') { e.preventDefault(); window.location.href = '/'; return; }
+        if (e.key === 'm') { e.preventDefault(); window.location.href = '/methodology/'; return; }
+        if (e.key === 's') { e.preventDefault(); window.location.href = '/setup/'; return; }
+        if (e.key === 'o') { e.preventDefault(); window.location.href = '/overview/'; return; }
+      }
+      // j = next, k = prev (read from EntryFooter prev/next links)
+      if (e.key === 'j' || e.key === 'k') {
+        const sel = e.key === 'j' ? '.pn-next a' : '.pn-prev a';
+        const link = document.querySelector(sel);
+        if (link && link.href) { e.preventDefault(); window.location.href = link.href; }
+      }
+    });
+  })();
+</script>
+
+<style is:global>
+  /* Code copy button */
+  .prose pre {
+    position: relative;
+  }
+  .cp-copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    color: var(--ink-mute);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wide);
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease), color var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+  }
+  .prose pre:hover .cp-copy-btn,
+  .cp-copy-btn:focus { opacity: 1; }
+  .cp-copy-btn:hover { color: var(--claw); border-color: var(--claw); }
+  .cp-copy-btn.copied { color: var(--olive); border-color: var(--olive); }
+
+  /* Help modal */
+  .help-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .help-modal[hidden] { display: none; }
+  .help-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    opacity: 0.4;
+    border: 0;
+    cursor: pointer;
+    padding: 0;
+  }
+  .help-panel {
+    position: relative;
+    width: min(420px, calc(100vw - 32px));
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 0 0 16px;
+  }
+  .help-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .help-title {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .help-close {
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    color: var(--ink-mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .help-close:hover { color: var(--claw); border-color: var(--claw); }
+  .help-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .help-table td {
+    padding: 6px 18px;
+    font-size: 12.5px;
+    color: var(--ink-mid);
+  }
+  .help-table td:first-child {
+    font-family: var(--mono);
+    color: var(--ink);
+    width: 1%;
+    white-space: nowrap;
+  }
+  .help-table kbd {
+    display: inline-block;
+    background: var(--canvas);
+    border: 1px solid var(--rule-faint);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+  }
+</style>

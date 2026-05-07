@@ -58,6 +58,8 @@ const sections = [
   { num: '§10', title: 'FAQ', count: coverage.sections.faq.current, slug: '/faq/' },
 ];
 
+const currentPath = Astro.url.pathname.replace(/\/$/, '') + '/';
+
 const readingAids = [
   { title: 'Methodology', slug: '/methodology/' },
   { title: 'Verification states', slug: '/methodology/#verification-states' },
@@ -70,9 +72,11 @@ const readingAids = [
 <aside class="sidebar">
   <h4>Contents</h4>
 
-  {sections.map(sec => (
-    <div class="nav-group">
-      <a class="nav-section" href={sec.slug}>
+  {sections.map(sec => {
+    const isCurrentSection = currentPath.startsWith(sec.slug);
+    return (
+    <div class={`nav-group ${isCurrentSection ? 'is-current-section' : ''}`}>
+      <a class={`nav-section ${currentPath === sec.slug ? 'active' : ''}`} href={sec.slug} aria-current={currentPath === sec.slug ? 'page' : undefined}>
         <span class="num">{sec.num}</span>{sec.title}
         {sec.count !== undefined && <span class="count">{sec.count}</span>}
       </a>
@@ -80,7 +84,7 @@ const readingAids = [
         <ul class="nav-children">
           {sec.children.map((child: any) => (
             <li>
-              <a href={child.href}>
+              <a href={child.href} class={currentPath === child.href ? 'active' : ''} aria-current={currentPath === child.href ? 'page' : undefined}>
                 {child.num}  {child.title}
                 {child.state && child.label && <span class={`verif ${child.state}`}>{child.label}</span>}
               </a>
@@ -89,7 +93,8 @@ const readingAids = [
         </ul>
       )}
     </div>
-  ))}
+    );
+  })}
 
   <h4 class="nav-aside-head">Reading aids</h4>
   {readingAids.map(aid => (
@@ -168,6 +173,16 @@ const readingAids = [
     gap: 8px;
   }
   .nav-children a:hover { color: var(--claw); }
+  .nav-children a.active {
+    color: var(--claw);
+    font-weight: 500;
+  }
+  .nav-section.active {
+    color: var(--claw);
+  }
+  .is-current-section .nav-section {
+    color: var(--ink);
+  }
   .nav-children a .verif {
     font-family: var(--mono);
     font-size: 9px;

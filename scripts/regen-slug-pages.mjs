@@ -43,7 +43,11 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
+
+const tocItems = headings
+  .filter((h) => h.depth >= 2 && h.depth <= 3)
+  .map((h) => ({ id: h.slug, text: h.text, level: h.depth }));
 
 const sectionPairs = [
   ['explainers', '/overview/', 'Overview'],
@@ -99,6 +103,7 @@ const editHref = \`https://github.com/susanthgit/claw-planet/edit/main/\${entryF
   entryFile={entryFile}
   lastUpdated={entry.data.lastReviewedAt}
   schemaJsonLd={schemaJsonLd}
+  margin={{ tocItems }}
 >
   <article class="entry-page">
     <header class="entry-header">

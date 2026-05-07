@@ -2,38 +2,45 @@
 /**
  * MarginCol — persistent right column.
  * Verification states (legend, FIRST per design) +
- * On this page (jump anchors) +
+ * On this page (jump anchors — auto-derived per entry when tocItems prop is provided) +
  * Recently changed +
  * External links +
  * Sister site
- *
- * Per page can override defaults via props (TBD in Phase 2).
  */
 
+export interface TocItem {
+  id: string;
+  text: string;
+  level: number;
+}
 export interface Props {
-  onThisPage?: { num: string; title: string; href: string }[];
+  tocItems?: TocItem[];
   recentlyChanged?: { title: string; meta: string; href: string }[];
 }
 
+const defaultGlobal = [
+  { num: '§1', title: 'Overview', href: '#sec-1' },
+  { num: '§2', title: 'Setup', href: '#sec-2' },
+  { num: '§3', title: 'Connections', href: '#sec-3' },
+  { num: '§4', title: 'Plugins', href: '#sec-4' },
+  { num: '§5', title: 'Use cases', href: '#sec-5' },
+  { num: '§6', title: 'Security', href: '#sec-6' },
+  { num: '§7', title: 'Compare', href: '#sec-7' },
+  { num: '§8', title: 'Updates', href: '#sec-8' },
+  { num: '§9', title: 'Resources', href: '#sec-9' },
+  { num: '§10', title: 'FAQ', href: '#sec-10' },
+];
+
 const {
-  onThisPage = [
-    { num: '§1', title: 'Overview', href: '#sec-1' },
-    { num: '§2', title: 'Setup', href: '#sec-2' },
-    { num: '§3', title: 'Connections', href: '#sec-3' },
-    { num: '§4', title: 'Plugins', href: '#sec-4' },
-    { num: '§5', title: 'Use cases', href: '#sec-5' },
-    { num: '§6', title: 'Security', href: '#sec-6' },
-    { num: '§7', title: 'Compare', href: '#sec-7' },
-    { num: '§8', title: 'Updates', href: '#sec-8' },
-    { num: '§9', title: 'Resources', href: '#sec-9' },
-    { num: '§10', title: 'FAQ', href: '#sec-10' },
-  ],
+  tocItems,
   recentlyChanged = [
     { title: '§4.1 Filesystem MCP', meta: '2026-05-07 · field note', href: '/plugins/filesystem-mcp/' },
     { title: '§2.3 Laptop quick-start', meta: '2026-05-06 · WSL2 path verified', href: '/setup/laptop/' },
     { title: '§8 Updates', meta: '2026-05-04 · easywebsearch advisory', href: '/updates/' },
   ],
 } = Astro.props;
+
+const useToc = Array.isArray(tocItems) && tocItems.length > 0;
 ---
 
 <aside class="margin-col">
@@ -48,9 +55,19 @@ const {
 
   <div class="margin-card">
     <h5>On this page</h5>
-    {onThisPage.map(item => (
-      <a href={item.href}>{item.num} {item.title}</a>
-    ))}
+    {useToc ? (
+      <nav class="toc" aria-label="On this page">
+        {tocItems!.map(item => (
+          <a href={`#${item.id}`} class={`toc-${item.level}`} data-toc-target={item.id}>
+            {item.text}
+          </a>
+        ))}
+      </nav>
+    ) : (
+      defaultGlobal.map(item => (
+        <a href={item.href}>{item.num} {item.title}</a>
+      ))
+    )}
   </div>
 
   <div class="margin-card">
@@ -63,8 +80,8 @@ const {
   <div class="margin-card">
     <h5>External</h5>
     <a href="https://openclaw.dev" target="_blank" rel="noopener">openclaw.dev (official docs)<small>↗ openclaw.dev</small></a>
-    <a href="#" target="_blank" rel="noopener">Awesome OpenClaw<small>↗ github.com</small></a>
-    <a href="#" target="_blank" rel="noopener">OpenClaw Discord<small>↗ discord.gg</small></a>
+    <a href="https://github.com/openclaw/awesome-openclaw" target="_blank" rel="noopener">Awesome OpenClaw<small>↗ github.com</small></a>
+    <a href="https://discord.gg/clawd" target="_blank" rel="noopener">OpenClaw Discord<small>↗ discord.gg</small></a>
   </div>
 
   <div class="margin-card">
@@ -72,6 +89,36 @@ const {
     <a href="https://agents.aguidetocloud.com" target="_blank" rel="noopener">Agentic Planet<small>agents.aguidetocloud.com</small></a>
   </div>
 </aside>
+
+{useToc && (
+  <script is:inline>
+    /* TOC active-on-scroll. Highlights the heading nearest the top of the viewport. */
+    (function () {
+      const links = Array.from(document.querySelectorAll('.toc a[data-toc-target]'));
+      if (links.length === 0) return;
+      const ids = links.map(l => l.getAttribute('data-toc-target')).filter(Boolean);
+      const targets = ids.map(id => document.getElementById(id)).filter(Boolean);
+      if (targets.length === 0) return;
+
+      function setActive(id) {
+        for (const a of links) {
+          if (a.getAttribute('data-toc-target') === id) a.classList.add('active');
+          else a.classList.remove('active');
+        }
+      }
+      function onScroll() {
+        let activeId = ids[0];
+        for (const t of targets) {
+          const r = t.getBoundingClientRect();
+          if (r.top < 100) activeId = t.id;
+        }
+        setActive(activeId);
+      }
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+  </script>
+)}
 
 <style>
   .margin-col {
@@ -133,5 +180,20 @@ const {
     width: 8px; height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  /* In-page TOC (per-entry) */
+  .toc { display: flex; flex-direction: column; }
+  .toc a {
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+    margin-left: -2px;
+    transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+  }
+  .toc a.toc-3 { padding-left: 22px; font-size: 12px; color: var(--ink-mute); }
+  .toc a.active {
+    color: var(--claw);
+    border-left-color: var(--claw);
+    font-weight: 500;
   }
 </style>
