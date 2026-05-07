@@ -5,64 +5,57 @@
  * Reading aids (subordinate group at the bottom).
  *
  * Verification badge classes:
- *   .verif.t — tested (olive)
- *   .verif.s — sourced (amber)
- *   .verif.e — early/planned (claw red)
+ *   .verif.t — tested-by-sush / tested-by-contributor (olive)
+ *   .verif.s — sourced-only (amber)
+ *   .verif.e — planned (claw red)
  */
+import { getCollection } from 'astro:content';
+import coverage from '@data/coverage.json';
 
-// Hardcoded TOC for now — Phase 1.
-// In a later phase, derive from content collections.
+function badge(state: string | undefined): { state: 't' | 's' | 'e'; label: string } {
+  if (state === 'tested-by-sush' || state === 'tested-by-contributor') return { state: 't', label: 'tested' };
+  if (state === 'sourced-only') return { state: 's', label: 'sourced' };
+  if (state === 'planned') return { state: 'e', label: 'planned' };
+  return { state: 's', label: 'sourced' };
+}
+
+async function loadChildren(name: string, baseHref: string) {
+  const all = await getCollection(name as any);
+  return all
+    .filter((e: any) => e.data.status === 'published')
+    .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber))
+    .map((e: any) => {
+      const slug = e.id.replace(/\.mdx?$/, '');
+      const b = badge(e.data.verificationState);
+      return {
+        num: e.data.sectionNumber,
+        title: e.data.title,
+        href: `${baseHref}${slug}/`,
+        state: b.state,
+        label: b.label,
+      };
+    });
+}
+
+const overviewKids = await loadChildren('explainers', '/overview/');
+const setupKids = await loadChildren('setups', '/setup/');
+const connectionsKids = await loadChildren('connections', '/connections/');
+const pluginsKids = await loadChildren('plugins', '/plugins/');
+const useCasesKids = await loadChildren('use-cases', '/use-cases/');
+const securityKids = await loadChildren('gotchas', '/security/');
+const compareKids = await loadChildren('compares', '/compare/');
+
 const sections = [
-  {
-    num: '§1', title: 'Overview', count: 4, slug: '/overview/',
-    children: [
-      { num: '1.1', title: 'What is OpenClaw', state: 't', label: 'live' },
-      { num: '1.2', title: 'Concepts & glossary', state: 't', label: 'live' },
-      { num: '1.3', title: 'Architecture diagram', state: 's', label: 'draft' },
-      { num: '1.4', title: 'Honest drawbacks', state: 's', label: 'draft' },
-    ],
-  },
-  {
-    num: '§2', title: 'Setup', count: 10, slug: '/setup/',
-    children: [
-      { num: '2.1', title: 'Hardware matrix', state: 't', label: 'live' },
-      { num: '2.2', title: 'Decision tree', state: 's', label: 'draft' },
-      { num: '2.3', title: 'Laptop quick-start', state: 't', label: 'tested' },
-      { num: '2.4', title: 'Linux server', state: 's', label: 'sourced' },
-      { num: '2.5', title: 'Azure', state: 's', label: 'sourced' },
-      { num: '2.6', title: 'Raspberry Pi', state: 's', label: 'sourced' },
-      { num: '2.7', title: 'Docker (packaging)', state: 's', label: 'sourced' },
-      { num: '2.8', title: 'Production patterns', state: 'e', label: 'planned' },
-      { num: '2.9', title: 'Observability', state: 'e', label: 'planned' },
-      { num: '2.10', title: 'Troubleshooting', state: 's', label: 'draft' },
-    ],
-  },
-  {
-    num: '§3', title: 'Connections', count: 5, slug: '/connections/',
-    children: [
-      { num: '3.1', title: 'Index — patterns vs packages' },
-      { num: '3.2', title: 'Channels (Slack · WhatsApp …)' },
-      { num: '3.3', title: 'Tools (browser · filesystem …)' },
-      { num: '3.4', title: 'Models (OpenAI · Claude · local)' },
-      { num: '3.5', title: 'Memory (vector · SQL · file)' },
-    ],
-  },
-  {
-    num: '§4', title: 'Plugins', count: 5, slug: '/plugins/',
-    children: [
-      { num: '4.1', title: 'Slack Connector', state: 't', label: 'tested' },
-      { num: '4.2', title: 'WhatsApp Connector', state: 's', label: 'draft' },
-      { num: '4.3', title: 'Browser Tool', state: 's', label: 'draft' },
-      { num: '4.4', title: 'Vector Memory', state: 's', label: 'draft' },
-      { num: '4.5', title: 'Web Search', state: 's', label: 'draft' },
-    ],
-  },
-  { num: '§5', title: 'Use cases', count: 5, slug: '/use-cases/' },
-  { num: '§6', title: 'Security', count: 4, slug: '/security/' },
-  { num: '§7', title: 'Compare', count: 3, slug: '/compare/' },
-  { num: '§8', title: 'Updates', count: 5, slug: '/updates/' },
-  { num: '§9', title: 'Resources', slug: '/resources/' },
-  { num: '§10', title: 'FAQ', count: 7, slug: '/faq/' },
+  { num: '§1', title: 'Overview', count: overviewKids.length, slug: '/overview/', children: overviewKids },
+  { num: '§2', title: 'Setup', count: setupKids.length, slug: '/setup/', children: setupKids },
+  { num: '§3', title: 'Connections', count: connectionsKids.length, slug: '/connections/', children: connectionsKids },
+  { num: '§4', title: 'Plugins', count: pluginsKids.length, slug: '/plugins/', children: pluginsKids },
+  { num: '§5', title: 'Use cases', count: useCasesKids.length, slug: '/use-cases/', children: useCasesKids },
+  { num: '§6', title: 'Security', count: securityKids.length, slug: '/security/', children: securityKids },
+  { num: '§7', title: 'Compare', count: compareKids.length, slug: '/compare/', children: compareKids },
+  { num: '§8', title: 'Updates', count: coverage.sections.updates.current, slug: '/updates/' },
+  { num: '§9', title: 'Resources', count: coverage.sections.resources.current, slug: '/resources/' },
+  { num: '§10', title: 'FAQ', count: coverage.sections.faq.current, slug: '/faq/' },
 ];
 
 const readingAids = [
@@ -83,11 +76,11 @@ const readingAids = [
         <span class="num">{sec.num}</span>{sec.title}
         {sec.count !== undefined && <span class="count">{sec.count}</span>}
       </a>
-      {sec.children && (
+      {sec.children && sec.children.length > 0 && (
         <ul class="nav-children">
-          {sec.children.map(child => (
+          {sec.children.map((child: any) => (
             <li>
-              <a href={sec.slug + (child.num.split('.').slice(1).join('-') ? '#' + child.num.replace('.', '-') : '')}>
+              <a href={child.href}>
                 {child.num}  {child.title}
                 {child.state && child.label && <span class={`verif ${child.state}`}>{child.label}</span>}
               </a>
@@ -190,7 +183,6 @@ const readingAids = [
   .nav-children a .verif.s { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
   .nav-children a .verif.e { color: var(--claw); border-color: var(--claw); background: var(--claw-tint); }
 
-  /* Subordinate Reading aids group */
   .nav-aside-head {
     font-family: var(--mono);
     font-size: 9px;
