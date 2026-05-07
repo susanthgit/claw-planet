@@ -35,6 +35,25 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       </p>
     </div>
   </article>
+
+  <script is:inline>
+    /* Beacon to /api/log-404 — best-effort, never blocks. */
+    (function () {
+      try {
+        const data = JSON.stringify({
+          path: location.pathname + location.search,
+          ref: document.referrer || '',
+          ua: navigator.userAgent || '',
+        });
+        if (navigator.sendBeacon) {
+          const blob = new Blob([data], { type: 'application/json' });
+          navigator.sendBeacon('/api/log-404', blob);
+        } else {
+          fetch('/api/log-404', { method: 'POST', body: data, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {});
+        }
+      } catch (e) {}
+    })();
+  </script>
 </BaseLayout>
 
 <style>

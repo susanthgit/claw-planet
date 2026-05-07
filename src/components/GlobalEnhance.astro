@@ -120,6 +120,87 @@
         if (link && link.href) { e.preventDefault(); window.location.href = link.href; }
       }
     });
+
+    /* === inline glossary tooltips === */
+    const GLOSSARY = {
+      'Gateway': { url: '/overview/concepts/#gateway', def: 'The persistent OpenClaw daemon that runs on your machine — handles channel webhooks, sessions, and plugin loading. One per box.' },
+      'agent runtime': { url: '/overview/concepts/#agent-runtime', def: 'The single agent process inside the Gateway. Built on the Pi agent core (models, tools, prompt pipeline).' },
+      'workspace': { url: '/overview/concepts/#workspace', def: 'The directory of plain markdown files that defines the agent — SOUL.md, AGENTS.md, USER.md, and so on.' },
+      'channels': { url: '/overview/concepts/#channels', def: 'Where messages come from and go to — 24+ supported (Slack, WhatsApp, iMessage, Discord, Telegram, etc.).' },
+      'channel': { url: '/overview/concepts/#channels', def: 'Where messages come from and go to — 24+ supported (Slack, WhatsApp, iMessage, Discord, Telegram, etc.).' },
+      'tools': { url: '/overview/concepts/#tools', def: 'Capabilities the agent can call — built-ins (read_file, http_request), skills, or MCP servers.' },
+      'skills': { url: '/overview/concepts/#skill', def: 'OpenClaw plugins that add tools. Live inside the workspace.' },
+      'skill': { url: '/overview/concepts/#skill', def: 'An OpenClaw plugin that adds a tool. Lives inside the workspace.' },
+      'MCP': { url: '/overview/concepts/#mcp', def: "Model Context Protocol — Anthropic's open standard for connecting agents to external tools/data. OpenClaw consumes MCP servers via its mcp bridge." },
+      'plugin': { url: '/overview/concepts/#plugin', def: 'A package added to OpenClaw — channel adapter, skill, memory engine, model provider, etc.' },
+      'plugins': { url: '/overview/concepts/#plugin', def: 'Packages added to OpenClaw — channel adapters, skills, memory engines, model providers, etc.' },
+    };
+
+    function shouldSkipNode(node) {
+      let p = node.parentElement;
+      while (p) {
+        const tag = p.tagName;
+        if (tag === 'A' || tag === 'CODE' || tag === 'PRE' || tag === 'KBD' ||
+            tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'H4' ||
+            p.classList.contains('cp-tooltip') || p.classList.contains('cp-no-tooltip')) {
+          return true;
+        }
+        if (p.classList.contains('prose')) return false; // inside prose
+        p = p.parentElement;
+      }
+      return true; // not inside .prose
+    }
+
+    function wrapGlossary() {
+      const prose = document.querySelector('.prose');
+      if (!prose) return;
+      const seen = new Set();
+      const terms = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length); // longest first
+      for (const term of terms) {
+        if (seen.has(term)) continue;
+        // build a regex for whole-word match
+        const re = new RegExp('(\\b)(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(\\b)');
+        const walker = document.createTreeWalker(prose, NodeFilter.SHOW_TEXT, {
+          acceptNode: (n) => {
+            if (shouldSkipNode(n)) return NodeFilter.FILTER_REJECT;
+            if (re.test(n.textContent)) return NodeFilter.FILTER_ACCEPT;
+            return NodeFilter.FILTER_SKIP;
+          },
+        });
+        const target = walker.nextNode();
+        if (!target) continue;
+        const text = target.textContent;
+        const m = re.exec(text);
+        if (!m) continue;
+        const before = text.slice(0, m.index + m[1].length);
+        const matched = m[2];
+        const after = text.slice(m.index + m[1].length + m[2].length);
+        const span = document.createElement('span');
+        span.className = 'cp-tooltip';
+        span.tabIndex = 0;
+        span.textContent = matched;
+        const def = GLOSSARY[term].def;
+        const url = GLOSSARY[term].url;
+        const tip = document.createElement('span');
+        tip.className = 'cp-tooltip-pop';
+        tip.innerHTML = `<strong>${matched}</strong><br>${def} <a href="${url}">(read more →)</a>`;
+        span.appendChild(tip);
+        const parent = target.parentNode;
+        const beforeNode = document.createTextNode(before);
+        const afterNode = document.createTextNode(after);
+        parent.insertBefore(beforeNode, target);
+        parent.insertBefore(span, target);
+        parent.insertBefore(afterNode, target);
+        parent.removeChild(target);
+        seen.add(term);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wrapGlossary);
+    } else {
+      wrapGlossary();
+    }
   })();
 </script>
 
@@ -148,6 +229,68 @@
   .cp-copy-btn:focus { opacity: 1; }
   .cp-copy-btn:hover { color: var(--claw); border-color: var(--claw); }
   .cp-copy-btn.copied { color: var(--olive); border-color: var(--olive); }
+
+  /* Glossary tooltip */
+  .cp-tooltip {
+    position: relative;
+    border-bottom: 1px dotted var(--ink-faint);
+    cursor: help;
+  }
+  .cp-tooltip:hover { border-bottom-color: var(--claw); color: var(--claw); }
+  .cp-tooltip-pop {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    width: 280px;
+    padding: 10px 14px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-mid);
+    text-align: left;
+    cursor: auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 120ms var(--ease), transform 120ms var(--ease);
+    z-index: 50;
+    font-style: normal;
+    font-weight: 400;
+  }
+  :global([data-theme="dark"]) .cp-tooltip-pop {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+  }
+  .cp-tooltip-pop strong {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claw);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .cp-tooltip-pop a {
+    color: var(--ink-mute);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    font-size: 11.5px;
+  }
+  .cp-tooltip-pop a:hover { color: var(--claw); border-color: var(--claw); }
+  .cp-tooltip:hover .cp-tooltip-pop,
+  .cp-tooltip:focus .cp-tooltip-pop,
+  .cp-tooltip:focus-within .cp-tooltip-pop {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-4px);
+    pointer-events: auto;
+  }
+  /* mobile: no hover, so click-to-focus is the path. Keep z-index above anything. */
+  @media (max-width: 640px) {
+    .cp-tooltip-pop { width: 240px; }
+  }
 
   /* Help modal */
   .help-modal {

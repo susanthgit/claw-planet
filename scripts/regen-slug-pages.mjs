@@ -103,6 +103,7 @@ const editHref = \`https://github.com/susanthgit/claw-planet/edit/main/\${entryF
   entryFile={entryFile}
   lastUpdated={entry.data.lastReviewedAt}
   schemaJsonLd={schemaJsonLd}
+  ogImage={\`/og/${s.dir}/\${slugBase}.png\`}
   margin={{ tocItems }}
 >
   <article class="entry-page">

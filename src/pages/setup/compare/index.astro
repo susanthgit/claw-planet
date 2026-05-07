@@ -1,0 +1,176 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+
+const all = await getCollection('setups');
+const setups = all
+  .filter((e: any) => e.data.section === 'Setup' && e.data.status === 'published')
+  .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
+
+const stateLabel: Record<string, string> = {
+  'tested-by-sush': 'tested',
+  'tested-by-contributor': 'tested',
+  'sourced-only': 'sourced',
+  'planned': 'planned',
+};
+const stateClass: Record<string, string> = {
+  'tested-by-sush': 'pill-t',
+  'tested-by-contributor': 'pill-t',
+  'sourced-only': 'pill-s',
+  'planned': 'pill-e',
+};
+
+function timeText(min?: number) {
+  if (!min) return '—';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+---
+
+<BaseLayout
+  title="§ 2.0 Setup compare — pick your environment"
+  description="Side-by-side comparison of all 6 setup paths. Hardware, runtime version, time-to-first-message, verification state. Pick the row that fits, then jump to the full setup page."
+  lastUpdated="2026-05-08"
+>
+  <SectionHead num="2.0" title="Setup compare" verb="6 paths · auto-generated from front matter" />
+  <SectionBlurb>
+    Side-by-side. Pick the environment that fits, then click the row to jump to the full page. The
+    columns are pulled directly from each setup's front matter — change a setup page, this page
+    re-renders to match. No hand-maintained synonyms.
+  </SectionBlurb>
+
+  <div class="cmp-wrapper">
+    <table class="cmp">
+      <thead>
+        <tr>
+          <th class="col-env">Environment</th>
+          <th class="col-rt">Runtime</th>
+          <th class="col-hw">Hardware</th>
+          <th class="col-os">OS</th>
+          <th class="col-time">Setup time</th>
+          <th class="col-state">State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {setups.map((s: any) => {
+          const slug = s.id.replace(/\.mdx?$/, '');
+          return (
+            <tr>
+              <td class="col-env">
+                <a href={`/setup/${slug}/`}>
+                  <span class="num">§ {s.data.sectionNumber}</span>
+                  <span class="env-name">{s.data.title}</span>
+                </a>
+                <p class="env-desc">{s.data.description}</p>
+              </td>
+              <td class="col-rt"><code>{s.data.runtimeVersion ?? '—'}</code></td>
+              <td class="col-hw">{s.data.hardware ?? '—'}</td>
+              <td class="col-os">{s.data.os ?? '—'}</td>
+              <td class="col-time">{timeText(s.data.estimatedTimeMinutes)}</td>
+              <td class="col-state">
+                <span class={`pill ${stateClass[s.data.verificationState] ?? ''}`}>
+                  {stateLabel[s.data.verificationState] ?? '—'}
+                </span>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="legend-row">
+    <span><strong>State</strong> · <span class="pill pill-t">tested</span> Sush ran this end-to-end · <span class="pill pill-s">sourced</span> compiled from official docs · <span class="pill pill-e">planned</span> not shipped yet</span>
+  </p>
+</BaseLayout>
+
+<style>
+  .cmp-wrapper {
+    margin: 16px 0 24px;
+    border: 1px solid var(--rule-faint);
+    overflow-x: auto;
+  }
+  .cmp {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    min-width: 720px;
+  }
+  .cmp thead { background: var(--paper-warm); }
+  .cmp th {
+    text-align: left;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    font-weight: 700;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cmp td {
+    padding: 14px;
+    border-bottom: 1px solid var(--rule-faint);
+    color: var(--ink-mid);
+    line-height: 1.45;
+    vertical-align: top;
+  }
+  .cmp tr:last-child td { border-bottom: 0; }
+  .cmp tr:hover td { background: var(--canvas); }
+  .col-env a { color: var(--ink); text-decoration: none; font-weight: 600; }
+  .col-env a:hover { color: var(--claw); }
+  .col-env .num { font-family: var(--mono); color: var(--claw); margin-right: 6px; font-weight: 600; }
+  .col-env .env-name { font-size: 14.5px; }
+  .col-env .env-desc {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    line-height: 1.45;
+  }
+  .col-rt code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--paper-warm);
+    padding: 2px 6px;
+    color: var(--ink);
+  }
+  .col-hw, .col-os, .col-time { font-size: 12.5px; }
+  .pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    border: 1px solid;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .pill-t { color: var(--olive); border-color: var(--olive); background: var(--olive-soft); }
+  .pill-s { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+  .pill-e { color: var(--claw); border-color: var(--claw); background: var(--claw-tint); }
+
+  .legend-row {
+    font-size: 12.5px;
+    color: var(--ink-mute);
+    margin: 14px 0 24px;
+    line-height: 1.6;
+  }
+  .legend-row .pill { margin: 0 4px 0 8px; }
+  .legend-row strong {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 640px) {
+    .cmp { font-size: 12px; }
+    .cmp td, .cmp th { padding: 10px; }
+  }
+</style>
