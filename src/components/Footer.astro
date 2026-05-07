@@ -1,0 +1,90 @@
+---
+/**
+ * Footer — independence + Microsoft disclosure + project links.
+ */
+---
+
+<footer class="foot">
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-disc">
+        <strong>Independence.</strong>
+        Claw Planet is an independent guide by Sush. <strong>Not affiliated with or endorsed by OpenClaw, ClawHub, or any plugin author</strong> unless explicitly stated.
+        Sush works at Microsoft — Microsoft makes Azure. We cover Azure where it's a sensible OpenClaw option; we don't favour it because of who pays the bills.
+        Anything labelled "tested by us" was actually run; anything labelled "sourced" was compiled from official + community docs without us running it ourselves.
+        Corrections welcome via GitHub.
+      </div>
+      <div>
+        <strong class="foot-h">Reading aids</strong>
+        <a href="/methodology/">Methodology</a>
+        <a href="/methodology/#verification-states">Verification states explained</a>
+        <a href="/methodology/#sources">Sources &amp; citations</a>
+        <a href="https://github.com/susanthgit/claw-planet/issues/new" target="_blank" rel="noopener">Dispute an entry</a>
+      </div>
+      <div>
+        <strong class="foot-h">Project</strong>
+        <a href="https://github.com/susanthgit/claw-planet" target="_blank" rel="noopener">GitHub repo</a>
+        <a href="https://github.com/susanthgit/claw-planet/issues/new?template=plugin-suggestion.md" target="_blank" rel="noopener">Suggest a plugin</a>
+        <a href="https://github.com/susanthgit/claw-planet/issues/new?template=setup-suggestion.md" target="_blank" rel="noopener">Suggest a setup method</a>
+        <a href="/llms.txt">/llms.txt</a>
+        <a href="/colophon/">/colophon</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-meta">
+    v0.1.0 · part of the aguidetocloud.com cosmos · CC BY 4.0 where applicable
+  </div>
+</footer>
+
+<style>
+  .foot {
+    border-top: 1px solid var(--rule-faint);
+    background: var(--paper-warm);
+    margin-top: 40px;
+  }
+  .foot-inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 28px var(--page-pad-x);
+  }
+  .foot-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--rule-faint);
+    font-size: 13px;
+    color: var(--ink-mute);
+    line-height: 1.55;
+  }
+  @media (max-width: 880px) {
+    .foot-grid { grid-template-columns: 1fr; gap: 24px; }
+  }
+  .foot-grid strong { color: var(--ink); }
+  .foot-disc { font-size: 12.5px; max-width: 720px; }
+  .foot-h {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-widest);
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .foot-grid a {
+    display: block;
+    color: var(--ink-mid);
+    font-size: 13px;
+    margin-bottom: 4px;
+    text-decoration: none;
+  }
+  .foot-grid a:hover { color: var(--claw); }
+  .foot-meta {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--ink-faint);
+    padding: 14px var(--page-pad-x);
+    text-align: center;
+    letter-spacing: var(--ls-wide);
+  }
+</style>

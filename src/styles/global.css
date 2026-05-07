@@ -1,0 +1,149 @@
+/* ============================================================
+   CLAW PLANET — GLOBAL STYLES
+   Body + reset + page grid + reusable utility patterns.
+   Component-specific styles live in their .astro files.
+   ============================================================ */
+
+@import './tokens.css';
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss01';
+  transition: background-color var(--dur-base) var(--ease),
+              color var(--dur-base) var(--ease);
+}
+
+/* Subtle graph-paper texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.5;
+}
+body > * { position: relative; z-index: 1; }
+
+/* Links — site default */
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 2px;
+  transition: color var(--dur-fast) var(--ease),
+              text-decoration-color var(--dur-fast) var(--ease);
+}
+a:hover {
+  color: var(--claw);
+  text-decoration-color: var(--claw);
+}
+
+/* Skip-link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  z-index: var(--z-modal);
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 8px;
+  color: var(--paper);
+}
+
+/* Page grid — sidebar · main · margin notes */
+.page {
+  max-width: var(--container);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: var(--col-sidebar) minmax(0, 1fr) var(--col-margin);
+  gap: var(--col-gap);
+  padding: 0 var(--page-pad-x);
+}
+
+main.main {
+  padding: 32px var(--main-pad-x) 72px;
+  min-width: 0;
+}
+
+/* Responsive collapse */
+@media (max-width: 1280px) {
+  .page { grid-template-columns: 240px minmax(0, 1fr); }
+  .margin-col { display: none !important; }
+  main.main { padding: 32px 24px 64px; }
+}
+@media (max-width: 880px) {
+  .page { grid-template-columns: 1fr; gap: 16px; }
+  .sidebar { display: none !important; }
+  main.main { padding: 24px 16px 48px; }
+}
+
+/* Visually hidden (for screen-reader-only labels) */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Cross-references row — reusable pattern */
+.cross-refs {
+  margin: 14px 0 4px;
+  padding: 10px 0;
+  border-top: 1px dashed var(--rule-faint);
+  font-size: 12.5px;
+  color: var(--ink-mute);
+}
+.cross-refs strong {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wider);
+  margin-right: 10px;
+}
+.cross-refs a {
+  color: var(--ink-mid);
+  margin-right: 12px;
+  text-decoration: none;
+}
+.cross-refs a:hover { color: var(--claw); }
+
+/* "Open §N" link — appears at end of section catalogs */
+.open-section-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--claw);
+  text-decoration: none;
+  border-bottom: 1px solid var(--claw);
+  padding-bottom: 2px;
+  letter-spacing: var(--ls-wide);
+}
+.open-section-link:hover { color: var(--claw-hover); border-bottom-color: var(--claw-hover); }

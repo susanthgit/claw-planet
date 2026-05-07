@@ -1,0 +1,134 @@
+---
+/**
+ * Header — sticky top bar with brand, search, meta, theme toggle.
+ */
+---
+
+<header class="header">
+  <div class="header-inner">
+    <a class="brand" href="/">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke-linecap="round" aria-hidden="true">
+        <path class="bracket" d="M7 4 L4 4 L4 20 L7 20" stroke-width="2.2"/>
+        <path class="bracket" d="M17 4 L20 4 L20 20 L17 20" stroke-width="2.2"/>
+        <g class="asterisk" stroke-width="2" stroke-linecap="round">
+          <line x1="12" y1="8" x2="12" y2="16"/>
+          <line x1="8.5" y1="9.5" x2="15.5" y2="14.5"/>
+          <line x1="15.5" y1="9.5" x2="8.5" y2="14.5"/>
+        </g>
+      </svg>
+      <div class="brand-text">
+        Claw Planet
+        <small>reference · v0a · first cut</small>
+      </div>
+    </a>
+
+    <label class="search-row">
+      <input type="search" placeholder="Search the reference (concepts · plugins · setup · gotchas)…" />
+      <span class="kbd">⌘K</span>
+    </label>
+
+    <div class="header-meta">
+      <span><span class="dot">●</span> last updated 2026-05-07</span>
+      <a href="https://github.com/susanthgit/claw-planet" target="_blank" rel="noopener">edit on GitHub</a>
+      <a href="/colophon/">colophon</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .header {
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule-faint);
+    position: sticky; top: 0; z-index: var(--z-sticky);
+  }
+  .header-inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 12px var(--page-pad-x);
+    display: grid;
+    grid-template-columns: var(--col-sidebar) 1fr auto;
+    gap: var(--col-gap);
+    align-items: center;
+  }
+  @media (max-width: 1280px) { .header-inner { grid-template-columns: 240px 1fr auto; } }
+  @media (max-width: 880px) {
+    .header-inner { grid-template-columns: 1fr auto; }
+    .search-row { grid-column: 1 / -1; grid-row: 2; margin-top: 8px; }
+  }
+
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand-mark { width: 22px; height: 22px; flex-shrink: 0; display: block; }
+  .brand-mark .bracket { stroke: var(--ink); transition: stroke var(--dur-base) var(--ease); }
+  .brand-mark .asterisk { stroke: var(--claw); transition: stroke var(--dur-base) var(--ease); }
+  .brand-text {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .brand-text small {
+    display: block;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+    margin-top: 1px;
+    text-transform: uppercase;
+  }
+
+  .search-row {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-mute);
+  }
+  .search-row::before { content: '⌕'; color: var(--ink-faint); font-size: 14px; }
+  .search-row input {
+    flex: 1; border: 0; background: transparent; outline: 0;
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+  }
+  .search-row input::placeholder { color: var(--ink-faint); }
+  .search-row .kbd {
+    border: 1px solid var(--rule-faint);
+    padding: 2px 6px;
+    font-size: 10px;
+    color: var(--ink-faint);
+    background: var(--paper-warm);
+  }
+
+  .header-meta {
+    display: flex; gap: 12px; align-items: center;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+  }
+  .header-meta a { text-decoration: none; color: var(--ink-mute); }
+  .header-meta a:hover { color: var(--claw); }
+  .header-meta span.dot { color: var(--olive); }
+
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    color: var(--ink-mute);
+    cursor: pointer;
+    transition: all var(--dur-base) var(--ease);
+  }
+  .theme-toggle:hover { border-color: var(--claw); color: var(--claw); }
+  .theme-toggle svg { width: 14px; height: 14px; }
+  .theme-toggle .icon-sun { display: none; }
+  :global([data-theme="dark"]) .theme-toggle .icon-moon { display: none; }
+  :global([data-theme="dark"]) .theme-toggle .icon-sun { display: inline-block; }
+</style>

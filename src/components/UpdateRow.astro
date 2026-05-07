@@ -1,0 +1,71 @@
+---
+/**
+ * UpdateRow — a single chronological row in the §8 Updates list.
+ *
+ * Tag classes:
+ *  - default: news (no extra class)
+ *  - 'release' (olive)
+ *  - 'advisory' (claw red)
+ */
+
+export interface Props {
+  date: string;
+  tag: 'NEWS' | 'RELEASE' | 'ADVISORY';
+  href?: string;
+  title: string;
+  meta?: string;
+}
+
+const { date, tag, href = '#', title, meta } = Astro.props;
+const tagClass = tag === 'RELEASE' ? 'release' : tag === 'ADVISORY' ? 'advisory' : '';
+---
+
+<div class="update-row">
+  <span class="update-date">{date}</span>
+  <span class={`update-tag ${tagClass}`}>{tag}</span>
+  <div class="update-title">
+    <a href={href}>{title}</a>
+    {meta && <small>{meta}</small>}
+  </div>
+</div>
+
+<style>
+  .update-row {
+    display: grid;
+    grid-template-columns: 100px 90px 1fr;
+    gap: 16px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--rule-faint);
+    align-items: baseline;
+    transition: background var(--dur-fast) var(--ease);
+  }
+  .update-row:first-of-type { border-top: 1px solid var(--rule-faint); }
+  .update-row:hover { background: var(--canvas); }
+
+  .update-date { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+  .update-tag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-widest);
+    color: var(--ink-mute);
+    font-weight: 600;
+  }
+  .update-tag.release { color: var(--olive); }
+  .update-tag.advisory { color: var(--claw); }
+
+  .update-title { font-size: 14px; line-height: 1.5; }
+  .update-title small {
+    display: block;
+    color: var(--ink-mute);
+    font-size: 13px;
+    margin-top: 3px;
+    font-weight: 400;
+  }
+  .update-title a { color: var(--ink); text-decoration: none; font-weight: 500; }
+  .update-title a:hover { color: var(--claw); }
+
+  @media (max-width: 720px) {
+    .update-row { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>

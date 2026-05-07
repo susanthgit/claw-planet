@@ -1,0 +1,69 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Banner from '@components/Banner.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+import InlineFig from '@components/InlineFig.astro';
+import CatalogTable from '@components/CatalogTable.astro';
+import UpdateRow from '@components/UpdateRow.astro';
+
+// Placeholder — Phase 1 home is built in Batch 5.
+// This page exists to verify the component pipeline + build green.
+---
+
+<BaseLayout
+  title="Claw Planet"
+  description="A plain-English study reference for the OpenClaw agent runtime. Concepts, setup paths, connections, plugins, security gotchas, and what's currently changing."
+  noIndex={true}
+>
+  <Banner />
+
+  <SectionHead num="1" title="Overview" verb="placeholder · 0 entries" />
+  <SectionBlurb>
+    The home page is a placeholder until content lands in <strong>Batch 5</strong>.
+    Everything you see is just to verify the component pipeline builds green: header,
+    sidebar, margin notes, banner, section heads, blurbs, the inline diagram, catalog
+    tables, and update rows are all rendering from real components.
+  </SectionBlurb>
+
+  <InlineFig caption="FIG. 1 · OpenClaw runtime — placeholder" />
+
+  <CatalogTable entries={[
+    {
+      num: '1.1',
+      title: 'What is OpenClaw, plainly',
+      href: '/overview/what-is-openclaw/',
+      description: 'Five-minute orientation. What problem the runtime solves and what trade-offs it makes vs MCP-based stacks and framework-only approaches.',
+      ref: '→ §3, §4',
+      state: 'planned',
+      date: '—',
+    },
+    {
+      num: '1.2',
+      title: 'Concepts &amp; glossary',
+      href: '/overview/concepts/',
+      description: 'SOUL.md · AGENTS.md · SKILLS.md · TOOLS.md · MEMORY.md · channels · plugins · skills.',
+      ref: '→ all sections',
+      state: 'planned',
+      date: '—',
+    },
+  ]} />
+
+  <a href="/overview/" class="open-section-link">→ open §1 Overview (placeholder)</a>
+
+  <SectionHead num="8" title="Updates we're watching" verb="placeholder · 0 entries" />
+  <SectionBlurb>
+    Hand-curated weekly. <strong>Not a CVE feed.</strong> Each item carries a date, a type,
+    and a source link. This is a placeholder until Batch 5.
+  </SectionBlurb>
+
+  <div>
+    <UpdateRow
+      date="2026-05-07"
+      tag="NEWS"
+      href="#"
+      title="Claw Planet scaffold deployed"
+      meta="Astro 5 + MDX + React. Components live. Content lands in Batch 5."
+    />
+  </div>
+</BaseLayout>

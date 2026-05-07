@@ -1,0 +1,52 @@
+# Claw Planet · llms.txt
+
+> A plain-English study reference for the OpenClaw agent runtime.
+> Concepts, setup paths, connections, plugins, security gotchas,
+> and what's currently changing. Independent guide by Sush.
+
+## Site
+
+- Home: https://claw.aguidetocloud.com/
+- Repo: https://github.com/susanthgit/claw-planet
+- Sister: https://agents.aguidetocloud.com/ (Agentic Planet)
+- Licence: CC BY 4.0 where applicable
+
+## Sections (10 §-numbered)
+
+- §1 Overview — https://claw.aguidetocloud.com/overview/
+- §2 Setup — https://claw.aguidetocloud.com/setup/
+- §3 Connections — https://claw.aguidetocloud.com/connections/
+- §4 Plugins (field notes) — https://claw.aguidetocloud.com/plugins/
+- §5 Use cases — https://claw.aguidetocloud.com/use-cases/
+- §6 Security — https://claw.aguidetocloud.com/security/
+- §7 Compare — https://claw.aguidetocloud.com/compare/
+- §8 Updates — https://claw.aguidetocloud.com/updates/
+- §9 Resources — https://claw.aguidetocloud.com/resources/
+- §10 FAQ — https://claw.aguidetocloud.com/faq/
+
+## Foundation
+
+- Methodology: https://claw.aguidetocloud.com/methodology/
+- Colophon: https://claw.aguidetocloud.com/colophon/
+- 404: https://claw.aguidetocloud.com/404/
+
+## Voice
+
+Plain English. Honest take. Examples · scenarios · comparisons.
+"Why does this matter" for important concepts. No marketing voice.
+Forbidden words list inherited from Agentic Planet voice-lint.
+
+## Verification states
+
+Every applicable page declares whether it's been verified or sourced:
+- tested-by-sush — Sush ran it; date + version + hardware noted
+- tested-by-contributor — someone else ran it; PR/issue linked
+- sourced-only — compiled from docs; not run by us
+- planned — stub, not in nav
+
+## Independence
+
+Independent guide by Sush. Not affiliated with or endorsed by
+OpenClaw, ClawHub, or any plugin author unless explicitly stated.
+Sush works at Microsoft — Microsoft makes Azure. We cover Azure
+where it's a sensible OpenClaw option; we don't favour it.

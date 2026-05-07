@@ -1,0 +1,18 @@
+---
+/**
+ * SectionBlurb — italic-feel intro paragraph after a SectionHead.
+ * Slot-based: pass HTML content as the body.
+ */
+---
+
+<p class="section-blurb"><slot /></p>
+
+<style>
+  .section-blurb {
+    font-size: var(--fs-base);
+    color: var(--ink-mid);
+    margin: 12px 0 22px;
+    max-width: 760px;
+    line-height: var(--lh-normal);
+  }
+</style>

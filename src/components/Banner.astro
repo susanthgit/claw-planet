@@ -1,0 +1,121 @@
+---
+/**
+ * Banner — front-matter card at the top of the home page.
+ * Two-sentence "what this site is" + reading-paths hint + metadata row.
+ * NOT a hero. NOT a CTA.
+ */
+
+export interface Props {
+  topic?: string;
+  lastReviewed?: string;
+  edition?: string;
+  licence?: string;
+  source?: string;
+}
+
+const {
+  topic = 'OpenClaw v2026.5.x',
+  lastReviewed = '2026-05-07',
+  edition = 'v0a · first cut',
+  licence = 'CC BY 4.0 where applicable',
+  source = 'github.com/susanthgit/claw-planet',
+} = Astro.props;
+---
+
+<div class="banner">
+  <p>
+    <strong>Claw Planet</strong> is a study reference for the OpenClaw agent runtime — the concepts,
+    the setup paths, the connection patterns, the marketplace plugins, the security gotchas, and
+    what's currently changing. Written for tech-savvy readers in plain English, with every entry
+    declaring whether it's been verified or only sourced from docs.
+  </p>
+  <div class="reading-paths">
+    <span class="rp-label">Reading paths:</span>
+    <span><a href="#sec-1">§1</a> if you're new</span>
+    <span class="sep">·</span>
+    <span>jump to <a href="#sec-2">§2</a> to install</span>
+    <span class="sep">·</span>
+    <span><a href="#sec-3">§3</a>–<a href="#sec-7">§7</a> to browse by topic</span>
+    <span class="sep">·</span>
+    <span><a href="#sec-8">§8</a> for what's changing</span>
+  </div>
+  <div class="banner-meta">
+    <span><strong>Topic:</strong> {topic}</span>
+    <span><strong>Last reviewed:</strong> {lastReviewed}</span>
+    <span><strong>Edition:</strong> {edition}</span>
+    <span><strong>Licence:</strong> {licence}</span>
+    <span><strong>Source:</strong> {source}</span>
+  </div>
+</div>
+
+<style>
+  .banner {
+    border: 1px solid var(--rule-faint);
+    background: var(--canvas);
+    padding: 22px 28px;
+    margin-bottom: 36px;
+    position: relative;
+  }
+  .banner::before {
+    content: 'FRONT MATTER · 2026-05-07';
+    position: absolute;
+    top: -8px;
+    left: 16px;
+    background: var(--paper);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+  }
+  .banner p {
+    font-size: var(--fs-md);
+    line-height: var(--lh-normal);
+    color: var(--ink);
+    max-width: 760px;
+    font-weight: 400;
+  }
+  .reading-paths {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule-faint);
+    display: flex;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--ink-mute);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .reading-paths .rp-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wider);
+    margin-right: 4px;
+  }
+  .reading-paths a {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+  }
+  .reading-paths a:hover { color: var(--claw); border-bottom-color: var(--claw); }
+  .reading-paths .sep { color: var(--ink-faint); }
+
+  .banner-meta {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule-faint);
+    display: flex;
+    gap: 24px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    flex-wrap: wrap;
+  }
+  .banner-meta strong {
+    color: var(--ink-mid);
+    font-weight: 600;
+  }
+</style>

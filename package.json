@@ -1,0 +1,49 @@
+{
+  "name": "claw-planet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claw Planet — a plain-English study reference for the OpenClaw agent runtime. Concepts, setup paths, connections, plugins, security gotchas, and what's currently changing.",
+  "homepage": "https://claw.aguidetocloud.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/susanthgit/claw-planet.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --port 4324",
+    "start": "astro dev --port 4324",
+    "build": "astro build && pagefind --site dist",
+    "build:no-search": "astro build",
+    "preview": "astro preview --port 4324",
+    "astro": "astro",
+    "check": "astro check",
+    "typecheck": "astro sync && tsc --noEmit",
+    "voice-lint": "node scripts/voice-lint.mjs",
+    "voice-lint:strict": "node scripts/voice-lint.mjs --strict",
+    "check:links": "node scripts/integrity-check.mjs",
+    "audit:claims": "node scripts/audit-claims.mjs",
+    "audit:verification": "node scripts/audit-verification-states.mjs",
+    "smoke": "node scripts/smoke-check.mjs",
+    "deploy": "npm run build:no-search && node scripts/deploy.mjs",
+    "deploy:nobuild": "node scripts/deploy.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/react": "^4.0.0",
+    "@astrojs/sitemap": "^3.2.0",
+    "astro": "^5.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "pagefind": "^1.1.0",
+    "playwright": "^1.59.1",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

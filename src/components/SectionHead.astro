@@ -1,0 +1,65 @@
+---
+/**
+ * SectionHead — the "§ N · Title" header that opens every section.
+ *
+ * Props:
+ *  - num: e.g. "1" → renders "§ 1"
+ *  - title: e.g. "Overview"
+ *  - verb: optional right-side mono caps line, e.g. "4 entries · all verified"
+ *  - id: section anchor for jump-links (defaults to "sec-{num}")
+ */
+export interface Props {
+  num: string;
+  title: string;
+  verb?: string;
+  id?: string;
+}
+const { num, title, verb, id } = Astro.props;
+const anchor = id ?? `sec-${num}`;
+---
+
+<div id={anchor} class="h1-section">
+  <span class="sec-num">§ {num}</span>
+  <h1><a href={`#${anchor}`}>{title}</a></h1>
+  {verb && <span class="verb">{verb}</span>}
+</div>
+
+<style>
+  .h1-section {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin: 56px 0 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .h1-section:first-child { margin-top: 0; }
+  .sec-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--claw);
+    font-weight: 600;
+    letter-spacing: var(--ls-wide);
+  }
+  .h1-section h1 {
+    font-family: var(--sans);
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    letter-spacing: var(--ls-snug);
+    color: var(--ink);
+  }
+  .h1-section h1 a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 0;
+  }
+  .h1-section h1 a:hover { color: var(--claw); }
+  .verb {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-wider);
+  }
+</style>

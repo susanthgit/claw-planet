@@ -1,0 +1,222 @@
+---
+/**
+ * Sidebar — persistent left navigation.
+ * Contents (§1–§10 with sub-items + verification badges) +
+ * Reading aids (subordinate group at the bottom).
+ *
+ * Verification badge classes:
+ *   .verif.t — tested (olive)
+ *   .verif.s — sourced (amber)
+ *   .verif.e — early/planned (claw red)
+ */
+
+// Hardcoded TOC for now — Phase 1.
+// In a later phase, derive from content collections.
+const sections = [
+  {
+    num: '§1', title: 'Overview', count: 4, slug: '/overview/',
+    children: [
+      { num: '1.1', title: 'What is OpenClaw', state: 't', label: 'live' },
+      { num: '1.2', title: 'Concepts & glossary', state: 't', label: 'live' },
+      { num: '1.3', title: 'Architecture diagram', state: 's', label: 'draft' },
+      { num: '1.4', title: 'Honest drawbacks', state: 's', label: 'draft' },
+    ],
+  },
+  {
+    num: '§2', title: 'Setup', count: 10, slug: '/setup/',
+    children: [
+      { num: '2.1', title: 'Hardware matrix', state: 't', label: 'live' },
+      { num: '2.2', title: 'Decision tree', state: 's', label: 'draft' },
+      { num: '2.3', title: 'Laptop quick-start', state: 't', label: 'tested' },
+      { num: '2.4', title: 'Linux server', state: 's', label: 'sourced' },
+      { num: '2.5', title: 'Azure', state: 's', label: 'sourced' },
+      { num: '2.6', title: 'Raspberry Pi', state: 's', label: 'sourced' },
+      { num: '2.7', title: 'Docker (packaging)', state: 's', label: 'sourced' },
+      { num: '2.8', title: 'Production patterns', state: 'e', label: 'planned' },
+      { num: '2.9', title: 'Observability', state: 'e', label: 'planned' },
+      { num: '2.10', title: 'Troubleshooting', state: 's', label: 'draft' },
+    ],
+  },
+  {
+    num: '§3', title: 'Connections', count: 5, slug: '/connections/',
+    children: [
+      { num: '3.1', title: 'Index — patterns vs packages' },
+      { num: '3.2', title: 'Channels (Slack · WhatsApp …)' },
+      { num: '3.3', title: 'Tools (browser · filesystem …)' },
+      { num: '3.4', title: 'Models (OpenAI · Claude · local)' },
+      { num: '3.5', title: 'Memory (vector · SQL · file)' },
+    ],
+  },
+  {
+    num: '§4', title: 'Plugins', count: 5, slug: '/plugins/',
+    children: [
+      { num: '4.1', title: 'Slack Connector', state: 't', label: 'tested' },
+      { num: '4.2', title: 'WhatsApp Connector', state: 's', label: 'draft' },
+      { num: '4.3', title: 'Browser Tool', state: 's', label: 'draft' },
+      { num: '4.4', title: 'Vector Memory', state: 's', label: 'draft' },
+      { num: '4.5', title: 'Web Search', state: 's', label: 'draft' },
+    ],
+  },
+  { num: '§5', title: 'Use cases', count: 5, slug: '/use-cases/' },
+  { num: '§6', title: 'Security', count: 4, slug: '/security/' },
+  { num: '§7', title: 'Compare', count: 3, slug: '/compare/' },
+  { num: '§8', title: 'Updates', count: 5, slug: '/updates/' },
+  { num: '§9', title: 'Resources', slug: '/resources/' },
+  { num: '§10', title: 'FAQ', count: 7, slug: '/faq/' },
+];
+
+const readingAids = [
+  { title: 'Methodology', slug: '/methodology/' },
+  { title: 'Verification states', slug: '/methodology/#verification-states' },
+  { title: 'Sources & citations', slug: '/methodology/#sources' },
+  { title: 'Dispute an entry', slug: 'https://github.com/susanthgit/claw-planet/issues/new?template=dispute.md' },
+  { title: 'llms.txt', slug: '/llms.txt' },
+];
+---
+
+<aside class="sidebar">
+  <h4>Contents</h4>
+
+  {sections.map(sec => (
+    <div class="nav-group">
+      <a class="nav-section" href={sec.slug}>
+        <span class="num">{sec.num}</span>{sec.title}
+        {sec.count !== undefined && <span class="count">{sec.count}</span>}
+      </a>
+      {sec.children && (
+        <ul class="nav-children">
+          {sec.children.map(child => (
+            <li>
+              <a href={sec.slug + (child.num.split('.').slice(1).join('-') ? '#' + child.num.replace('.', '-') : '')}>
+                {child.num}  {child.title}
+                {child.state && child.label && <span class={`verif ${child.state}`}>{child.label}</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  ))}
+
+  <h4 class="nav-aside-head">Reading aids</h4>
+  {readingAids.map(aid => (
+    <a class="nav-aside" href={aid.slug}>{aid.title}</a>
+  ))}
+</aside>
+
+<style>
+  .sidebar {
+    position: sticky;
+    top: var(--header-h);
+    align-self: start;
+    height: calc(100vh - var(--header-h));
+    overflow-y: auto;
+    padding: 24px 0 32px;
+    border-right: 1px solid var(--rule-faint);
+    padding-right: 16px;
+    margin-right: -8px;
+    font-size: 13px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+  .sidebar h4 {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-widest);
+    margin: 22px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--rule-faint);
+  }
+  .sidebar h4:first-child { margin-top: 0; }
+
+  .nav-group { margin-bottom: 4px; }
+  .nav-section {
+    display: block;
+    padding: 4px 0;
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 13.5px;
+    letter-spacing: -0.005em;
+  }
+  .nav-section:hover { color: var(--claw); }
+  .nav-section .num {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-weight: 500;
+    font-size: 11px;
+    margin-right: 8px;
+  }
+  .nav-section .count {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-weight: 400;
+    font-size: 10px;
+    margin-left: 6px;
+  }
+  .nav-children {
+    margin: 4px 0 8px 28px;
+    list-style: none;
+  }
+  .nav-children li { padding: 2px 0; }
+  .nav-children a {
+    color: var(--ink-mute);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 400;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .nav-children a:hover { color: var(--claw); }
+  .nav-children a .verif {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    color: var(--ink-faint);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule-faint);
+    letter-spacing: var(--ls-wide);
+  }
+  .nav-children a .verif.t { color: var(--olive); border-color: var(--olive); background: var(--olive-soft); }
+  .nav-children a .verif.s { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+  .nav-children a .verif.e { color: var(--claw); border-color: var(--claw); background: var(--claw-tint); }
+
+  /* Subordinate Reading aids group */
+  .nav-aside-head {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-widest);
+    margin: 28px 0 6px;
+    padding-bottom: 0;
+    border-bottom: 0;
+    opacity: 0.75;
+  }
+  .nav-aside {
+    display: block;
+    padding: 2px 0 2px 14px;
+    text-decoration: none;
+    color: var(--ink-mute);
+    font-size: 12px;
+    font-weight: 400;
+    position: relative;
+  }
+  .nav-aside::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: var(--ink-faint);
+  }
+  .nav-aside:hover { color: var(--claw); }
+</style>

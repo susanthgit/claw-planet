@@ -1,0 +1,43 @@
+# Build
+dist/
+.astro/
+.cache/
+.output/
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Lockfiles for non-active package managers
+yarn.lock
+pnpm-lock.yaml
+
+# Cloudflare
+.wrangler/
+.cloudflare/
+
+# Pagefind output (regenerated each build)
+public/pagefind/
+
+# Local
+*.local
+.history/

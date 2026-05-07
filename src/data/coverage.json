@@ -1,0 +1,17 @@
+{
+  "_doc": "Single source of truth for hero/coverage counts. Audit-claims script verifies these match actual collection counts at build time. Update manually when shipping a new entry.",
+  "_lastUpdated": "2026-05-07",
+  "phase": "P0a",
+  "sections": {
+    "overview": { "code": "S.01", "title": "Overview", "current": 0, "target": 4, "verified": 0 },
+    "setup": { "code": "S.02", "title": "Setup methods", "current": 0, "target": 10, "tested": 0, "sourced": 0 },
+    "connections": { "code": "C.03", "title": "Connection categories", "current": 0, "target": 4 },
+    "plugins": { "code": "P.04", "title": "Plugin field notes", "current": 0, "target": 30 },
+    "useCases": { "code": "U.05", "title": "Use cases / recipes", "current": 0, "target": 15 },
+    "gotchas": { "code": "G.06", "title": "Security gotchas", "current": 0, "target": 4 },
+    "compares": { "code": "X.07", "title": "Comparisons", "current": 0, "target": 10 },
+    "updates": { "code": "N.08", "title": "Updates watchlist", "current": 0, "target": 5 },
+    "resources": { "code": "R.09", "title": "Curated external", "current": 0, "target": 6 },
+    "faq": { "code": "F.10", "title": "FAQ", "current": 0, "target": 20 }
+  }
+}

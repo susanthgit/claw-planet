@@ -1,0 +1,149 @@
+/* ============================================================
+   CLAW PLANET — DESIGN TOKENS
+   Light + dark modes via [data-theme="dark"] on <html>.
+   Translated from mockup-B3-reference-study.html (locked 2026-05-07).
+   ============================================================ */
+
+/* ───────── LIGHT THEME (default) ───────── */
+:root {
+  /* Surfaces */
+  --paper:        #FAF8F2;
+  --paper-warm:   #F2EDDF;
+  --canvas:       #FFFFFF;
+
+  /* Hairlines */
+  --rule-faint:   #E8E3D2;
+  --rule:         #C9C2A8;
+  --rule-strong:  #5C5544;
+
+  /* Ink */
+  --ink:          #15140F;
+  --ink-mid:      #3F3A2C;
+  --ink-mute:     #6F6856;
+  --ink-faint:    #9C957D;
+
+  /* OpenClaw brand red — used as ACCENT, not primary surface */
+  --claw:         #FF2626;
+  --claw-hover:   #C91515;
+  --claw-deep:    #8E0000;
+  --claw-tint:    rgba(255, 38, 38, 0.06);
+
+  /* Semantic — verification states */
+  --olive:        #5C7C2D;
+  --amber:        #B57814;
+  --olive-soft:   rgba(92, 124, 45, 0.08);
+  --amber-soft:   rgba(181, 120, 20, 0.08);
+
+  /* Background grid texture */
+  --grid-line:    rgba(232, 227, 210, 0.4);
+
+  /* Typography */
+  --sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Type scale */
+  --fs-2xs:  9.5px;
+  --fs-xs:   10.5px;
+  --fs-sm:   12px;
+  --fs-base: 15px;
+  --fs-md:   16px;
+  --fs-lg:   19px;
+  --fs-xl:   22px;
+  --fs-2xl:  28px;
+
+  /* Line heights */
+  --lh-tight:   1.2;
+  --lh-snug:    1.4;
+  --lh-normal:  1.6;
+  --lh-relaxed: 1.7;
+
+  /* Letter-spacing */
+  --ls-tight:   -0.025em;
+  --ls-snug:    -0.015em;
+  --ls-normal:  0;
+  --ls-wide:    0.05em;
+  --ls-wider:   0.15em;
+  --ls-widest:  0.18em;
+
+  /* Spacing — 4px grid */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  /* Layout */
+  --container:        1640px;
+  --col-sidebar:      260px;
+  --col-margin:       260px;
+  --col-gap:          28px;
+  --page-pad-x:       16px;
+  --main-pad-x:       32px;
+  --header-h:         58px;
+
+  /* Radii — sharp by default */
+  --radius-sm:   2px;
+  --radius:      4px;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --dur-fast:    150ms;
+  --dur-base:    200ms;
+  --dur-slow:    320ms;
+  --ease:        ease-out;
+
+  /* Z layers */
+  --z-sticky:    50;
+  --z-overlay:   100;
+  --z-modal:     1000;
+}
+
+/* ───────── DARK THEME ───────── */
+[data-theme="dark"] {
+  --paper:        #0E0F14;
+  --paper-warm:   #161821;
+  --canvas:       #1A1C26;
+
+  --rule-faint:   #25283A;
+  --rule:         #3A3F55;
+  --rule-strong:  #6B7290;
+
+  --ink:          #ECEAE2;
+  --ink-mid:      #B8B3A5;
+  --ink-mute:     #8A8576;
+  --ink-faint:    #5C5A52;
+
+  /* Slightly softer red on dark — same brand, less retinal strain */
+  --claw:         #FF4747;
+  --claw-hover:   #FF6B6B;
+  --claw-deep:    #C81515;
+  --claw-tint:    rgba(255, 71, 71, 0.10);
+
+  --olive:        #9DBE5A;
+  --amber:        #E0A03A;
+  --olive-soft:   rgba(157, 190, 90, 0.10);
+  --amber-soft:   rgba(224, 160, 58, 0.10);
+
+  --grid-line:    rgba(58, 63, 85, 0.30);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
