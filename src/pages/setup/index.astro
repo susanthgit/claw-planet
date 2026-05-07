@@ -1,0 +1,43 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import SectionHead from '@components/SectionHead.astro';
+import SectionBlurb from '@components/SectionBlurb.astro';
+import CatalogTable from '@components/CatalogTable.astro';
+import { getCollection } from 'astro:content';
+
+const allSetups = await getCollection('setups');
+const setupEntries = allSetups
+  .filter(e => e.data.section === 'Setup' && e.data.status === 'published')
+  .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
+
+const catalogEntries = setupEntries.map(e => ({
+  num: e.data.sectionNumber,
+  title: e.data.title,
+  href: `/setup/${e.id.replace(/\.mdx?$/, '')}/`,
+  description: e.data.description,
+  state: e.data.verificationState,
+  date: e.data.lastReviewedAt,
+}));
+
+const tested = setupEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
+const sourced = setupEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const planned = setupEntries.filter(e => e.data.verificationState === 'planned').length;
+const verbCount = `${setupEntries.length} entries · ${tested} tested · ${sourced} sourced · ${planned} planned`;
+---
+
+<BaseLayout
+  title="§ 2 Setup"
+  description="Install OpenClaw on a laptop, Linux server, Azure, Raspberry Pi, or Docker. Hardware matrix + concrete commands. Verification state declared on every page."
+  noIndex={true}
+>
+  <SectionHead num="2" title="Setup" verb={verbCount} />
+  <SectionBlurb>
+    Five environments, one packaging method, one hardware matrix. Pick where OpenClaw will run — most
+    people start on a laptop or a Pi 5. Every page has runnable commands you can paste, plus
+    sanity-checks and the "what to do when it goes wrong" section we wished existed when learning.
+    Each declares whether we've actually run it (verification state); right now everything's
+    <strong>sourced-only</strong> because Sush hasn't run his first OpenClaw yet — he'll promote
+    pages to <strong>tested</strong> as he runs them.
+  </SectionBlurb>
+  <CatalogTable entries={catalogEntries} />
+</BaseLayout>

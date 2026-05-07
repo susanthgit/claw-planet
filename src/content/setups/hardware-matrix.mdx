@@ -1,0 +1,99 @@
+---
+title: "Hardware matrix"
+section: "Setup"
+sectionNumber: "2.1"
+description: "What hardware can run an OpenClaw Gateway, what you trade off at each tier, and what to actually buy if you're starting from zero."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from official runtime requirements (Node 24 recommended, 22.14+ minimum, WSL2 strongly recommended on Windows) plus public hardware specs. Power and thermal numbers for Pi cited from Raspberry Pi Foundation product pages. Not yet validated against Sush's actual boxes."
+lastReviewedAt: "2026-05-07"
+environment: "other"
+sources:
+  - "https://github.com/openclaw/openclaw#install-recommended"
+  - "https://docs.openclaw.ai/install/docker"
+  - "https://www.raspberrypi.com/products/"
+seeAlso:
+  - "1.1"
+  - "2.3"
+  - "2.6"
+---
+
+## Read this first
+
+You can run an OpenClaw Gateway on a wide spectrum of hardware — from a Raspberry Pi sitting on your desk to an Azure VM in a datacenter. The trade-offs are real but knowable. This page is the cheat-sheet I wished I had before picking where to start.
+
+> **TL;DR:** if you have a recent-ish Mac (M1 or newer), use it. If you don't, a Raspberry Pi 5 with 8GB is the strongest "buy it and forget it" pick. Everything else is a variation on those two themes.
+
+## The matrix
+
+| Hardware | RAM | OpenClaw fit | Voice features | Cost (USD-ish) | Best for |
+|---|---|---|---|---|---|
+| **Mac M1 / M2 / M3 / M4** | 8GB+ | Excellent — runtime + local model possible | Yes (Voice Wake + Talk Mode native) | $1,000+ (you probably already own one) | Daily driver. Best feature parity, easiest install. |
+| **Linux desktop** (mid-range) | 16GB | Excellent — runtime + local model | Limited (text channels only — no native voice node) | $400–$1,500 | If you live on Linux. WSL2 on Windows works the same way. |
+| **Intel NUC / mini PC** | 16GB | Excellent — silent always-on home server | Limited | $400–$700 | "Set and forget" on your desk, fanless or quiet. |
+| **Raspberry Pi 5 (8GB)** | 8GB | Good — runtime fine; small local model only | None (no voice node) | $80 + power supply + SD card ≈ $130 | Cheap always-on. Most people's first OpenClaw box. |
+| **Raspberry Pi 4 (4GB or 8GB)** | 4GB / 8GB | OK with caveats — see Pi page | None | $40–$70 | Already-have-one starter. 4GB is tight. |
+| **Old laptop (recycle)** | 4GB+ | Depends on age — anything from ~2018+ likely fine | Maybe (Mac yes, others limited) | Free if you have one | Best value if you've got one collecting dust. |
+| **Azure VM (B-series small)** | 2GB+ (B2s = 4GB) | Workable for text channels; no local model | None | ~$40–$100/month | Production-style deployment. See [§2.5 Azure](/setup/azure/). |
+| **Azure Container Apps** | configurable | Workable for stateless restarts; persistence needs care | None | scales with use | Serverless-ish path. See [§2.5 Azure](/setup/azure/). |
+| **Old gaming desktop with GPU** | 16GB+ + GPU | Excellent if you want to run local models | Limited | already have it | If you've already invested in local LLMs (Ollama et al), the Gateway can drive them locally. |
+| **NAS (Synology / TrueNAS / Unraid)** | depends on model | Possible via Docker — see [§2.7 Docker](/setup/docker/) | None | already have it | Quiet 24/7 home server you already pay for in electricity. |
+
+## What "fit" actually means
+
+The Gateway runtime is Node 24 (or 22.14+). It needs:
+
+- **~200–500MB of RAM** at idle (one Gateway, one agent)
+- **More if you load skills / MCP servers** — each loaded skill or MCP adds context
+- **Network connectivity to your model provider** — unless you're running local models, every message round-trip hits Anthropic / OpenAI / etc.
+- **Persistent disk** for sessions JSONL (`~/.openclaw/agents/<agentId>/sessions/`) and workspace files
+- **The ability to keep a process alive** — `launchd` on macOS, `systemd` on Linux, your platform's equivalent on Windows
+
+So the *runtime itself* is light. What grows your hardware needs is **what you connect to it**:
+
+| Workload | Extra RAM needed | Extra disk needed |
+|---|---|---|
+| Just the Gateway, text channels, API-based models | Negligible | Negligible |
+| Adding 5+ MCP servers (filesystem, GitHub, browser) | +100–500MB | Negligible |
+| Long sessions accumulating JSONL transcripts | Negligible | ~10MB / month / active session |
+| Local model via Ollama (e.g. Llama 3.1 8B) | +6GB at minimum | +5–10GB per model |
+| Local model larger (70B+) | +50GB+ and you need a decent GPU | +40GB+ per model |
+| Voice features (TTS, ASR) | +500MB–1GB | +1GB |
+
+So if you want **API-only models + text channels**, almost any modern computer works. If you want **local models**, plan for the model's footprint not the runtime's.
+
+## Why this matters
+
+A common mistake is to over-spec the box because "AI = expensive hardware." That's true if you're training models. It's not true if you're running an agent runtime that calls a hosted API. **A $130 Pi 5 can do the same agent work as a $3,000 Mac, as long as the model is hosted.**
+
+The decision really comes down to:
+
+1. **What's always-on?** (Pi / NUC / NAS / VM are 24/7. A laptop closes.)
+2. **Do you want voice?** (Mac/iOS/Android only — see [§1.4 drawback #6](/overview/honest-drawbacks/).)
+3. **Do you want a local model?** (Then RAM and possibly GPU dominate; otherwise hosted API is fine.)
+4. **What's the threat surface?** (Always-on internet-facing changes the security calculus — see [§6.1 Self-hosting checklist](/security/self-hosting-checklist/).)
+
+## Recommended starter box
+
+If you don't have anything yet and want the cheapest credible path to "I have an OpenClaw and it works":
+
+- **Raspberry Pi 5, 8GB** ($80)
+- 64GB or 128GB MicroSD card or NVMe (faster) ($15–$30)
+- Official 27W USB-C power supply ($12)
+- A case with a fan (the Pi 5 will throttle without one) ($15)
+- An ethernet cable to your router (faster + more reliable than wifi)
+
+Total: **~$130**. Boot Raspberry Pi OS Lite (or Ubuntu Server). Follow [§2.6 Raspberry Pi](/setup/raspberry-pi/). Connect the channels you actually use. Done.
+
+## What we are NOT going to claim
+
+We have not benchmarked OpenClaw on every box in the table. RAM/CPU floors are inferred from Node runtime requirements + architectural docs + community discussion. **Specific timing numbers (cold-start latency, memory-at-rest) need actual runs to confirm.** Sush will run on his M2 MacBook (Mac column promotes to `tested-by-sush`) and a Pi 5 (Pi column promotes to `tested-by-sush`) — those two will get real numbers first.
+
+## What to read next
+
+- **You picked your hardware.** → [§2.2 Decision tree](/setup/decision-tree/) (planned) or jump to the right setup page below
+- [§2.3 Laptop quick-start](/setup/laptop/) — Mac / Linux desktop / Windows WSL2
+- [§2.6 Raspberry Pi](/setup/raspberry-pi/) — Pi 4 / Pi 5
+- [§2.5 Azure](/setup/azure/) — Container Apps + VM paths
+- [§2.7 Docker](/setup/docker/) — packaging method that wraps several of the above
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — turn the box into a credible deployment

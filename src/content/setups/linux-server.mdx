@@ -1,0 +1,207 @@
+---
+title: "Linux server"
+section: "Setup"
+sectionNumber: "2.4"
+description: "Install OpenClaw on a Linux server (cloud VM, home server, NUC). systemd setup, firewall posture, common pitfalls for headless boxes."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from official install docs and community deployment patterns. Sush has not run this on a headless Linux box yet. Each step's source is cited inline."
+lastReviewedAt: "2026-05-07"
+environment: "linux-server"
+runtimeVersion: "Node 24 (recommended) or 22.14+"
+os: "Ubuntu 22.04+ / Debian 12 / Fedora 39+ / similar"
+estimatedTimeMinutes: 45
+sources:
+  - "https://github.com/openclaw/openclaw#install-recommended"
+  - "https://docs.openclaw.ai/cli/daemon"
+  - "https://docs.openclaw.ai/gateway/security"
+  - "https://docs.openclaw.ai/gateway/remote"
+seeAlso:
+  - "2.1"
+  - "2.6"
+  - "2.7"
+  - "6.1"
+---
+
+## When this is the right setup
+
+You want **always-on**, you don't need a screen attached, and you're comfortable with `systemd` and `ufw`. Common shapes:
+
+- A spare Intel NUC sitting on a shelf at home
+- A modest cloud VM (DigitalOcean droplet, Hetzner Cloud, AWS Lightsail) — $5–$20/month
+- An old desktop you've turned into a home server
+- A NAS running native Linux (vs. NAS-via-Docker which is [§2.7 Docker](/setup/docker/))
+
+> **What this isn't:** a turn-key managed deploy. You'll be the sysadmin. If you want managed-feeling, [§2.5 Azure](/setup/azure/) Container Apps is the closer shape.
+
+## What you'll have at the end
+
+A Linux box running an OpenClaw Gateway as a `systemd` user service, restarting on reboot, exposed only on the loopback interface (with a Tailscale or Cloudflare Tunnel option for remote access), with a firewall posture you'd be comfortable showing a colleague.
+
+## Before you start
+
+- **A Linux box with sudo.** Ubuntu Server 22.04+ or Debian 12+ are the tested-in-the-wild patterns. Other distros work but expect to translate package commands.
+- **Node 24** (or 22.14+). Distro repos lag — install via [nodesource](https://github.com/nodesource/distributions) or [nvm](https://github.com/nvm-sh/nvm).
+- **A user account that's NOT root.** OpenClaw should run as a regular user. `useradd -m -s /bin/bash openclaw` if you need to create one.
+- **Network connectivity.** Outbound to model providers (network) + inbound from your messaging channels (most are pull-based webhook or websocket — no inbound port required).
+- **A model API key.**
+
+## Step 1 — Install Node 24 the right way
+
+Don't use `apt install nodejs` on Ubuntu — the version is way behind. Use NodeSource:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node --version  # should print v24.x.x
+```
+
+On RHEL / Fedora / Rocky, there's a parallel `setup_24.x` for `dnf`.
+
+## Step 2 — Install OpenClaw
+
+As your non-root user (NOT with `sudo`):
+
+```bash
+npm install -g openclaw@latest
+openclaw --version
+```
+
+If you get a permission error, your global npm is configured to require sudo. Two fixes:
+
+1. **Reconfigure npm to use a user-owned prefix** (the cleanest):
+   ```bash
+   mkdir -p ~/.npm-global
+   npm config set prefix '~/.npm-global'
+   echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+   source ~/.bashrc
+   npm install -g openclaw@latest
+   ```
+2. **Use `nvm`** which already does this for you.
+
+## Step 3 — Run onboard with the daemon flag
+
+```bash
+openclaw onboard --install-daemon
+```
+
+The onboarder detects you're on Linux and creates a `systemd` user service (NOT a system service — it runs as your user). On Ubuntu / Debian:
+
+```bash
+systemctl --user status openclaw
+```
+
+You should see `active (running)`. The unit file lives at `~/.config/systemd/user/openclaw.service`.
+
+> **Why user-service not system-service:** the agent runs as you, has access to your home directory, and shouldn't have root. Treat the daemon like the `tmux` or `cron` you set up for yourself.
+
+## Step 4 — Make the user service start at boot
+
+`systemd --user` doesn't run at boot by default; it starts when the user logs in. For an always-on server, enable lingering:
+
+```bash
+sudo loginctl enable-linger $USER
+```
+
+Now the systemd-user-instance starts on boot regardless of whether you're logged in. Check with `loginctl show-user $USER | grep Linger` — should be `Linger=yes`.
+
+## Step 5 — Firewall posture
+
+If your box has any chance of being exposed to the internet (and even on a home LAN, you should be defensive), tighten the firewall now.
+
+The OpenClaw Gateway listens on `127.0.0.1:18789` by default — **loopback only**. That means even if your firewall is wide open, the Gateway isn't reachable from outside the box. Verify:
+
+```bash
+ss -tlnp | grep 18789
+# expected: 127.0.0.1:18789  (NOT 0.0.0.0:18789)
+```
+
+If it's bound to `0.0.0.0` (you turned on remote access), you need to put it behind something. **Don't** open port 18789 to the internet directly. Use one of:
+
+- **Tailscale** — install on the box and your client; messages cross your private mesh. [Setup guide](https://tailscale.com/kb/1019/install-ubuntu-2204).
+- **Cloudflare Tunnel** — `cloudflared` daemon makes the Gateway reachable via a custom domain you own, no port forwarding needed. Free tier covers personal use.
+- **Wireguard** — the bare-metal version of the Tailscale shape if you prefer DIY.
+
+UFW basics for a Linux box that should stay locked down:
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp           # SSH (use a non-default port if exposed publicly)
+sudo ufw enable
+sudo ufw status
+```
+
+## Step 6 — Verify and run doctor
+
+```bash
+openclaw status
+openclaw doctor
+```
+
+`doctor` will flag any risky DM policies (default is `pairing` for unknown senders, but if you turned on `dmPolicy="open"` for any channel without a tight allowlist, doctor will yell). Fix everything `doctor` complains about.
+
+## Step 7 — Send a test message
+
+```bash
+openclaw agent --message "Health check from $(hostname). What's the time?"
+```
+
+Should respond with the time and a sentence acknowledging the hostname. If yes, your runtime is wired correctly. Now pair the channels you actually use ([§3.2 Channels](/connections/channels/)).
+
+## What's now running on the box
+
+```
+┌─────────────────────────────────────────────────┐
+│  Linux server (always-on)                       │
+│                                                 │
+│  systemd --user enabled (lingering on)          │
+│      └─ openclaw.service                        │
+│             └─ openclaw gateway --port 18789    │
+│                  ├─ 127.0.0.1 only (UFW deny)   │
+│                  └─ outbound: model API, channels│
+│                                                 │
+│  ufw enabled, deny in / allow out               │
+│                                                 │
+│  Optional remote-access layer:                  │
+│    Tailscale OR cloudflared OR Wireguard        │
+└─────────────────────────────────────────────────┘
+```
+
+## Cost of running this
+
+Approximate monthly cost depending on your hardware choice:
+
+| Option | Hardware cost (one-time) | Monthly running cost |
+|---|---|---|
+| Old NUC at home | $0–$300 | $2–$5 (electricity) |
+| New NUC at home | $400–$700 | $2–$5 (electricity) |
+| Hetzner CCX13 (4 vCPU / 8GB / 80GB) | $0 | ~$15/month |
+| DigitalOcean Premium AMD 4GB | $0 | ~$24/month |
+| AWS Lightsail 2GB | $0 | ~$10/month |
+| Azure B2s (4GB) | $0 | ~$30/month → see [§2.5 Azure](/setup/azure/) |
+
+Your model API costs are separate from this. A typical hobbyist using Claude or GPT for normal-volume chat runs $5–$20 / month in API calls.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Daemon doesn't start on boot | `loginctl enable-linger` not run | Run it; verify with `loginctl show-user` |
+| `npm install -g` needs sudo | Global prefix is system-owned | Reconfigure prefix or use nvm |
+| Gateway listens on 0.0.0.0 | Remote access turned on without tunnel | Bind back to 127.0.0.1; add Tailscale or cloudflared |
+| Channel pairing never resolves | Outbound network blocked | Check egress firewall; some VPS providers block outbound to certain message-app endpoints |
+| systemd unit exists but `active (failed)` | Auth file permissions wrong | `chmod 600 ~/.openclaw/agents/<id>/agent/auth-profiles.json` |
+
+## Things to try
+
+- **Set up a daily summary cron.** `openclaw cron add` and schedule a 9am morning brief. The agent reads its memory + any RSS feeds you've configured and DMs you a summary.
+- **Run the agent with a different SOUL.md per project.** Use multi-agent routing — different Slack workspaces hit different agents with different personalities. See [§1.2 Concepts → multi-agent](/overview/concepts/#multi-agent-routing).
+- **Pair this with a Pi for redundancy.** Two boxes, two Gateways (note: multi-gateway is "advanced"), shared workspace via private git. If one dies, the other keeps responding.
+
+## What to read next
+
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — turn the box into a credible deployment
+- [§2.7 Docker](/setup/docker/) — containerised version of this same shape
+- [§2.5 Azure](/setup/azure/) — managed-ier shapes if you want to skip the sysadmin
+- [§3.2 Channels](/connections/channels/) — pair the messaging surfaces you actually use

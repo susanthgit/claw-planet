@@ -1,0 +1,169 @@
+---
+title: "Laptop quick-start"
+section: "Setup"
+sectionNumber: "2.3"
+description: "Get an OpenClaw Gateway running on your laptop in about 25 minutes. Mac, Linux desktop, or Windows (via WSL2)."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Commands are taken verbatim from the official README and onboarding docs. Sush has not yet run this end-to-end on his M2 MacBook — it'll get promoted to tested-by-sush with the actual session log when he does. If you run it before he does and it works, open a PR to add a contributor verification note."
+lastReviewedAt: "2026-05-07"
+environment: "laptop"
+runtimeVersion: "Node 24 recommended (22.14+ minimum)"
+estimatedTimeMinutes: 25
+sources:
+  - "https://github.com/openclaw/openclaw#install-recommended"
+  - "https://docs.openclaw.ai/start/getting-started"
+  - "https://docs.openclaw.ai/start/wizard"
+  - "https://docs.openclaw.ai/cli/onboard"
+seeAlso:
+  - "1.1"
+  - "2.1"
+  - "6.1"
+---
+
+## What you'll have at the end
+
+A running OpenClaw Gateway on your laptop, connected to at least one channel (Slack or Telegram are easiest), with an agent that responds to your messages. About 25 minutes for someone who's installed npm packages before; longer if Node 24 isn't yet on your machine.
+
+> **Verification state:** this guide is `sourced-only` — every command below comes from the official README. We haven't run the full sequence end-to-end on Sush's machine yet. If you hit a step that doesn't match what's documented, the docs are likely newer than this page; trust them and [tell us](https://github.com/susanthgit/claw-planet/issues/new).
+
+## Before you start
+
+You need:
+
+- **Node 24** (or 22.14 minimum). Check with `node --version`. If you're on an older version, the easiest install path is [nvm](https://github.com/nvm-sh/nvm) on Mac/Linux or [nvm-windows](https://github.com/coreybutler/nvm-windows) on Windows.
+- **An API key or OAuth-able subscription** for at least one model provider. Anthropic API key (the easiest), an OpenAI subscription (ChatGPT/Codex — supports OAuth), or another provider's key. Free Google AI Studio keys also work for trying things out.
+- **A messaging account** to connect. Telegram is the easiest first channel because the bot pairing is the simplest. Slack is fine if you have a workspace. WhatsApp / iMessage need extra setup steps; do those after the basics work.
+- **About 25 minutes** of uninterrupted time.
+
+> **Windows readers:** install via WSL2 (the README explicitly says "strongly recommended"). The native Windows install path exists but has more rough edges. WSL2 is closer to the Mac/Linux path that the docs assume.
+
+## Step 1 — Install OpenClaw globally
+
+```bash
+# npm
+npm install -g openclaw@latest
+
+# or pnpm
+pnpm add -g openclaw@latest
+
+# or bun
+bun add -g openclaw@latest
+```
+
+**Sanity check:** run `openclaw --version`. You should get a version number printed without errors. If you get "command not found," your global npm bin folder isn't on your PATH; on macOS the fix is usually adding `export PATH="$HOME/.npm-global/bin:$PATH"` to your shell rc.
+
+## Step 2 — Run the guided onboarder
+
+```bash
+openclaw onboard --install-daemon
+```
+
+This is the **recommended setup path** per the official docs. It walks you through:
+
+1. **Creating the workspace** at `~/.openclaw/workspace` (creates the seven workspace files: SOUL.md, AGENTS.md, TOOLS.md, BOOTSTRAP.md, IDENTITY.md, USER.md, HEARTBEAT.md). See [§1.2 Concepts](/overview/concepts/) for what each does.
+2. **Picking your channels** — pair Telegram, Slack, etc. Skip anything you don't want yet; you can add later.
+3. **Picking your model provider** — paste an API key or sign in via OAuth (OpenAI subscriptions work via OAuth).
+4. **Installing the daemon** so the Gateway stays running across reboots. On macOS that's `launchd`; on Linux it's a `systemd` user service.
+
+> **Why `--install-daemon` matters:** without it, the Gateway only runs while a terminal is open. With it, it's a real always-on service. Forgetting this is the most common "I configured everything but my agent doesn't reply at 3am" mistake.
+
+## Step 3 — Verify the daemon is alive
+
+```bash
+openclaw status
+```
+
+Expected output: a status block showing the daemon as running, the configured channels in their states (paired / awaiting pair), and the configured model provider.
+
+If status reports the daemon as down, start it manually:
+
+```bash
+openclaw gateway --port 18789 --verbose
+```
+
+The `--verbose` flag is your friend on first install — it logs every channel auth handshake. Keep this open in a terminal until you've confirmed your channels are talking.
+
+## Step 4 — Send your first message via the CLI
+
+Before connecting messaging apps, sanity-check that the agent responds at all:
+
+```bash
+openclaw agent --message "Say hello and tell me what your name is."
+```
+
+The agent reads your `IDENTITY.md` + `SOUL.md` and responds in your terminal. If you see something like *"Hi! I'm Atlas — happy to help. What can I do for you today?"*, the runtime is working. The agent's name comes from `IDENTITY.md` (default is whatever the onboarder set; you can edit it any time).
+
+If you instead see an auth error, your model provider credentials aren't loading. Run `openclaw doctor` and follow the suggestions.
+
+## Step 5 — Connect a channel and message via it
+
+Assuming you paired Telegram during onboarding:
+
+1. Open Telegram and find your bot (the onboarder told you its handle).
+2. DM it: *"What's the time?"*
+3. The bot should respond. The first response can take 5–15 seconds (cold start — see [§1.4 drawback #2](/overview/honest-drawbacks/)).
+
+If nothing happens, check your `--verbose` Gateway log for the inbound message. Common issues:
+
+- **Pairing not approved.** The default DM policy is `pairing` — unknown senders get a code instead of a response. Check the Gateway log for a pairing prompt and approve with `openclaw pairing approve telegram <code>`.
+- **Allowlist excludes you.** You're not in `channels.telegram.allowFrom`. Edit `~/.openclaw/openclaw.json` and add your Telegram username (or `"*"` for development — but **NOT** in production; see [§6.1](/security/self-hosting-checklist/)).
+
+## Step 6 — Run `openclaw doctor`
+
+```bash
+openclaw doctor
+```
+
+This is the diagnostic command. It surfaces risky / misconfigured DM policies, missing config, deployment health issues. **Run it after every config change.** If it complains, fix before going further.
+
+## What's actually running now
+
+After step 6, you have:
+
+```
+┌─────────────────────────────────────────────┐
+│  Your laptop                                │
+│                                             │
+│  launchd / systemd ── openclaw gateway     │
+│                          (port 18789)      │
+│                              │              │
+│                              ▼              │
+│                       agent runtime         │
+│                              │              │
+│                  ┌───────────┴───────────┐  │
+│                  ▼                       ▼  │
+│           workspace files          model API│
+│           (SOUL, AGENTS, ...)       (network)│
+│                                             │
+│                       Telegram ◀────────┐   │
+│                       (channel)         │   │
+└─────────────────────────────────────────┘
+```
+
+Plus channels for whatever else you paired. Every message in any channel hits your laptop's daemon, gets answered by the agent, and goes back through the same channel.
+
+## Things to try once it works
+
+- **Edit SOUL.md and watch the agent change personality.** Add `## Communication style\n- Reply in haiku unless asked otherwise.` to SOUL.md. Restart the agent (`openclaw daemon restart`). Send a message. Marvel at the haiku.
+- **Add a skill from the bundled set.** `openclaw skills list` to see what ships, then `openclaw skills enable <skill-name>` to activate one. (Skills loading order is: workspace → project-agent → personal → managed → bundled — see [§1.2 Concepts](/overview/concepts/#skill).)
+- **Ask the agent to read its own workspace.** *"Show me what's in my AGENTS.md and tell me one thing I should consider adding."* It uses the built-in `read` tool to open the file and reasons about it.
+- **Set up a cron job.** `openclaw cron add` to schedule a daily 9am check-in. See [§1.2 Concepts → automation](/overview/concepts/#cron-jobs) for the shape.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `openclaw: command not found` after install | npm global bin not on PATH | Add `export PATH="$(npm config get prefix)/bin:$PATH"` to shell rc |
+| Agent never responds in chat, no error | DM pairing policy blocking | `openclaw pairing approve <channel> <code>` |
+| Bot responds in CLI but not in chat | Channel `allowFrom` excludes your handle | Edit `~/.openclaw/openclaw.json` |
+| Cold-start delay over 30s | Workspace files too large + heavy model | Trim AGENTS.md memory; pick a faster model |
+| Daemon dies after laptop sleeps | Power management | macOS: `caffeinate -d` workaround; Linux: check `systemctl --user status openclaw` |
+| `Module not found` errors | Node version mismatch | `node --version` should be 22.14+ or 24.x |
+
+## What to do next
+
+- **Lock down the install before exposing it.** [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — even on a laptop, the defaults need a once-over.
+- **Add more channels.** [§3.2 Channels](/connections/channels/) catalogs all 24+.
+- **Try a use case.** [§5.1 Hello-world recipe](/use-cases/) (planned).
+- **Promote this page.** When Sush runs every step on his M2 MacBook, this page goes from `sourced-only` to `tested-by-sush` with a real session log.

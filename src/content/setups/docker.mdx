@@ -1,0 +1,194 @@
+---
+title: "Docker (packaging method)"
+section: "Setup"
+sectionNumber: "2.7"
+description: "Docker is a packaging method, not a peer environment. Use it to wrap any of the other setup paths (Linux server, Azure, NAS) in a portable container. Compose file + volume layout for SOUL.md persistence."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compose recipes below are inferred from Node 24 base image + the OpenClaw global install pattern. The official Docker docs at docs.openclaw.ai/install/docker should be the source of truth — read those AND this page. Sush has not run Dockerised OpenClaw yet."
+lastReviewedAt: "2026-05-07"
+environment: "docker"
+runtimeVersion: "Node 24 base image (or 22.14+)"
+estimatedTimeMinutes: 30
+sources:
+  - "https://docs.openclaw.ai/install/docker"
+  - "https://github.com/openclaw/openclaw#install-recommended"
+seeAlso:
+  - "2.4"
+  - "2.5"
+  - "2.6"
+  - "6.1"
+---
+
+## Why this page is here
+
+Most setup pages on this site cover an **environment** — a place where the Gateway runs (laptop, Pi, Linux box, Azure VM). Docker is different. **Docker is a packaging method.** It wraps OpenClaw and its runtime into a portable container that you can deploy on:
+
+- A Linux server with `docker compose` (often the cleanest approach for homelab / NUC)
+- A NAS (Synology / TrueNAS / Unraid) — Docker is how non-Linux NAS boxes run Linux software
+- Azure Container Apps ([§2.5](/setup/azure/))
+- AWS ECS / Fargate / Lightsail Containers
+- Anywhere else that runs OCI containers
+
+This page is about the Docker shape itself. For environment-specific quirks, jump to those pages.
+
+## When to use Docker (and when not to)
+
+**Use Docker when:**
+
+- Your host doesn't have Node 24 and you don't want to install it (NAS, an old VPS)
+- You want to keep OpenClaw versioning isolated from the host's Node
+- You're deploying somewhere container-native (Container Apps, ECS, k8s)
+- You want a one-line "spin up another instance"
+- You're running on a NAS and Docker is the supported software-delivery path
+
+**Skip Docker when:**
+
+- You're on a fresh Linux server you control. Native install is simpler.
+- You want voice features (the macOS / iOS / Android voice nodes don't fit cleanly in containers).
+- You're optimising for cold-start speed (containers add ~500ms vs native on the same host).
+
+## What needs to live outside the container
+
+The two things that make Docker tricky for OpenClaw are:
+
+1. **Persistent state** — workspace files, sessions, credentials. These MUST survive container restarts.
+2. **Network reach** — channels reach the Gateway via webhooks/websockets; the model API is reached outbound. Both work fine through Docker networking but need attention.
+
+The Docker volume mount layout that works:
+
+```
+HOST                                 CONTAINER
+~/openclaw-data/openclaw.json    →   /home/claw/.openclaw/openclaw.json
+~/openclaw-data/workspace/       →   /home/claw/.openclaw/workspace/
+~/openclaw-data/agents/          →   /home/claw/.openclaw/agents/
+~/openclaw-data/credentials/     →   /home/claw/.openclaw/credentials/
+~/openclaw-data/skills/          →   /home/claw/.openclaw/skills/
+```
+
+Everything in `~/.openclaw/` survives container rebuilds because it's a host-bind-mount.
+
+## A working `docker-compose.yml`
+
+> **Note:** the official `docs.openclaw.ai/install/docker` page is the canonical source. The compose below is our best read of the published recipe; verify against the official before relying on it in production.
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  openclaw:
+    image: node:24-bookworm-slim
+    container_name: openclaw
+    restart: unless-stopped
+    network_mode: host  # easiest for channel webhooks; see notes
+    user: "1000:1000"   # match your host user
+    working_dir: /home/claw
+    volumes:
+      - ./openclaw-data:/home/claw/.openclaw
+      - ./bashrc:/home/claw/.bashrc:ro
+    environment:
+      - HOME=/home/claw
+      - NODE_ENV=production
+    command: >
+      sh -c "
+        npm config set prefix /home/claw/.npm-global &&
+        export PATH=/home/claw/.npm-global/bin:$$PATH &&
+        npm install -g openclaw@latest &&
+        openclaw gateway --port 18789 --verbose
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL http://127.0.0.1:18789/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+```
+
+**Why `network_mode: host`?** It's the easiest path for channels that need to bind to specific local ports (some IRC bridges, BlueBubbles for iMessage). For pure webhook channels (Slack, Discord), bridge mode + port mapping is fine; trade `network_mode: host` for `ports: [18789:18789]`.
+
+**Why `user: "1000:1000"`?** Files in the volume need to be owned by your host user, otherwise you can't `vim` SOUL.md without sudo.
+
+## A pre-built image option
+
+If you don't want to build/run from a base Node image, there are community-maintained pre-built images. Check the official docs index for the canonical one. A pre-built image lets you simplify the compose:
+
+```yaml
+services:
+  openclaw:
+    image: openclaw/openclaw:latest  # canonical (verify in docs)
+    restart: unless-stopped
+    volumes:
+      - ./openclaw-data:/home/claw/.openclaw
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    ports:
+      - "18789:18789"
+```
+
+`docker compose up -d` and you're running.
+
+## First-run sequence (Docker)
+
+1. **Pull / start the container:**
+   ```bash
+   docker compose up -d
+   docker compose logs -f openclaw
+   ```
+
+2. **The first time, run onboard inside the container:**
+   ```bash
+   docker compose exec openclaw bash
+   openclaw onboard
+   ```
+   This creates the workspace files inside the volume. They persist for next time.
+
+3. **Verify:**
+   ```bash
+   docker compose exec openclaw openclaw status
+   docker compose exec openclaw openclaw doctor
+   ```
+
+4. **Pair channels and send a test message** — same as native install.
+
+## NAS shapes (Synology / TrueNAS / Unraid)
+
+NAS boxes generally have a Docker UI. The compose above translates to those UIs as:
+
+- One container, one image (Node 24 base or pre-built OpenClaw image)
+- One bind volume from a stable path on the NAS to `/home/claw/.openclaw`
+- One env var per secret (Anthropic key, etc.)
+- Optional: bind a path for backups (separate from the workspace volume so backups don't recurse into themselves)
+
+A NAS as the OpenClaw host is a strong "set and forget" pattern for home users — the NAS is already always-on, already has UPS protection in many homes, and already has a backup story you trust.
+
+## Common pitfalls (Docker-specific)
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Workspace files owned by root after first run | Container ran as root, files inherited | Set `user: "$UID:$GID"` in compose; chown the host folder |
+| Channel webhooks don't reach the agent | Bridge networking + port not exposed | Either use `network_mode: host` or map the port explicitly |
+| `npm install -g openclaw` fails inside container | Network egress blocked | Verify container can reach registry.npmjs.org; some corp networks block |
+| Daemon on host kicks in instead of container | Already installed natively | Disable native systemd unit if running both |
+| `openclaw doctor` warns about missing PATH | Container shell missed the npm-global path | Add `ENV PATH=/home/claw/.npm-global/bin:$PATH` to your Dockerfile |
+| Restarts wipe sessions | Volume not actually mounted | `docker inspect openclaw \| grep Mounts` to verify |
+
+## Backups for a Dockerised install
+
+The whole `./openclaw-data/` folder is your backup target. Two patterns that work:
+
+1. **Daily git push** of `./openclaw-data/workspace/` (NOT `./openclaw-data/credentials/` — keep secrets out of git).
+2. **Restic / borg / rsync** of the whole `./openclaw-data/` to a remote storage (Backblaze B2 is cheap; ~$1/month for 10GB).
+
+The OpenClaw docs explicitly recommend treating the workspace as private memory and putting it in a private git repo. Honour that.
+
+## Things to try
+
+- **Stand up a second OpenClaw container with a different SOUL.md** for testing. The two have isolated workspaces. Prove the multi-personality mental model.
+- **Pin a version.** `openclaw@2026.5.1` instead of `openclaw@latest`. Reproducible builds; no surprise breakages on auto-deploy.
+- **Add Watchtower** for automated minor-version updates with notifications (test before relying on this in production — auto-update of an agent runtime needs care).
+
+## What to read next
+
+- [§2.4 Linux server](/setup/linux-server/) — the most common Docker host shape
+- [§2.5 Azure](/setup/azure/) — Container Apps shape (Docker-flavoured but managed)
+- [§2.6 Raspberry Pi](/setup/raspberry-pi/) — Pi can run Docker too if you prefer it over native install
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — extra steps for Dockerised deploys

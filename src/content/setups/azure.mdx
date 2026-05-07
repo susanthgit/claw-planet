@@ -1,0 +1,150 @@
+---
+title: "Azure"
+section: "Setup"
+sectionNumber: "2.5"
+description: "Run an OpenClaw Gateway on Azure — Container Apps for serverless-ish, VM for full control. Cost notes, networking, security posture, Microsoft disclosure."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from official OpenClaw install docs + Azure documentation. Sush works at Microsoft (disclosure inline). We have not yet stood up an Azure deployment of OpenClaw end-to-end. Pricing figures are 2026-05 list prices and change."
+lastReviewedAt: "2026-05-07"
+environment: "azure"
+runtimeVersion: "Node 24 (recommended) or 22.14+"
+estimatedTimeMinutes: 60
+sources:
+  - "https://github.com/openclaw/openclaw#install-recommended"
+  - "https://docs.openclaw.ai/cli/daemon"
+  - "https://learn.microsoft.com/en-us/azure/container-apps/overview"
+  - "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes-b-series-burstable"
+seeAlso:
+  - "2.4"
+  - "2.7"
+  - "6.1"
+---
+
+> **Microsoft disclosure.** Sush works at Microsoft. Microsoft makes Azure. We cover Azure as one of several reasonable cloud paths because it's a common ask, not because of who pays the bills. If your team's already on Azure with reserved-instance pricing, this page applies. If not, [§2.4 Linux server](/setup/linux-server/) on Hetzner / DigitalOcean / a Pi is usually cheaper for personal use.
+
+## When this is the right setup
+
+You want OpenClaw deployed somewhere "managed-ish" — not your laptop, not a Pi, not a box you maintain manually. You either already use Azure (work account, existing tenant, reserved-instance discounts) or you specifically want Microsoft's offerings (compliance posture, regional presence, Entra ID auth integration).
+
+The two paths we cover:
+
+| Path | Shape | Best for |
+|---|---|---|
+| **Azure Container Apps** | Serverless container with persistent storage volume | "I want to deploy and forget" with autoscale-to-zero |
+| **Azure VM (B-series)** | A full Linux box you SSH into | Same as [§2.4 Linux server](/setup/linux-server/) but on Azure infrastructure |
+
+> If you want neither — i.e., you're learning OpenClaw on the side and don't want to think about Azure at all — start on a laptop ([§2.3](/setup/laptop/)) or a Pi ([§2.6](/setup/raspberry-pi/)) and come back to Azure when you have a real reason.
+
+## Path A — Azure Container Apps
+
+### Cost outline (2026-05 list prices, useast region)
+
+- **Compute:** Container Apps charges per vCPU-second + per-GB-second when active. Stateless apps that scale to zero cost $0 when idle. **OpenClaw doesn't scale to zero well** because it's a persistent agent runtime — sessions and workspaces would die on cold start. Plan to run with `minReplicas: 1`.
+- **At minReplicas: 1 (1 vCPU / 2GB always-on):** roughly **~$40–$70/month** depending on actual traffic.
+- **Persistent storage:** Azure Files share for `~/.openclaw/workspace` + sessions. ~$3/month for 5GB.
+- **Egress:** model API calls + channel webhooks. Assume **$1–$5/month** for normal personal use.
+
+Total: roughly **$45–$80/month** for a small personal Container Apps deployment. Compare to **~$15/month** on Hetzner / **~$2/month electricity** on a Pi. You're paying for "managed" — networking, ingress, observability.
+
+### High-level deploy sketch
+
+> **What we have NOT done:** we haven't run the full sequence below ourselves. The shape is correct (we know Container Apps + we know the OpenClaw runtime). Specific commands will likely need calibration on first real run. We'll promote this page from `sourced-only` once Sush stands one up.
+
+```bash
+# 1. Set up resource group + Container Apps environment
+az group create --name claw-rg --location eastus
+az containerapp env create --name claw-env --resource-group claw-rg --location eastus
+
+# 2. Create Azure Files share for persistence
+az storage account create --name clawpersist01 --resource-group claw-rg --sku Standard_LRS
+az storage share create --account-name clawpersist01 --name openclaw-workspace --quota 5
+
+# 3. Build/push your image (a Dockerfile based on Node 24 + npm i -g openclaw)
+# Or use a pre-built community image — see §2.7 Docker
+
+# 4. Deploy the Container App with the volume mounted
+az containerapp create \
+  --name claw-gateway \
+  --resource-group claw-rg \
+  --environment claw-env \
+  --image yourregistry.azurecr.io/openclaw:latest \
+  --target-port 18789 \
+  --ingress external \
+  --min-replicas 1 \
+  --max-replicas 1 \
+  --memory 2Gi --cpu 1.0
+# Then add the volume mount via az containerapp update or YAML manifest
+```
+
+### What needs special care
+
+- **Persistent state.** Without a mounted volume for `~/.openclaw/`, every restart loses your workspace, sessions, and credentials. Mount Azure Files (or use a cheaper alternative — see "What we don't recommend" below).
+- **Inbound channels.** Most channels are webhook-style or websocket. The Container App needs an ingress endpoint reachable by those services. Container Apps gives you a public URL (`https://<app>-<id>.eastus.azurecontainerapps.io`); use it as the webhook target for Slack/Discord/etc.
+- **Secrets.** Don't bake API keys into the image. Use Container Apps secret refs — `az containerapp secret set --secrets ANTHROPIC_API_KEY=...`.
+- **Logging.** Enable Azure Monitor / Log Analytics from day 1. The Gateway logs are your only window into "did the message arrive, did the agent respond, what tool did it call." Don't lose them to ephemeral container output.
+- **Restart strategy.** Set `replicaTimeout` and `restartPolicy: Always`. Container Apps' default behaviour can drop in-flight requests on revisions.
+
+### What we don't recommend (and why)
+
+- **Don't auto-scale beyond 1 replica.** OpenClaw is single-agent-per-Gateway. Two replicas mean two competing agents on the same workspace — race conditions, duplicated responses, confused state.
+- **Don't put the workspace on ephemeral disk.** It must survive restarts.
+- **Don't expose the Gateway port directly.** Use Container Apps' ingress; let it terminate TLS and route.
+
+## Path B — Azure VM
+
+Pick this if you want the [§2.4 Linux server](/setup/linux-server/) shape but on Azure infrastructure. Use cases: existing Azure presence, Entra ID-managed identity for the model provider, regional compliance.
+
+### Sizing
+
+| VM size | vCPU / RAM | Monthly cost (B-series, useast) | Use case |
+|---|---|---|---|
+| **B2s** | 2 / 4GB | ~$30 | Personal Gateway, no local model |
+| **B2ms** | 2 / 8GB | ~$60 | Comfortable headroom, multiple skills |
+| **B4ms** | 4 / 16GB | ~$120 | If you want to run local Ollama models on the VM |
+
+The B-series is "burstable" — fine for the bursty pattern of agent traffic (idle most of the time, spikes when you message). For 24/7 always-on agentic workloads with consistent CPU draw (e.g., heavy cron jobs), look at D-series instead.
+
+### Setup
+
+It's literally [§2.4 Linux server](/setup/linux-server/) once the VM exists. Specifically:
+
+1. Create the VM (Ubuntu 22.04 LTS recommended).
+2. SSH in.
+3. Follow §2.4 step-by-step.
+4. Add Tailscale or Cloudflare Tunnel for remote access — **don't** open NSG ports to 0.0.0.0/0 just for OpenClaw.
+
+### Cost-aware notes
+
+- **Reserved Instances.** A 1-year RI on B2s drops the cost ~30%. Worth it if you're committed.
+- **Auto-shutdown.** If your agent isn't truly 24/7 (e.g., you only message during waking hours), enable auto-shutdown at night. Saves ~30% on a B2s. Trade-off: cron jobs that run overnight won't fire.
+- **Spot instances are NOT a good fit** for an agent runtime. Eviction would kill your sessions.
+
+## Common pitfalls (across both paths)
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Container restarts every few minutes | Memory pressure | Bump replica memory; check for memory-heavy skills |
+| Channel webhooks fail with 502 | Container Apps ingress timing out | Increase `ingress.timeout`; ensure agent responds in under 240s |
+| API keys missing on restart | Baked into image (lost) or ephemeral env | Use secret refs; mount config from Key Vault |
+| SSH cost surprise on idle VM | Forgot auto-shutdown | Configure auto-shutdown; set spending alerts |
+| MCP server can't reach internet | Container Apps egress proxying | Check vNet integration; default egress is usually fine |
+
+## Things to try
+
+- **Use Entra ID-managed identity** to authenticate to Azure-hosted services (Storage, Key Vault) without managing keys. The OpenClaw Gateway can use the standard Azure SDK to pick up the managed identity token automatically.
+- **Wire OpenClaw alerts to Microsoft Teams.** Pair Teams as a channel, set up a cron job that summarises Application Insights traces every morning, posts to a Teams channel. ([§3.2 Channels → Microsoft Teams](/connections/channels/)).
+- **Deploy as part of a Bicep/Terraform stack.** Azure Verified Modules or AVMs include patterns for Container Apps + Azure Files + secrets. Folds OpenClaw into your standard infra-as-code.
+
+## When to NOT use Azure
+
+- **Personal-only, cost-sensitive.** Hetzner/DO/Linode are 30–60% cheaper for the same Linux shape.
+- **Latency-sensitive.** If your channels and you are physically close to a non-Azure region (e.g., NZ, where Sush is), latency to Microsoft's NZ regions might be higher than to a closer non-Microsoft region. Test before committing.
+- **You actively don't want a Microsoft-tied tech stack.** Fair. Use [§2.4 Linux server](/setup/linux-server/).
+
+## What to read next
+
+- [§2.4 Linux server](/setup/linux-server/) — the underlying shape if you pick the VM path
+- [§2.7 Docker](/setup/docker/) — image patterns that apply to Container Apps
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — production-shape posture
+- [§7.1 OpenClaw vs MCP-based stacks](/compare/) — the architectural decision behind even running this

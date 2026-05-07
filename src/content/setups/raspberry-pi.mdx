@@ -1,0 +1,223 @@
+---
+title: "Raspberry Pi"
+section: "Setup"
+sectionNumber: "2.6"
+description: "Run an OpenClaw Gateway on a Pi 4 or Pi 5. RAM constraints, model choice (small local vs API), thermal/power notes, the always-on home agent setup."
+status: "published"
+verificationState: "sourced-only"
+verificationNote: "Compiled from official install docs + Raspberry Pi Foundation product specs + community deployment patterns. Sush has a Pi 5 on his shelf and will promote this page once he runs it. Pre-promote contributions welcome via PR."
+lastReviewedAt: "2026-05-07"
+environment: "raspberry-pi"
+runtimeVersion: "Node 24 (recommended) or 22.14+"
+hardware: "Raspberry Pi 5 (8GB recommended) · Pi 4 (8GB ok, 4GB tight)"
+os: "Raspberry Pi OS Lite (64-bit) or Ubuntu Server 22.04+ for arm64"
+estimatedTimeMinutes: 60
+sources:
+  - "https://github.com/openclaw/openclaw#install-recommended"
+  - "https://www.raspberrypi.com/products/raspberry-pi-5/"
+  - "https://docs.openclaw.ai/cli/daemon"
+seeAlso:
+  - "2.1"
+  - "2.4"
+  - "5.4"
+---
+
+## When this is the right setup
+
+You want a $130 always-on assistant that lives on your desk. You don't need voice (Pi has no native voice node — see [§1.4 drawback #6](/overview/honest-drawbacks/)). You're either already on Pi or want the cheapest credible "I have an agent" path.
+
+The Pi 5 with 8GB is the **strongest first OpenClaw box** for most people: cheap, low power (~5W), silent (with passive cooling for light loads), small enough to put on your monitor, and powerful enough for the runtime + a small local model if you want.
+
+## What you'll have at the end
+
+A Pi running an OpenClaw Gateway as a `systemd` user service, restarting on boot, on your home network with a static IP or hostname. Connected to whichever channels you use (Telegram is the easiest first; Slack works fine; iMessage requires a Mac in the chain — see [§3.2 Channels](/connections/channels/)).
+
+## Hardware shopping list
+
+If you don't have a Pi yet:
+
+| Item | Recommended | Cost |
+|---|---|---|
+| **Raspberry Pi 5, 8GB** | The base unit | $80 |
+| **27W official USB-C power supply** | Pi 5 needs more juice than Pi 4 | $12 |
+| **MicroSD card 64GB+ A2 class** OR **NVMe via Pi 5 PCIe** | NVMe is faster + more reliable | $15 (SD) or $30 (NVMe + adapter) |
+| **Active cooling case** | Pi 5 throttles under sustained load without one | $15 |
+| **Ethernet cable** | Faster + more reliable than wifi | $5 |
+| **(Optional)** USB SSD for backups | Workspace git mirror | $30 |
+
+Total: **~$130** if you go SD; **~$160** for NVMe.
+
+If you have a Pi 4: 8GB model is fine; 4GB is tight (you'll feel it during cold starts and if you load multiple skills).
+
+## Step 1 — Install the OS
+
+Use Raspberry Pi Imager to write **Raspberry Pi OS Lite (64-bit)** to your SD or NVMe. "Lite" because we don't need the desktop — this box will be headless.
+
+In the Imager's advanced settings (gear icon):
+
+- Set hostname (e.g. `claw-pi`)
+- Set username (e.g. `claw`) and password
+- Enable SSH (key auth preferred — paste your public key)
+- Configure wifi (or skip if you'll use ethernet)
+- Set locale / timezone
+
+Boot the Pi. SSH in: `ssh claw@claw-pi.local` (mDNS) or whatever IP your router gave it.
+
+## Step 2 — Update the system
+
+```bash
+sudo apt update && sudo apt full-upgrade -y
+sudo reboot
+```
+
+Reconnect after reboot.
+
+## Step 3 — Install Node 24 (NodeSource for arm64)
+
+The Pi's default Node version (if any) is too old. Use NodeSource:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node --version  # should print v24.x.x
+```
+
+This works on arm64 (which is what Pi 5 / Pi 4 64-bit OS run).
+
+## Step 4 — Install OpenClaw
+
+```bash
+# Reconfigure npm to user-owned prefix to avoid sudo
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+npm install -g openclaw@latest
+openclaw --version
+```
+
+## Step 5 — Run the onboarder
+
+```bash
+openclaw onboard --install-daemon
+```
+
+The onboarder will create the workspace, prompt for channel pairing, and install a `systemd` user service. Same flow as [§2.4 Linux server step 3](/setup/linux-server/).
+
+## Step 6 — Enable lingering (start on boot)
+
+```bash
+sudo loginctl enable-linger $USER
+loginctl show-user $USER | grep Linger  # expect Linger=yes
+```
+
+Without this, the daemon only runs when you're SSH'd in. Lingering keeps it alive across reboots even with no user logged in.
+
+## Step 7 — Sanity check
+
+```bash
+openclaw status
+openclaw doctor
+openclaw agent --message "Hello from the Pi. What's the time?"
+```
+
+If the agent responds, the runtime is wired. Now pair the channels you use ([§3.2 Channels](/connections/channels/)).
+
+## Model choice on a Pi (the important one)
+
+This is where the Pi differs from a laptop or Linux server. **You have two model choices:**
+
+### Option A — Hosted API (recommended for most)
+
+Anthropic / OpenAI / Google / OpenRouter / etc. The Pi sends prompts over the network; the model runs in the provider's datacenter. Pi only needs ~500MB of RAM total. **No GPU needed. No model download.** Latency depends on your home internet (typically 1–3s overhead vs the network-less local case).
+
+This is the **default and the easiest**. Almost every Pi OpenClaw user runs this way.
+
+### Option B — Local model via Ollama
+
+Run a small model directly on the Pi. The Pi 5 with 8GB can run quantised models up to ~3–4B parameters comfortably (Llama 3.2 3B, Phi-3 Mini quantised). Larger models will swap-thrash and feel terrible.
+
+When this is worth it:
+
+- **Privacy.** No prompt leaves your home network.
+- **Offline.** Works without internet.
+- **Cost.** $0/month in API fees (you pay in electricity ~$2/month).
+
+When it's not:
+
+- **Quality.** A 3B local model is meaningfully worse than Claude Sonnet or GPT-4o for complex reasoning.
+- **Speed.** Tokens/second on a Pi 5 8GB is ~5–10 for a 3B model. Slow but acceptable for non-urgent agents.
+
+```bash
+# Quick test of a local model on the Pi
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.2:3b
+ollama run llama3.2:3b "Hello"
+
+# Then point OpenClaw at it via openclaw.json:
+# agents.defaults.model = "ollama/llama3.2:3b"
+```
+
+> **My honest recommendation:** start with hosted API on the Pi. Get the assistant feeling good. Once it does, swap in a local model as an experiment to see if the quality is acceptable for your use case. Many people end up running the Gateway on the Pi but pointing at hosted models — best of both worlds.
+
+## Power, thermal, and uptime
+
+- **Power draw:** Pi 5 idles at ~3W, runs at ~5W under normal Gateway load, peaks at ~12W with a local model crunching. At NZ retail electricity rates that's roughly **$2/month**.
+- **Thermal:** Pi 5 throttles at 80°C. With an active cooler (the official one or any Argon-style case) you'll never see this even on a hot summer day. Without cooling, sustained load can throttle.
+- **Uptime:** The Pi is reliable. Common causes of downtime are SD card corruption (use a good A2-class card or NVMe; back up the workspace to a private git repo), power events (a $20 mini-UPS is worth it for always-on), and OS updates that need a reboot (schedule them).
+
+## A small "always-on home agent" reference deployment
+
+This is roughly what a polished Pi-OpenClaw setup looks like:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Raspberry Pi 5 (on your desk, ethernet wired)  │
+│                                                 │
+│  Raspberry Pi OS Lite 64-bit, Node 24           │
+│  loginctl linger enabled                        │
+│                                                 │
+│  systemd --user                                 │
+│    └─ openclaw.service (linger)                 │
+│         └─ Gateway (127.0.0.1:18789)            │
+│              ├─ workspace: ~/.openclaw/         │
+│              │   (mirrored to private git on    │
+│              │    cron daily)                   │
+│              └─ model: anthropic/claude-3-5     │
+│                    (or ollama/llama3.2:3b)      │
+│                                                 │
+│  Channels paired:                               │
+│    - Telegram (always-on)                       │
+│    - Discord (your homelab server)              │
+│    - WhatsApp (via QR pairing)                  │
+│                                                 │
+│  Tailscale on for remote SSH + edit             │
+│  UFW: deny in / allow out (default safe)        │
+└─────────────────────────────────────────────────┘
+```
+
+## Common pitfalls (Pi-specific)
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `npm install -g` is super slow | SD card I/O bottleneck | Switch to NVMe via Pi 5 PCIe; A2-class SD as fallback |
+| Pi reboots randomly under load | Power supply underrated | Use the official 27W USB-C; cheap chargers cause this |
+| Local model OOMs | Pi RAM exceeded | Use a smaller model (≤3B params), quantised |
+| Daemon dies on power blip | No UPS | Add a $20 mini-UPS module |
+| Workspace lost after SD card death | No backups | Set up daily git push to a private repo (the docs explicitly recommend this) |
+| Slow first response (~10s) | Cold start + slow disk | Move workspace to NVMe; reduce SOUL.md size |
+
+## Things to try once it works
+
+- **Schedule a 9am daily summary cron** that hits your calendar API and DMs you.
+- **Run the agent on a local 3B model** for one week, then swap back to Claude. Notice the quality difference. (See [§5 Use cases — Pi-hosted always-on home agent](/use-cases/) for a real recipe.)
+- **Add a second channel** (e.g. Slack workspace at home or work). Test that the agent identity feels consistent.
+- **Set up a "what's overnight on Hacker News" cron** — agent reads HN, posts a summary to your DM at 7am. Fun, low-stakes, teaches you the cron + browser-tool flow.
+
+## What to read next
+
+- [§5.4 Pi-hosted always-on home agent](/use-cases/) (planned) — the full recipe
+- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — even at home, defaults matter
+- [§3.2 Channels](/connections/channels/) — pair the messaging surfaces you use
+- [§2.4 Linux server](/setup/linux-server/) — same shape for non-Pi Linux boxes
