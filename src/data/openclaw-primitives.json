@@ -1,0 +1,489 @@
+{
+  "_doc": "Sourced taxonomy of OpenClaw primitives. Source-of-truth for every page that references these terms. If we use an umbrella term that is NOT in official docs (e.g. our 'Connections' category), it is flagged with `ourLabel` so readers know it is our framing.",
+  "_lastFullReview": "2026-05-07",
+  "_methodology": "Fetched canonical pages on docs.openclaw.ai and the GitHub README. Cross-referenced docs/llms.txt index. Where a concept has both an official term and a different umbrella we use, both are recorded. lastVerified on each entry stamps when the linked source was last read.",
+  "_disputeUrl": "https://github.com/susanthgit/claw-planet/issues/new?template=primitive-correction.md",
+
+  "_brand": {
+    "name": "OpenClaw",
+    "tagline": "EXFOLIATE! EXFOLIATE!",
+    "shortDescription": "Self-hosted gateway that connects messaging surfaces (Discord, Telegram, Slack, WhatsApp, iMessage, etc.) to AI coding agents. Run one Gateway process on your own machine and message your AI assistant from anywhere.",
+    "github": "https://github.com/openclaw/openclaw",
+    "docs": "https://docs.openclaw.ai",
+    "site": "https://openclaw.ai",
+    "discord": "https://discord.gg/clawd",
+    "licence": "MIT",
+    "runtime": "Node 24 (recommended) or Node 22.14+",
+    "emoji": "🦞",
+    "configRoot": "~/.openclaw/openclaw.json"
+  },
+
+  "_categories": {
+    "workspace-file": "Plain-text markdown files inside the agent's workspace directory. Injected into the system prompt at session bootstrap.",
+    "architecture": "Top-level architectural concepts — Gateway, Runtime, Workspace, Sessions, Skills system.",
+    "channel": "Messaging surfaces the Gateway connects to (24+ supported).",
+    "built-in-tool": "Tools the agent can invoke directly (read, exec, edit, write, etc.). Always available subject to tool policy.",
+    "model": "LLM provider/model configuration concepts.",
+    "memory": "Memory engine concepts and storage backends.",
+    "security": "Sandbox modes, DM policy, pairing, auth.",
+    "automation": "Scheduled tasks, hooks, standing orders, task flow.",
+    "umbrella": "Our framing terms that group multiple official concepts. Flagged so readers know it's our editorial choice."
+  },
+
+  "primitives": [
+
+    {
+      "id": "soul-md",
+      "term": "SOUL.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "Persona, boundaries, tone. Defines who the agent IS — character, values, communication style. Injected into the system prompt every session so identity stays stable across reboots and channel switches.",
+      "officialSource": "https://docs.openclaw.ai/concepts/soul",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/agent"],
+      "exampleLocation": "~/.openclaw/workspace/SOUL.md",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "agents-md",
+      "term": "AGENTS.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "Operating instructions + memory. Operational rules, what the agent can and can't do, plus accumulated working memory. Where 'never email without my approval' lives. Injected into system prompt at bootstrap.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent",
+      "exampleLocation": "~/.openclaw/workspace/AGENTS.md",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tools-md",
+      "term": "TOOLS.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "User-maintained notes about tools — when to use which, conventions, examples. Does NOT control which tools exist; that's tool policy. This is guidance for how YOU want them used.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent",
+      "exampleLocation": "~/.openclaw/workspace/TOOLS.md",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "bootstrap-md",
+      "term": "BOOTSTRAP.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "One-time first-run ritual instructions. Created only for brand-new workspaces. Deleted after the ritual completes; not recreated on later restarts. Disable with `agents.defaults.skipBootstrap: true` for pre-seeded workspaces.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent",
+      "exampleLocation": "~/.openclaw/workspace/BOOTSTRAP.md",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "identity-md",
+      "term": "IDENTITY.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "Agent name, vibe, emoji. Short identity card — distinct from SOUL.md (which holds the deeper persona). Injected at bootstrap.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent",
+      "exampleLocation": "~/.openclaw/workspace/IDENTITY.md",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "user-md",
+      "term": "USER.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "User profile and preferred form of address. Tells the agent how to talk to you specifically. Injected at bootstrap.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent",
+      "exampleLocation": "~/.openclaw/workspace/USER.md",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "heartbeat-md",
+      "term": "HEARTBEAT.md",
+      "category": "workspace-file",
+      "ourLabel": null,
+      "summary": "Long-running rhythm and check-in cadence for the agent. Used by the Gateway heartbeat system to keep the assistant present even when no message is inbound.",
+      "officialSource": "https://docs.openclaw.ai/gateway/heartbeat",
+      "exampleLocation": "~/.openclaw/workspace/HEARTBEAT.md",
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "gateway",
+      "term": "Gateway",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "The control plane process. One Gateway per machine handles sessions, channels, tools, and events. Runs as a daemon (launchd / systemd user service). The product is the assistant; the Gateway is just the wire.",
+      "officialSource": "https://docs.openclaw.ai/gateway",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/architecture"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "agent-runtime",
+      "term": "Agent runtime",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "Single embedded agent process per Gateway, with its own workspace, bootstrap files, and session store. Built on the Pi agent core (models, tools, prompt pipeline). OpenClaw layers session management, discovery, tool wiring, and channel delivery on top.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/agent-runtimes", "https://docs.openclaw.ai/concepts/agent-loop"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "workspace",
+      "term": "Workspace",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "The agent's home directory. Default `~/.openclaw/workspace`. Holds the bootstrap files (SOUL/AGENTS/TOOLS/BOOTSTRAP/IDENTITY/USER/HEARTBEAT) and the agent's working directory. Treat as private memory; back up to a private git repo.",
+      "officialSource": "https://docs.openclaw.ai/concepts/agent-workspace",
+      "exampleLocation": "~/.openclaw/workspace",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "session",
+      "term": "Session",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "A single conversation thread. Stored as JSONL at `~/.openclaw/agents/<agentId>/sessions/<SessionId>.jsonl`. Session IDs are stable and chosen by OpenClaw.",
+      "officialSource": "https://docs.openclaw.ai/concepts/session",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/session-pruning"],
+      "exampleLocation": "~/.openclaw/agents/<agentId>/sessions/",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "skill",
+      "term": "Skill",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "Reusable capability the agent can load. Loaded from (highest precedence first): `<workspace>/skills`, `<workspace>/.agents/skills`, `~/.agents/skills`, `~/.openclaw/skills`, then bundled (shipped with install). Configurable via `skills.load.extraDirs`.",
+      "officialSource": "https://docs.openclaw.ai/tools/skills",
+      "alsoSee": ["https://docs.openclaw.ai/cli/skills"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "multi-agent-routing",
+      "term": "Multi-agent routing",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "Route inbound channels, accounts, or peers to isolated agents — each with its own workspace and per-agent sessions. Configured under `agents` in `openclaw.json`.",
+      "officialSource": "https://docs.openclaw.ai/concepts/multi-agent",
+      "alsoSee": ["https://docs.openclaw.ai/channels/channel-routing"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "compaction",
+      "term": "Compaction",
+      "category": "architecture",
+      "ourLabel": null,
+      "summary": "How long sessions get summarised so the context stays under model limits. The runtime trims older turns and keeps a rolling summary.",
+      "officialSource": "https://docs.openclaw.ai/concepts/compaction",
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "channel-whatsapp",
+      "term": "WhatsApp channel",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "Connects WhatsApp to the agent. Default DM policy is `pairing` — unknown senders receive a pairing code and don't reach the agent until approved. Group messaging supported.",
+      "officialSource": "https://docs.openclaw.ai/channels/whatsapp",
+      "alsoSee": ["https://docs.openclaw.ai/channels/group-messages"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "channel-telegram",
+      "term": "Telegram channel",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "Connects Telegram to the agent. DM pairing applies. Block streaming is on by default for Telegram (other channels need explicit `*.blockStreaming: true`).",
+      "officialSource": "https://docs.openclaw.ai/channels/telegram",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "channel-slack",
+      "term": "Slack channel",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "Connects Slack workspaces. DM policy `channels.slack.dmPolicy=\"pairing\"` is the default. Allowlist via `channels.slack.allowFrom`.",
+      "officialSource": "https://docs.openclaw.ai/channels/slack",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "channel-discord",
+      "term": "Discord channel",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "Connects Discord servers and DMs. Same pairing-default pattern as Slack. Channel-specific actions available as built-in tools.",
+      "officialSource": "https://docs.openclaw.ai/channels/discord",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "channel-imessage",
+      "term": "iMessage channel",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "Connects iMessage. Two backends: native iMessage and BlueBubbles (more mature). Pairing default applies. macOS-only host requirement.",
+      "officialSource": "https://docs.openclaw.ai/channels/imessage",
+      "alsoSee": ["https://docs.openclaw.ai/channels/bluebubbles"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "channel-msteams",
+      "term": "Microsoft Teams channel",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "Connects Microsoft Teams. Pairing default applies. Worth flagging for enterprise deployments.",
+      "officialSource": "https://docs.openclaw.ai/channels/msteams",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "channel-list-full",
+      "term": "Full channel list (24+)",
+      "category": "channel",
+      "ourLabel": null,
+      "summary": "WhatsApp · Telegram · Slack · Discord · Google Chat · Signal · iMessage · BlueBubbles · IRC · Microsoft Teams · Matrix · Feishu · LINE · Mattermost · Nextcloud Talk · Nostr · Synology Chat · Tlon · Twitch · Zalo · Zalo Personal · WeChat · QQ · WebChat · Yuanbao. Plus voice nodes on macOS/iOS/Android.",
+      "officialSource": "https://docs.openclaw.ai/channels/index",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "dm-policy",
+      "term": "DM policy",
+      "category": "security",
+      "ourLabel": null,
+      "summary": "Default `pairing` mode means unknown senders receive a short pairing code and the bot does NOT process their message. Approve with `openclaw pairing approve <channel> <code>`. Public DM access requires `dmPolicy=\"open\"` AND `\"*\"` in `allowFrom`.",
+      "officialSource": "https://docs.openclaw.ai/channels/pairing",
+      "alsoSee": ["https://docs.openclaw.ai/gateway/security"],
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "tool-read",
+      "term": "read",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Built-in file read tool. Always available subject to tool policy. Used by the agent to inspect workspace files.",
+      "officialSource": "https://docs.openclaw.ai/tools",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-exec",
+      "term": "exec",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Built-in shell exec tool. Subject to sandbox policy. The optional `apply_patch` shape is gated by `tools.exec.applyPatch`.",
+      "officialSource": "https://docs.openclaw.ai/tools",
+      "alsoSee": ["https://docs.openclaw.ai/gateway/sandboxing"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-edit",
+      "term": "edit",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Built-in file edit tool. Surgical edits to existing files (find/replace style). Subject to tool policy.",
+      "officialSource": "https://docs.openclaw.ai/tools",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-write",
+      "term": "write",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Built-in file write tool. Creates new files. Subject to tool policy.",
+      "officialSource": "https://docs.openclaw.ai/tools",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-browser",
+      "term": "browser",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Headless browser tool. Typically restricted in sandboxed (non-main) sessions.",
+      "officialSource": "https://docs.openclaw.ai/cli/browser",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-canvas",
+      "term": "canvas",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Live Canvas — agent-driven visual workspace with A2UI (agent-to-UI) protocol. macOS-first.",
+      "officialSource": "https://docs.openclaw.ai/platforms/mac/canvas",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-mcp",
+      "term": "MCP",
+      "category": "built-in-tool",
+      "ourLabel": null,
+      "summary": "Model Context Protocol bridge. Lets the agent use tools defined by external MCP servers (e.g. filesystem, GitHub, Slack).",
+      "officialSource": "https://docs.openclaw.ai/cli/mcp",
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "model-ref",
+      "term": "Model ref",
+      "category": "model",
+      "ourLabel": null,
+      "summary": "Format `provider/model` (e.g. `anthropic/claude-3-5-sonnet`). For OpenRouter-style nested refs, include the provider prefix: `openrouter/moonshotai/kimi-k2`. If you omit the provider, OpenClaw tries an alias, then a unique configured-provider match.",
+      "officialSource": "https://docs.openclaw.ai/concepts/models",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/model-failover", "https://docs.openclaw.ai/concepts/model-providers"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "auth-profile",
+      "term": "Auth profile",
+      "category": "model",
+      "ourLabel": null,
+      "summary": "Per-agent OAuth + API-key store. Lives at `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`. Supports OAuth for OpenAI (ChatGPT/Codex subscriptions).",
+      "officialSource": "https://docs.openclaw.ai/auth-credential-semantics",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/oauth"],
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "memory-builtin",
+      "term": "Built-in memory engine",
+      "category": "memory",
+      "ourLabel": null,
+      "summary": "OpenClaw's default memory backend. Stored under the workspace and surfaces in AGENTS.md as accumulated working memory.",
+      "officialSource": "https://docs.openclaw.ai/concepts/memory-builtin",
+      "alsoSee": ["https://docs.openclaw.ai/concepts/memory"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "memory-honcho",
+      "term": "Honcho memory",
+      "category": "memory",
+      "ourLabel": null,
+      "summary": "Optional memory backend powered by the Honcho external service. Useful for richer relational memory across sessions.",
+      "officialSource": "https://docs.openclaw.ai/concepts/memory-honcho",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "memory-qmd",
+      "term": "QMD memory engine",
+      "category": "memory",
+      "ourLabel": null,
+      "summary": "Quantised markdown memory engine. Stores long-term context in markdown chunks indexable by semantic search.",
+      "officialSource": "https://docs.openclaw.ai/concepts/memory-qmd",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "memory-search",
+      "term": "Memory search",
+      "category": "memory",
+      "ourLabel": null,
+      "summary": "Search across stored memory. Engine-dependent (builtin/Honcho/QMD all expose different search shapes).",
+      "officialSource": "https://docs.openclaw.ai/concepts/memory-search",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "active-memory",
+      "term": "Active memory",
+      "category": "memory",
+      "ourLabel": null,
+      "summary": "Memory injected into the current session's context. Distinct from long-term memory which lives in workspace files / memory engines.",
+      "officialSource": "https://docs.openclaw.ai/concepts/active-memory",
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "sandbox",
+      "term": "Sandbox",
+      "category": "security",
+      "ourLabel": null,
+      "summary": "Optional process isolation for non-`main` sessions. Default backend is Docker; SSH and OpenShell backends also available. Set `agents.defaults.sandbox.mode: \"non-main\"`. Typical sandbox allows bash/process/read/write/edit/sessions_*; denies browser/canvas/nodes/cron/discord/gateway.",
+      "officialSource": "https://docs.openclaw.ai/gateway/sandboxing",
+      "alsoSee": ["https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "tool-policy",
+      "term": "Tool policy",
+      "category": "security",
+      "ourLabel": null,
+      "summary": "Per-tool allow/deny rules independent of sandbox. Distinct from sandboxing (which isolates the whole process).",
+      "officialSource": "https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "openclaw-doctor",
+      "term": "openclaw doctor",
+      "category": "security",
+      "ourLabel": null,
+      "summary": "Diagnostic CLI command that surfaces risky/misconfigured DM policies, missing config, and deployment health issues. Run after every config change.",
+      "officialSource": "https://docs.openclaw.ai/cli/doctor",
+      "alsoSee": ["https://docs.openclaw.ai/gateway/doctor"],
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "cron-jobs",
+      "term": "Scheduled tasks (cron)",
+      "category": "automation",
+      "ourLabel": null,
+      "summary": "Time-triggered agent runs. Useful for daily summaries, periodic check-ins, status reports.",
+      "officialSource": "https://docs.openclaw.ai/automation/cron-jobs",
+      "alsoSee": ["https://docs.openclaw.ai/cli/cron"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "hooks",
+      "term": "Hooks",
+      "category": "automation",
+      "ourLabel": null,
+      "summary": "Event-triggered agent runs. Hooks fire on lifecycle events (session start, tool call, etc.).",
+      "officialSource": "https://docs.openclaw.ai/automation/hooks",
+      "alsoSee": ["https://docs.openclaw.ai/cli/hooks"],
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "standing-orders",
+      "term": "Standing orders",
+      "category": "automation",
+      "ourLabel": null,
+      "summary": "Persistent instructions stored in workspace files that the agent applies on every session. Different from BOOTSTRAP.md (one-time) — these recur.",
+      "officialSource": "https://docs.openclaw.ai/automation/standing-orders",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "task-flow",
+      "term": "Task flow",
+      "category": "automation",
+      "ourLabel": null,
+      "summary": "Multi-step background tasks the agent executes asynchronously. Distinct from interactive sessions.",
+      "officialSource": "https://docs.openclaw.ai/automation/taskflow",
+      "alsoSee": ["https://docs.openclaw.ai/automation/tasks"],
+      "lastVerified": "2026-05-07"
+    },
+
+    {
+      "id": "umbrella-connections",
+      "term": "Connections",
+      "category": "umbrella",
+      "ourLabel": "Connections",
+      "summary": "OUR umbrella term grouping channels + tools + models + memory engines into one tab. NOT in official OpenClaw docs. We use it because for a learner the question 'what plugs into what?' is easier with one section than four.",
+      "officialMapsTo": ["channels", "built-in tools", "models", "memory engines"],
+      "officialSource": null,
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "umbrella-plugins",
+      "term": "Plugins (in our editorial sense)",
+      "category": "umbrella",
+      "ourLabel": "Plugins",
+      "summary": "OUR editorial umbrella covering both 'skills' (bundled/managed/workspace skills loaded from skill folders) AND 'plugins' (the `openclaw plugins` CLI surface). OpenClaw uses both terms with slightly different meanings; in our catalog we describe each entry by its actual mechanism.",
+      "officialMapsTo": ["skill", "openclaw plugins (cli)"],
+      "officialSource": "https://docs.openclaw.ai/cli/plugins",
+      "lastVerified": "2026-05-07"
+    },
+    {
+      "id": "umbrella-field-note",
+      "term": "Field note",
+      "category": "umbrella",
+      "ourLabel": "Field note",
+      "summary": "OUR editorial pattern for plugin/skill writeups. Lighter than a formal scorecard. Each field note declares what we checked, what we didn't, sources used, and links to a dispute issue. NOT an OpenClaw-coined term.",
+      "officialMapsTo": [],
+      "officialSource": null,
+      "lastVerified": "2026-05-07"
+    }
+
+  ]
+}
