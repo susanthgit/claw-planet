@@ -119,9 +119,11 @@ If the primary fails (rate limit, outage, auth error), OpenClaw tries the next. 
 
 > *Why this matters:* model providers have outages. If your only model is OpenAI and OpenAI is down for 30 minutes, your agent is silent for 30 minutes. With failover, you degrade gracefully.
 
-## Cost notes (rough 2026-05 figures)
+## Cost notes (rough, illustrative figures · 2026-05)
 
-API call cost per 1M tokens at last check:
+> **These are rough estimates, not measured runs.** Pulled from each provider's public pricing page on 2026-05-07. Provider pricing changes frequently — re-check before you budget. The "monthly usage" figures are back-of-envelope assumptions about a personal-assistant workload (~1000 messages, ~2000 tokens each), not measurements from a real OpenClaw deployment.
+
+API call cost per 1M tokens at last check ([Anthropic pricing](https://www.anthropic.com/pricing) · [OpenAI pricing](https://openai.com/api/pricing/) · [Google AI pricing](https://ai.google.dev/pricing)):
 
 | Model | Input | Output |
 |---|---|---|
@@ -131,13 +133,13 @@ API call cost per 1M tokens at last check:
 | GPT-4o mini | $0.15 | $0.60 |
 | Gemini 2 Flash | $0.075 | $0.30 |
 
-A typical "personal assistant agent" usage profile (~1000 messages/month, ~2000 tokens/message average) lands at:
+For a back-of-envelope "personal assistant" usage profile (~1000 messages/month, ~2000 tokens/message average) the estimated monthly spend is:
 
-- Claude 3.5 Sonnet: **~$15–25/month**
-- GPT-4o mini: **~$1–3/month**
-- Gemini 2 Flash: **~$0.50–1.50/month**
+- Claude 3.5 Sonnet: **~$15–25/month** (estimate)
+- GPT-4o mini: **~$1–3/month** (estimate)
+- Gemini 2 Flash: **~$0.50–1.50/month** (estimate)
 
-Heavy agentic workflows (long sessions, multiple tool calls per message) can be 5–10× this.
+Heavy agentic workflows (long sessions, multiple tool calls per message) can be 5–10× this. **Measure your own usage before you trust the estimate.**
 
 > *Cost-runaway pattern:* see [§6.3 pattern #3](/security/practical-patterns/). Set provider-side spending alerts and hard caps before you tinker.
 

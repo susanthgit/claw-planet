@@ -46,7 +46,7 @@ This page is about the Docker shape itself. For environment-specific quirks, jum
 
 - You're on a fresh Linux server you control. Native install is simpler.
 - You want voice features (the macOS / iOS / Android voice nodes don't fit cleanly in containers).
-- You're optimising for cold-start speed (containers add ~500ms vs native on the same host).
+- You're optimising for cold-start speed (containerised processes carry some startup overhead vs native on the same host — we don't have a measured number for OpenClaw specifically).
 
 ## What needs to live outside the container
 

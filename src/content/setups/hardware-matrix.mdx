@@ -43,22 +43,24 @@ You can run an OpenClaw Gateway on a wide spectrum of hardware — from a Raspbe
 
 The Gateway runtime is Node 24 (or 22.14+). It needs:
 
-- **~200–500MB of RAM** at idle (one Gateway, one agent)
+- **~200–500MB of RAM at idle** (estimated, one Gateway, one agent — not measured by us yet)
 - **More if you load skills / MCP servers** — each loaded skill or MCP adds context
 - **Network connectivity to your model provider** — unless you're running local models, every message round-trip hits Anthropic / OpenAI / etc.
 - **Persistent disk** for sessions JSONL (`~/.openclaw/agents/<agentId>/sessions/`) and workspace files
 - **The ability to keep a process alive** — `launchd` on macOS, `systemd` on Linux, your platform's equivalent on Windows
 
-So the *runtime itself* is light. What grows your hardware needs is **what you connect to it**:
+So the *runtime itself* is light. What grows your hardware needs is **what you connect to it**.
+
+> **The table below is illustrative — sourced inferences, not measurements.** Local-model RAM/disk numbers come from the model providers' published specs (Ollama / Hugging Face). The Gateway-side figures are educated guesses pending a real measurement pass; treat them as ranges, not guarantees.
 
 | Workload | Extra RAM needed | Extra disk needed |
 |---|---|---|
 | Just the Gateway, text channels, API-based models | Negligible | Negligible |
-| Adding 5+ MCP servers (filesystem, GitHub, browser) | +100–500MB | Negligible |
-| Long sessions accumulating JSONL transcripts | Negligible | ~10MB / month / active session |
-| Local model via Ollama (e.g. Llama 3.1 8B) | +6GB at minimum | +5–10GB per model |
-| Local model larger (70B+) | +50GB+ and you need a decent GPU | +40GB+ per model |
-| Voice features (TTS, ASR) | +500MB–1GB | +1GB |
+| Adding 5+ MCP servers (filesystem, GitHub, browser) | +100–500MB (estimated) | Negligible |
+| Long sessions accumulating JSONL transcripts | Negligible | ~10MB / month / active session (estimated) |
+| Local model via Ollama (e.g. Llama 3.1 8B) | +6GB at minimum (model spec) | +5–10GB per model (model spec) |
+| Local model larger (70B+) | +50GB+ and you need a decent GPU (model spec) | +40GB+ per model (model spec) |
+| Voice features (TTS, ASR) | +500MB–1GB (estimated) | +1GB (estimated) |
 
 So if you want **API-only models + text channels**, almost any modern computer works. If you want **local models**, plan for the model's footprint not the runtime's.
 

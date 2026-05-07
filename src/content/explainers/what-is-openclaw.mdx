@@ -74,7 +74,7 @@ If you only remember five things from this page, make it these:
 
 1. **The Gateway is one process per machine.** It's a daemon, runs in the background, handles everything. Install with `npm install -g openclaw@latest` and run `openclaw onboard --install-daemon`.
 
-2. **There's exactly one agent runtime per Gateway.** Not a swarm. Not multi-agent. One persistent assistant.
+2. **There's one agent runtime per Gateway by default.** It's a single persistent assistant — not a swarm. (Multi-agent routing is supported when you actively configure it: different agents for different channels or accounts. The default shape is one.)
 
 3. **The workspace is a directory of plain markdown files.** [SOUL.md](/overview/concepts/#soul-md) is its personality, [AGENTS.md](/overview/concepts/#agents-md) is its operating instructions, [USER.md](/overview/concepts/#user-md) is what it knows about you, and so on. You can edit them with `vim`. You can put them in a git repo. They're injected into the system prompt every time the agent starts a session.
 

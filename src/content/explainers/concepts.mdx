@@ -100,7 +100,7 @@ These are the files OpenClaw expects to find at `~/.openclaw/workspace/`. They g
 
 ### Agent runtime
 
-**The single agent process inside the Gateway.** Built on the *Pi agent core* (models, tools, prompt pipeline). One agent runtime per Gateway. OpenClaw layers session management, discovery, tool wiring, and channel delivery on top of the core.
+**The single agent process inside the Gateway.** Built on the *Pi agent core* (models, tools, prompt pipeline). **By default, one agent runtime per Gateway** — though OpenClaw also supports [multi-agent routing](#multi-agent-routing) when you configure it (different agents per channel/account). OpenClaw layers session management, discovery, tool wiring, and channel delivery on top of the core.
 
 [Official agent runtime docs →](https://docs.openclaw.ai/concepts/agent)
 
