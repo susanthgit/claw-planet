@@ -17,6 +17,7 @@ import MarginCol from '@components/MarginCol.astro';
 import Footer from '@components/Footer.astro';
 import SearchModal from '@components/SearchModal.astro';
 import GlobalEnhance from '@components/GlobalEnhance.astro';
+import MobileDrawer from '@components/MobileDrawer.astro';
 import '@styles/global.css';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
@@ -124,6 +125,7 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   <Footer />
 
   <SearchModal />
+  <MobileDrawer />
   <GlobalEnhance />
 
   <!-- Theme toggle binding (deferred — runs after DOM ready) -->

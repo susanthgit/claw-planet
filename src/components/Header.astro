@@ -15,6 +15,7 @@ const editHref = entryFile
   ? `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`
   : 'https://github.com/susanthgit/claw-planet';
 const dateText = lastUpdated ?? '2026-05-08';
+const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '';
 ---
 
 <header class="header">
@@ -31,7 +32,7 @@ const dateText = lastUpdated ?? '2026-05-08';
       </svg>
       <div class="brand-text">
         Claw Planet
-        <small>reference · v0a · first cut</small>
+        <small>{isHome ? 'reference · v0a · first cut' : 'reference'}</small>
       </div>
     </a>
 
@@ -39,6 +40,21 @@ const dateText = lastUpdated ?? '2026-05-08';
       <input type="search" id="cp-search-trigger" placeholder="Search the reference (concepts · plugins · setup · gotchas)…" aria-label="Search the reference" readonly />
       <span class="kbd">⌘K</span>
     </label>
+
+    <button class="mobile-icon-btn search-icon-btn" id="cp-mobile-search" aria-label="Search" title="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </button>
+
+    <button class="mobile-icon-btn hamburger-btn" id="cp-mobile-menu" aria-label="Open menu" aria-expanded="false" aria-controls="cp-mobile-drawer" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="4" y1="7" x2="20" y2="7"/>
+        <line x1="4" y1="13" x2="20" y2="13"/>
+        <line x1="4" y1="19" x2="20" y2="19"/>
+      </svg>
+    </button>
 
     <div class="header-meta">
       <span class="meta-item meta-updated"><span class="dot">●</span> last updated {dateText}</span>
@@ -74,8 +90,26 @@ const dateText = lastUpdated ?? '2026-05-08';
   }
   @media (max-width: 1280px) { .header-inner { grid-template-columns: 240px 1fr auto; } }
   @media (max-width: 880px) {
-    .header-inner { grid-template-columns: 1fr auto; }
-    .search-row { grid-column: 1 / -1; grid-row: 2; margin-top: 8px; }
+    .header-inner { grid-template-columns: 1fr auto auto auto; gap: 8px; }
+    .search-row { display: none; }
+  }
+
+  /* Mobile-only icon buttons: search + hamburger.
+     Hidden by default; shown at <880px (search shows in 880-640 range too). */
+  .mobile-icon-btn {
+    display: none;
+    align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    color: var(--ink-mute);
+    cursor: pointer;
+    transition: border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+  }
+  .mobile-icon-btn:hover { border-color: var(--claw); color: var(--claw); }
+  .mobile-icon-btn svg { width: 18px; height: 18px; }
+  @media (max-width: 880px) {
+    .mobile-icon-btn { display: inline-flex; }
   }
 
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
@@ -148,15 +182,37 @@ const dateText = lastUpdated ?? '2026-05-08';
   :global([data-theme="dark"]) .theme-toggle .icon-sun { display: inline-block; }
 
   /* Responsive overrides — must come AFTER all default rules so media queries win */
+  @media (max-width: 880px) {
+    .header-meta .meta-item { display: none; }
+    .header-meta { gap: 8px; }
+  }
   @media (max-width: 640px) {
-    .header-inner { padding: 10px var(--page-pad-x); gap: 8px; }
+    .header-inner { padding: 10px var(--page-pad-x); gap: 6px; }
     .brand-text small { display: none; }
-    .meta-item { display: none; }
-    .header-meta { gap: 0; }
-    .search-row input::placeholder { font-size: 11.5px; }
-    .search-row .kbd { display: none; }
   }
   @media (max-width: 420px) {
     .brand-text { font-size: 13px; }
   }
 </style>
+
+<script is:inline>
+  /* Wire the mobile-search icon to the existing search modal trigger.
+     SearchModal listens for clicks on #cp-search-trigger. */
+  (function () {
+    var s = document.getElementById('cp-mobile-search');
+    if (!s) return;
+    s.addEventListener('click', function () {
+      var trigger = document.getElementById('cp-search-trigger');
+      if (trigger) trigger.click();
+    });
+  })();
+
+  /* Wire the hamburger to the mobile drawer via a custom event. */
+  (function () {
+    var btn = document.getElementById('cp-mobile-menu');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      window.dispatchEvent(new CustomEvent('cp-toggle-drawer'));
+    });
+  })();
+</script>

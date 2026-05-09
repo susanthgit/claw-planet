@@ -1,0 +1,148 @@
+---
+/**
+ * RecentUpdates — the home-page slice of the §8 updates feed.
+ *
+ * Pulls the three most recent entries from src/data/updates.ts (the SSOT)
+ * so the home and /updates/ never disagree about what's the latest.
+ *
+ * Same UpdateRow-style layout as the dedicated /updates/ page, just trimmed.
+ */
+import { updates } from '@data/updates';
+
+const recent = updates.slice(0, 3);
+---
+
+<section class="recent-updates" aria-labelledby="ru-heading">
+  <h2 id="ru-heading" class="ru-heading">
+    <span class="ru-num">·</span>
+    What's new
+  </h2>
+  <p class="ru-sub">Hand-curated. Not a CVE feed. <a href="/updates/">See the full feed →</a></p>
+
+  <div class="ru-list">
+    {recent.map(u => {
+      const isInternal = u.href.startsWith('/');
+      return (
+        <article class="ru-row">
+          <span class="ru-date">{u.date}</span>
+          <span class={`ru-tag ru-tag--${u.tag.toLowerCase()}`}>{u.tag}</span>
+          <div class="ru-body">
+            <a class="ru-title" href={u.href} target={isInternal ? undefined : '_blank'} rel={isInternal ? undefined : 'noopener'}>{u.title}</a>
+            <p class="ru-meta">{u.meta}</p>
+          </div>
+        </article>
+      );
+    })}
+  </div>
+</section>
+
+<style>
+  .recent-updates {
+    margin: 0 0 32px;
+  }
+  .ru-heading {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: var(--ls-snug);
+    color: var(--ink);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .ru-num {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 14px;
+  }
+  .ru-sub {
+    color: var(--ink-mute);
+    font-size: 14px;
+    margin-bottom: 18px;
+    max-width: 680px;
+  }
+  .ru-sub a {
+    color: var(--claw);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--claw);
+    padding-bottom: 1px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: var(--ls-wide);
+  }
+  .ru-sub a:hover { border-bottom-style: solid; }
+
+  .ru-list {
+    border-top: 1px solid var(--rule-faint);
+  }
+  .ru-row {
+    display: grid;
+    grid-template-columns: 100px 90px 1fr;
+    gap: 16px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--rule-faint);
+    align-items: baseline;
+  }
+  .ru-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-wide);
+  }
+  .ru-tag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 2px 8px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    color: var(--ink-mute);
+    background: var(--paper-warm);
+    letter-spacing: var(--ls-wider);
+    font-weight: 600;
+    text-align: center;
+    justify-self: start;
+  }
+  .ru-tag--cve, .ru-tag--advisory {
+    color: var(--claw);
+    border-color: var(--claw);
+    background: var(--claw-tint);
+  }
+  .ru-tag--release {
+    color: var(--olive);
+    border-color: var(--olive);
+    background: var(--olive-soft);
+  }
+  .ru-tag--news {
+    color: var(--amber);
+    border-color: var(--amber);
+    background: var(--amber-soft);
+  }
+  .ru-tag--deprecated {
+    color: var(--ink-mute);
+    border-color: var(--rule);
+  }
+
+  .ru-body { min-width: 0; }
+  .ru-title {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 14.5px;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+  .ru-title:hover { color: var(--claw); }
+  .ru-meta {
+    color: var(--ink-mute);
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin-top: 4px;
+    max-width: 680px;
+  }
+
+  @media (max-width: 720px) {
+    .ru-row { grid-template-columns: 1fr; gap: 4px; padding: 12px 0; }
+    .ru-tag { justify-self: start; }
+    .ru-meta { font-size: 13px; }
+  }
+</style>

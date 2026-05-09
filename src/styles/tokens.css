@@ -45,11 +45,11 @@
   --fs-2xs:  9.5px;
   --fs-xs:   10.5px;
   --fs-sm:   12px;
-  --fs-base: 15px;
-  --fs-md:   16px;
-  --fs-lg:   19px;
-  --fs-xl:   22px;
-  --fs-2xl:  28px;
+  --fs-base: 16px;
+  --fs-md:   17px;
+  --fs-lg:   20px;
+  --fs-xl:   24px;
+  --fs-2xl:  30px;
 
   /* Line heights */
   --lh-tight:   1.2;

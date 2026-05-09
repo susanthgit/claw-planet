@@ -1,0 +1,389 @@
+---
+/**
+ * MobileDrawer — slide-in left panel for <880px.
+ * Opens when the header hamburger fires the `cp-toggle-drawer` custom event.
+ * Mirrors the desktop Sidebar contents (§1–§10 + reading aids).
+ *
+ * Closes on:
+ *   - backdrop click
+ *   - Escape key
+ *   - clicking any link inside (so navigation closes the drawer)
+ *   - swipe-left (touch only)
+ *
+ * Body scroll locks while open.
+ */
+import { getCollection } from 'astro:content';
+import coverage from '@data/coverage.json';
+
+function badge(state: string | undefined): { state: 't' | 's' | 'e'; label: string } {
+  if (state === 'tested-by-sush' || state === 'tested-by-contributor') return { state: 't', label: 'tested' };
+  if (state === 'sourced-only') return { state: 's', label: 'sourced' };
+  if (state === 'planned') return { state: 'e', label: 'planned' };
+  return { state: 's', label: 'sourced' };
+}
+
+async function loadChildren(name: string, baseHref: string) {
+  const all = await getCollection(name as any);
+  return all
+    .filter((e: any) => e.data.status === 'published')
+    .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber))
+    .map((e: any) => {
+      const slug = e.id.replace(/\.mdx?$/, '');
+      const b = badge(e.data.verificationState);
+      return {
+        num: e.data.sectionNumber,
+        title: e.data.title,
+        href: `${baseHref}${slug}/`,
+        state: b.state,
+        label: b.label,
+      };
+    });
+}
+
+const overviewKids = await loadChildren('explainers', '/overview/');
+const setupKids = await loadChildren('setups', '/setup/');
+const connectionsKids = await loadChildren('connections', '/connections/');
+const pluginsKids = await loadChildren('plugins', '/plugins/');
+const useCasesKids = await loadChildren('use-cases', '/use-cases/');
+const securityKids = await loadChildren('gotchas', '/security/');
+const compareKids = await loadChildren('compares', '/compare/');
+
+const sections = [
+  { num: '§1',  title: 'Overview',    count: overviewKids.length,    slug: '/overview/',    children: overviewKids },
+  { num: '§2',  title: 'Setup',       count: setupKids.length,       slug: '/setup/',       children: setupKids },
+  { num: '§3',  title: 'Connections', count: connectionsKids.length, slug: '/connections/', children: connectionsKids },
+  { num: '§4',  title: 'Plugins',     count: pluginsKids.length,     slug: '/plugins/',     children: pluginsKids },
+  { num: '§5',  title: 'Use cases',   count: useCasesKids.length,    slug: '/use-cases/',   children: useCasesKids },
+  { num: '§6',  title: 'Security',    count: securityKids.length,    slug: '/security/',    children: securityKids },
+  { num: '§7',  title: 'Compare',     count: compareKids.length,     slug: '/compare/',     children: compareKids },
+  { num: '§8',  title: 'Updates',     count: coverage.sections.updates.current,   slug: '/updates/' },
+  { num: '§9',  title: 'Resources',   count: coverage.sections.resources.current, slug: '/resources/' },
+  { num: '§10', title: 'FAQ',         count: coverage.sections.faq.current,       slug: '/faq/' },
+];
+
+const readingAids = [
+  { title: 'Methodology',           slug: '/methodology/' },
+  { title: 'Verification states',   slug: '/methodology/#verification-states' },
+  { title: 'Sources & citations',   slug: '/methodology/#sources' },
+  { title: 'Dispute an entry',      slug: 'https://github.com/susanthgit/claw-planet/issues/new?template=dispute.md' },
+  { title: 'Colophon',              slug: '/colophon/' },
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') + '/';
+---
+
+<div id="cp-mobile-drawer" class="cp-drawer" role="dialog" aria-modal="true" aria-label="Site navigation" hidden>
+  <div class="cp-drawer__backdrop" data-drawer-close></div>
+  <aside class="cp-drawer__panel">
+    <header class="cp-drawer__head">
+      <span class="cp-drawer__title">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke-linecap="round" aria-hidden="true">
+          <path d="M7 4 L4 4 L4 20 L7 20" stroke="currentColor" stroke-width="2.2"/>
+          <path d="M17 4 L20 4 L20 20 L17 20" stroke="currentColor" stroke-width="2.2"/>
+          <g stroke="var(--claw)" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8.5" y1="9.5" x2="15.5" y2="14.5"/>
+            <line x1="15.5" y1="9.5" x2="8.5" y2="14.5"/>
+          </g>
+        </svg>
+        Contents
+      </span>
+      <button class="cp-drawer__close" aria-label="Close menu" data-drawer-close>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </button>
+    </header>
+
+    <nav class="cp-drawer__nav">
+      {sections.map(sec => (
+        <div class={`cp-drawer__group ${currentPath.startsWith(sec.slug) ? 'is-current' : ''}`}>
+          <a class={`cp-drawer__section ${currentPath === sec.slug ? 'active' : ''}`} href={sec.slug}>
+            <span class="num">{sec.num}</span>
+            <span class="title">{sec.title}</span>
+            {sec.count !== undefined && <span class="count">{sec.count}</span>}
+          </a>
+          {sec.children && sec.children.length > 0 && currentPath.startsWith(sec.slug) && (
+            <ul class="cp-drawer__children">
+              {sec.children.map((child: any) => (
+                <li>
+                  <a href={child.href} class={currentPath === child.href ? 'active' : ''}>
+                    <span class="num">{child.num}</span>
+                    <span class="title">{child.title}</span>
+                    {child.state && <span class={`verif ${child.state}`}>{child.label}</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+
+      <h5 class="cp-drawer__head-aids">Reading aids</h5>
+      {readingAids.map(aid => (
+        <a class="cp-drawer__aside" href={aid.slug}>{aid.title}</a>
+      ))}
+
+      <div class="cp-drawer__legend">
+        <span class="cp-drawer__legend-row"><i style="background: var(--olive)"></i>tested by us</span>
+        <span class="cp-drawer__legend-row"><i style="background: var(--amber)"></i>sourced only</span>
+        <span class="cp-drawer__legend-row"><i style="background: var(--claw)"></i>planned</span>
+      </div>
+    </nav>
+  </aside>
+</div>
+
+<script is:inline>
+  (function () {
+    var drawer = document.getElementById('cp-mobile-drawer');
+    if (!drawer) return;
+    var trigger = document.getElementById('cp-mobile-menu');
+    var lockedScrollY = 0;
+
+    function open() {
+      lockedScrollY = window.scrollY || 0;
+      drawer.removeAttribute('hidden');
+      requestAnimationFrame(function () { drawer.classList.add('is-open'); });
+      document.body.style.position = 'fixed';
+      document.body.style.top = '-' + lockedScrollY + 'px';
+      document.body.style.width = '100%';
+      if (trigger) trigger.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      drawer.classList.remove('is-open');
+      setTimeout(function () { drawer.setAttribute('hidden', ''); }, 250);
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, lockedScrollY);
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    }
+    function toggle() {
+      if (drawer.hasAttribute('hidden')) open(); else close();
+    }
+
+    window.addEventListener('cp-toggle-drawer', toggle);
+
+    drawer.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t && t.closest && t.closest('[data-drawer-close]')) close();
+      // Also close when a navigation link is clicked
+      if (t && t.tagName === 'A' && t.closest('.cp-drawer__nav')) close();
+      if (t && t.parentElement && t.parentElement.tagName === 'A' && t.closest('.cp-drawer__nav')) close();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !drawer.hasAttribute('hidden')) close();
+    });
+
+    // Close drawer if viewport widens past mobile breakpoint
+    var mq = window.matchMedia('(min-width: 881px)');
+    if (mq.addEventListener) {
+      mq.addEventListener('change', function (ev) { if (ev.matches && !drawer.hasAttribute('hidden')) close(); });
+    }
+  })();
+</script>
+
+<style>
+  .cp-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: block;
+    pointer-events: none;
+  }
+  .cp-drawer[hidden] { display: none; }
+  .cp-drawer__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 14, 11, 0.4);
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease);
+    pointer-events: auto;
+  }
+  .cp-drawer.is-open .cp-drawer__backdrop { opacity: 1; }
+
+  .cp-drawer__panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: min(86vw, 360px);
+    height: 100dvh;
+    background: var(--paper);
+    border-right: 1px solid var(--rule);
+    transform: translateX(-100%);
+    transition: transform var(--dur-base) var(--ease);
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .cp-drawer.is-open .cp-drawer__panel { transform: translateX(0); }
+
+  .cp-drawer__head {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .cp-drawer__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .cp-drawer__title .brand-mark {
+    width: 20px; height: 20px;
+    color: var(--ink);
+  }
+  .cp-drawer__close {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+  .cp-drawer__close:hover { color: var(--claw); border-color: var(--claw); }
+  .cp-drawer__close svg { width: 14px; height: 14px; }
+
+  .cp-drawer__nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cp-drawer__group { margin-bottom: 4px; }
+  .cp-drawer__section {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 4px;
+    align-items: baseline;
+    padding: 8px 8px 8px 4px;
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: var(--radius);
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .cp-drawer__section:hover { color: var(--claw); background: var(--paper-warm); }
+  .cp-drawer__section .num {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .cp-drawer__section .count {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 11px;
+    font-weight: 400;
+    padding: 1px 6px;
+    border: 1px solid var(--rule-faint);
+    border-radius: var(--radius-sm);
+  }
+  .cp-drawer__section.active { color: var(--claw); }
+  .cp-drawer__group.is-current .cp-drawer__section { background: var(--claw-tint); }
+
+  .cp-drawer__children {
+    list-style: none;
+    margin: 4px 0 8px 36px;
+    padding: 0;
+  }
+  .cp-drawer__children a {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 4px;
+    align-items: baseline;
+    padding: 6px 4px;
+    text-decoration: none;
+    color: var(--ink-mute);
+    font-size: 13px;
+    line-height: 1.4;
+    border-radius: var(--radius-sm);
+  }
+  .cp-drawer__children a:hover { color: var(--claw); background: var(--paper-warm); }
+  .cp-drawer__children a.active { color: var(--claw); font-weight: 500; }
+  .cp-drawer__children .num { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+  .cp-drawer__children .verif {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+    color: var(--ink-faint);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule-faint);
+    letter-spacing: var(--ls-wide);
+  }
+  .cp-drawer__children .verif.t { color: var(--olive); border-color: var(--olive); background: var(--olive-soft); }
+  .cp-drawer__children .verif.s { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+  .cp-drawer__children .verif.e { color: var(--claw); border-color: var(--claw); background: var(--claw-tint); }
+
+  .cp-drawer__head-aids {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-widest);
+    margin: 24px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--rule-faint);
+  }
+  .cp-drawer__aside {
+    display: block;
+    padding: 6px 4px 6px 14px;
+    text-decoration: none;
+    color: var(--ink-mute);
+    font-size: 13px;
+    position: relative;
+  }
+  .cp-drawer__aside::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: var(--ink-faint);
+  }
+  .cp-drawer__aside:hover { color: var(--claw); }
+
+  .cp-drawer__legend {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--rule-faint);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-mute);
+  }
+  .cp-drawer__legend-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cp-drawer__legend-row i {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* The drawer is mobile-only; on desktop the sidebar handles navigation. */
+  @media (min-width: 881px) {
+    .cp-drawer { display: none !important; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .cp-drawer__panel { transition: none; }
+    .cp-drawer__backdrop { transition: none; }
+  }
+</style>

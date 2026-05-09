@@ -1,0 +1,163 @@
+---
+/**
+ * ReadingPaths — three index-card-style entries on the home page.
+ *
+ * The current Banner has a one-line "reading paths" sentence with hash anchors;
+ * this component blows it up into three proper cards so the most common reader
+ * intents are visually obvious.
+ *
+ * Notebook-tab aesthetic — sharp corners, paper warm hover, no shadow,
+ * mono number tab on the corner. NOT glossy SaaS cards.
+ */
+
+const paths = [
+  {
+    num: '01',
+    label: "I'm new to OpenClaw",
+    title: 'Five-minute orientation',
+    blurb: 'The 30-second version, the seven canonical workspace files, a flat schematic of the runtime, and the drawbacks the official docs won\'t lead with.',
+    href: '/overview/',
+    cta: 'Open §1 Overview',
+  },
+  {
+    num: '02',
+    label: 'I want to install',
+    title: 'Pick a setup path',
+    blurb: 'Six install paths from laptop to Pi to Azure, plus a hardware matrix. Concrete commands. Honest verification states on each page.',
+    href: '/setup/',
+    cta: 'Open §2 Setup',
+  },
+  {
+    num: '07',
+    label: "I'm comparing stacks",
+    title: 'OpenClaw vs the alternatives',
+    blurb: 'Honest matchups against MCP-based stacks, Claude Desktop + plugins, hosted SaaS. Where OpenClaw fits — and where it doesn\'t.',
+    href: '/compare/',
+    cta: 'Open §7 Compare',
+  },
+];
+---
+
+<section class="reading-paths" aria-labelledby="rp-heading">
+  <h2 id="rp-heading" class="rp-heading">
+    <span class="rp-num">·</span>
+    Pick a reading path
+  </h2>
+  <p class="rp-sub">Three doors in. Each one leads to a section page where every entry carries a verification badge.</p>
+
+  <div class="rp-grid">
+    {paths.map(p => (
+      <a class="rp-card" href={p.href}>
+        <span class="rp-card-num">§ {p.num}</span>
+        <span class="rp-card-label">{p.label}</span>
+        <span class="rp-card-title">{p.title}</span>
+        <span class="rp-card-blurb">{p.blurb}</span>
+        <span class="rp-card-cta">{p.cta} →</span>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .reading-paths {
+    margin: 0 0 56px;
+  }
+  .rp-heading {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: var(--ls-snug);
+    color: var(--ink);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .rp-num {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 14px;
+  }
+  .rp-sub {
+    color: var(--ink-mute);
+    font-size: 14px;
+    margin-bottom: 18px;
+    max-width: 680px;
+  }
+
+  .rp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .rp-card {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 6px;
+    padding: 18px 20px 18px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    text-decoration: none;
+    position: relative;
+    transition: border-color var(--dur-base) var(--ease),
+                background var(--dur-base) var(--ease),
+                transform var(--dur-base) var(--ease);
+  }
+  .rp-card:hover {
+    border-color: var(--claw);
+    background: var(--paper-warm);
+    transform: translateY(-1px);
+  }
+
+  .rp-card-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+  }
+  .rp-card-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--claw);
+    letter-spacing: var(--ls-wider);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .rp-card-title {
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: var(--ls-snug);
+    line-height: 1.25;
+    margin-top: 2px;
+  }
+  .rp-card-blurb {
+    font-size: 13.5px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+  .rp-card-cta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claw);
+    letter-spacing: var(--ls-wide);
+    margin-top: 12px;
+    border-top: 1px dashed var(--rule-faint);
+    padding-top: 10px;
+  }
+
+  @media (max-width: 1080px) {
+    .rp-grid { grid-template-columns: 1fr 1fr; }
+    .rp-grid .rp-card:nth-child(3) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    .rp-grid { grid-template-columns: 1fr; gap: 12px; }
+    .rp-grid .rp-card:nth-child(3) { grid-column: auto; }
+    .rp-heading { font-size: 19px; }
+    .rp-card { padding: 16px 16px; }
+    .rp-card-title { font-size: 16px; }
+  }
+</style>

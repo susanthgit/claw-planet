@@ -1,0 +1,139 @@
+---
+/**
+ * SectionGrid — compact grid of all 10 sections on the home page.
+ *
+ * Replaces the old behaviour of dumping the full catalog table for every
+ * section onto the home (~50+ entries). Now the home gives you a clean
+ * navigational matrix; each section page has its own catalog table.
+ *
+ * Each card: § number · title · 1-line subtitle · count badge.
+ * Notebook index-card aesthetic — same family as ReadingPaths.
+ */
+import coverage from '@data/coverage.json';
+
+const sections = [
+  { num: '1',  title: 'Overview',    href: '/overview/',    sub: 'Five-minute orientation. Concepts, workspace files, schematic.', count: coverage.sections.overview.current },
+  { num: '2',  title: 'Setup',       href: '/setup/',       sub: 'Install paths from laptop to Pi to Azure, plus a hardware matrix.',  count: coverage.sections.setup.current },
+  { num: '3',  title: 'Connections', href: '/connections/', sub: 'Channels, tools, models, memory — the integration patterns.',       count: coverage.sections.connections.current },
+  { num: '4',  title: 'Plugins',     href: '/plugins/',     sub: 'Field notes on marketplace plugins. Sourced, not endorsed.',         count: coverage.sections.plugins.current },
+  { num: '5',  title: 'Use cases',   href: '/use-cases/',   sub: 'End-to-end recipes. Hello-world, Slack agent, RAG, Pi home.',        count: coverage.sections.useCases.current },
+  { num: '6',  title: 'Security',    href: '/security/',    sub: 'Patterns to do (and not do) when self-hosting an agent runtime.',    count: coverage.sections.gotchas.current },
+  { num: '7',  title: 'Compare',     href: '/compare/',     sub: 'OpenClaw vs MCP-based stacks. Honest matchups, no marketing.',       count: coverage.sections.compares.current },
+  { num: '8',  title: 'Updates',     href: '/updates/',     sub: 'Hand-curated. Not a CVE feed. Date · type · source link.',           count: coverage.sections.updates.current },
+  { num: '9',  title: 'Resources',   href: '/resources/',   sub: 'The good stuff written elsewhere. Linked, not duplicated.',          count: coverage.sections.resources.current },
+  { num: '10', title: 'FAQ',         href: '/faq/',         sub: 'Real questions Sush had. Production readiness, cost, longevity.',    count: coverage.sections.faq.current },
+];
+---
+
+<section class="section-grid-block" aria-labelledby="sg-heading">
+  <h2 id="sg-heading" class="sg-heading">
+    <span class="sg-num">·</span>
+    Browse by section
+  </h2>
+  <p class="sg-sub">All ten sections. Click any tile to open the section's catalog.</p>
+
+  <div class="sg-grid">
+    {sections.map(s => (
+      <a class="sg-card" href={s.href}>
+        <span class="sg-card-head">
+          <span class="sg-card-num">§&nbsp;{s.num}</span>
+          <span class="sg-card-title">{s.title}</span>
+          <span class="sg-card-count">{s.count}</span>
+        </span>
+        <span class="sg-card-sub">{s.sub}</span>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-grid-block {
+    margin: 0 0 56px;
+  }
+  .sg-heading {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: var(--ls-snug);
+    color: var(--ink);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .sg-num {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 14px;
+  }
+  .sg-sub {
+    color: var(--ink-mute);
+    font-size: 14px;
+    margin-bottom: 18px;
+    max-width: 680px;
+  }
+
+  .sg-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .sg-card {
+    display: grid;
+    gap: 6px;
+    padding: 14px 18px;
+    border: 1px solid var(--rule-faint);
+    background: var(--canvas);
+    text-decoration: none;
+    transition: border-color var(--dur-fast) var(--ease),
+                background var(--dur-fast) var(--ease);
+  }
+  .sg-card:hover {
+    border-color: var(--claw);
+    background: var(--paper-warm);
+  }
+  .sg-card-head {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .sg-card-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-wide);
+    font-weight: 500;
+  }
+  .sg-card-title {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: var(--ls-snug);
+  }
+  .sg-card-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    padding: 2px 7px;
+    border: 1px solid var(--rule-faint);
+    border-radius: var(--radius-pill);
+    letter-spacing: var(--ls-wide);
+  }
+  .sg-card-sub {
+    font-size: 13px;
+    color: var(--ink-mute);
+    line-height: 1.45;
+    padding-left: 66px;
+  }
+
+  @media (max-width: 880px) {
+    .sg-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .sg-card-head { grid-template-columns: 44px 1fr auto; gap: 8px; }
+    .sg-card-sub { padding-left: 52px; font-size: 12.5px; }
+    .sg-card-title { font-size: 15px; }
+  }
+</style>

@@ -27,6 +27,19 @@ body {
               color var(--dur-base) var(--ease);
 }
 
+/* Dark-mode chrome polish — reserve claw-red for actions + verification badges.
+   In dark mode, navigational §-numbers (sidebar + section heads) drop to ink-faint
+   so the brand red doesn't compete with the verification pills it should highlight. */
+[data-theme="dark"] .h1-section .sec-num,
+[data-theme="dark"] aside.sidebar .nav-section .num,
+[data-theme="dark"] aside.sidebar .nav-section .count {
+  color: var(--ink-mute);
+}
+[data-theme="dark"] aside.sidebar .nav-section.active,
+[data-theme="dark"] aside.sidebar .nav-children a.active {
+  color: var(--claw);
+}
+
 /* Subtle graph-paper texture */
 body::before {
   content: '';

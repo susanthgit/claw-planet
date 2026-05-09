@@ -1,8 +1,14 @@
 ---
 /**
- * Banner — front-matter card at the top of the home page.
- * Two-sentence "what this site is" + reading-paths hint + metadata row.
- * NOT a hero. NOT a CTA.
+ * Banner — front-matter card on the home page.
+ *
+ * Two short paragraphs:
+ *   1. What OpenClaw is, in plain English (the thing this site is about).
+ *   2. What Claw Planet is, and the verification contract that IS the brand.
+ *
+ * Followed by a meta strip (topic · last reviewed · edition · licence · source).
+ *
+ * NOT a hero. NOT a CTA. Front-matter of a printed book.
  */
 
 export interface Props {
@@ -15,7 +21,7 @@ export interface Props {
 
 const {
   topic = 'OpenClaw v2026.5.x',
-  lastReviewed = '2026-05-07',
+  lastReviewed = '2026-05-08',
   edition = 'v0a · first cut',
   licence = 'CC BY 4.0 where applicable',
   source = 'github.com/susanthgit/claw-planet',
@@ -23,28 +29,30 @@ const {
 ---
 
 <div class="banner">
-  <p>
-    <strong>Claw Planet</strong> is a study reference for the OpenClaw agent runtime — the concepts,
-    the setup paths, the connection patterns, the marketplace plugins, the security gotchas, and
-    what's currently changing. Written for tech-savvy readers in plain English, with every entry
-    declaring whether it's been verified or only sourced from docs.
+  <div class="banner-tag">FRONT MATTER · {lastReviewed}</div>
+
+  <p class="banner-lede">
+    <strong>OpenClaw</strong> is a personal AI assistant you run on your own machine.
+    One process — the <em>Gateway</em> — sits on your laptop and connects to the messaging apps
+    you already use (WhatsApp, Telegram, Slack, iMessage, Discord, twenty-plus more). When a
+    message comes in, the Gateway hands it to a single agent process that reads its config
+    files, calls a model, runs whatever tools are needed, and replies on the same channel.
+    Local-first. Single-user. Yours.
   </p>
-  <div class="reading-paths">
-    <span class="rp-label">Reading paths:</span>
-    <span><a href="#sec-1">§1</a> if you're new</span>
-    <span class="sep">·</span>
-    <span>jump to <a href="#sec-2">§2</a> to install</span>
-    <span class="sep">·</span>
-    <span><a href="#sec-3">§3</a>–<a href="#sec-7">§7</a> to browse by topic</span>
-    <span class="sep">·</span>
-    <span><a href="#sec-8">§8</a> for what's changing</span>
-  </div>
+
+  <p class="banner-body">
+    <strong>Claw Planet</strong> is a study reference for that runtime — concepts, install paths,
+    connection patterns, plugin field notes, security gotchas, and what's currently changing.
+    Every entry declares whether it's been <span class="b-pill b-t">tested by us</span> or
+    <span class="b-pill b-s">sourced only</span> from docs. That honesty is the contract.
+  </p>
+
   <div class="banner-meta">
-    <span><strong>Topic:</strong> {topic}</span>
-    <span><strong>Last reviewed:</strong> {lastReviewed}</span>
-    <span><strong>Edition:</strong> {edition}</span>
-    <span><strong>Licence:</strong> {licence}</span>
-    <span><strong>Source:</strong> {source}</span>
+    <span><strong>Topic</strong>{topic}</span>
+    <span><strong>Last reviewed</strong>{lastReviewed}</span>
+    <span><strong>Edition</strong>{edition}</span>
+    <span><strong>Licence</strong>{licence}</span>
+    <span><strong>Source</strong>{source}</span>
   </div>
 </div>
 
@@ -52,15 +60,14 @@ const {
   .banner {
     border: 1px solid var(--rule-faint);
     background: var(--canvas);
-    padding: 22px 28px;
-    margin-bottom: 36px;
+    padding: 28px 32px 24px;
+    margin-bottom: 40px;
     position: relative;
   }
-  .banner::before {
-    content: 'FRONT MATTER · 2026-05-07';
+  .banner-tag {
     position: absolute;
     top: -8px;
-    left: 16px;
+    left: 20px;
     background: var(--paper);
     padding: 0 8px;
     font-family: var(--mono);
@@ -68,54 +75,82 @@ const {
     color: var(--ink-faint);
     letter-spacing: var(--ls-widest);
   }
-  .banner p {
-    font-size: var(--fs-md);
-    line-height: var(--lh-normal);
+
+  .banner-lede {
+    font-size: 17px;
+    line-height: 1.6;
     color: var(--ink);
     max-width: 760px;
+    margin-bottom: 14px;
     font-weight: 400;
   }
-  .reading-paths {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--rule-faint);
-    display: flex;
-    gap: 8px;
-    font-size: 13.5px;
-    color: var(--ink-mute);
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .reading-paths .rp-label {
-    font-family: var(--mono);
-    font-size: 10.5px;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-wider);
-    margin-right: 4px;
-  }
-  .reading-paths a {
+  .banner-lede strong {
+    font-weight: 700;
     color: var(--ink);
-    font-weight: 600;
-    text-decoration: none;
-    border-bottom: 1px solid var(--rule);
   }
-  .reading-paths a:hover { color: var(--claw); border-bottom-color: var(--claw); }
-  .reading-paths .sep { color: var(--ink-faint); }
+  .banner-lede em {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--ink-mid);
+    font-style: normal;
+    background: var(--paper-warm);
+    padding: 0 4px;
+    border-radius: 2px;
+  }
 
-  .banner-meta {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--rule-faint);
-    display: flex;
-    gap: 24px;
+  .banner-body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-mid);
+    max-width: 760px;
+    margin-bottom: 18px;
+  }
+  .banner-body strong { color: var(--ink); font-weight: 700; }
+
+  .b-pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid;
     font-family: var(--mono);
     font-size: 11px;
-    color: var(--ink-faint);
+    font-weight: 500;
+    letter-spacing: var(--ls-wide);
+    vertical-align: 1px;
+    margin: 0 2px;
+  }
+  .b-pill.b-t { color: var(--olive); border-color: var(--olive); background: var(--olive-soft); }
+  .b-pill.b-s { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+
+  .banner-meta {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule-faint);
+    display: flex;
+    gap: 28px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mute);
     flex-wrap: wrap;
   }
+  .banner-meta span {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
   .banner-meta strong {
-    color: var(--ink-mid);
+    color: var(--ink-faint);
     font-weight: 600;
+    font-size: 9.5px;
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 640px) {
+    .banner { padding: 22px 18px 18px; }
+    .banner-lede { font-size: 16px; }
+    .banner-body { font-size: 14.5px; }
+    .banner-meta { gap: 18px; font-size: 10.5px; }
   }
 </style>
+
