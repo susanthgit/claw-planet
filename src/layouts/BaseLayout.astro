@@ -11,6 +11,7 @@
  * - Footer with independence + Microsoft disclosure
  */
 import Header from '@components/Header.astro';
+import CosmosBar from '@components/CosmosBar.astro';
 import Sidebar from '@components/Sidebar.astro';
 import MarginCol from '@components/MarginCol.astro';
 import Footer from '@components/Footer.astro';
@@ -102,9 +103,11 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   <link rel="alternate" type="application/rss+xml" title="Claw Planet — Updates" href="/updates/feed.xml" />
 
   {schemaJsonLd && <script type="application/ld+json" set:html={schemaJsonLd} />}
+  <link rel="stylesheet" href="/cosmos-bar.css" />
 </head>
 
 <body class={bodyClass}>
+  <CosmosBar />
   <a href="#main" class="skip-link">Skip to main content</a>
 
   <Header entryFile={entryFile} lastUpdated={lastUpdated} />
