@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import SectionHead from '@components/SectionHead.astro';
-import SectionBlurb from '@components/SectionBlurb.astro';
+import SectionHero from '@components/SectionHero.astro';
 import CatalogTable from '@components/CatalogTable.astro';
 import { getCollection } from 'astro:content';
 
@@ -19,20 +18,18 @@ const catalogEntries = securityEntries.map(e => ({
   date: e.data.lastReviewedAt,
 }));
 
-const verbCount = `${securityEntries.length} entries · all sourced`;
+const tested = securityEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
+const sourced = securityEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const planned = securityEntries.filter(e => e.data.verificationState === 'planned').length;
+
+const lede = `Not a CVE tracker. <strong>The patterns to actually do</strong> (and not do) when self-hosting an agent runtime with a third-party plugin marketplace. The 12-item checklist hardens your install, the trust-signals page tells you what to look for in plugins, the practical-patterns page covers the eight failure modes you'll meet, and the "what NOT to build" page is the counter-intuitive list of jobs better served by simpler tools.`;
 ---
 
 <BaseLayout
   title="§ 6 Security"
   description="High-level practical security patterns for self-hosted OpenClaw — checklist, plugin trust, common patterns, and what NOT to build as an agent."
 >
-  <SectionHead num="6" title="Security" verb={verbCount} />
-  <SectionBlurb>
-    Not a CVE tracker. <strong>The patterns to actually do</strong> (and not do) when self-hosting an
-    agent runtime with a third-party plugin marketplace. The 12-item checklist hardens your install,
-    the trust-signals page tells you what to look for in plugins, the practical-patterns page covers
-    the eight failure modes you'll meet, and the "what NOT to build" page is the counter-intuitive
-    list of jobs better served by simpler tools.
-  </SectionBlurb>
+  <SectionHero num="6" title="Security" lede={lede} tested={tested} sourced={sourced} planned={planned} />
   <CatalogTable entries={catalogEntries} />
 </BaseLayout>
+

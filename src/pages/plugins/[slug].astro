@@ -5,6 +5,7 @@
  */
 import BaseLayout from '@layouts/BaseLayout.astro';
 import EntryFooter from '@components/EntryFooter.astro';
+import VerificationBanner from '@components/VerificationBanner.astro';
 import { getCollection, render } from 'astro:content';
 import { sectionConfig, getPrevNext, getReadingTime, getSchemaOrgArticle, getRelated } from '@utils/entry-helpers';
 
@@ -94,16 +95,12 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
       </div>
       <h1>{entry.data.title}</h1>
       <p class="lede">{entry.data.description}</p>
-      <div class="entry-meta">
-        <span class={`verif ${stateClass}`}>{stateLabel}</span>
-        <span class="meta-stat">last reviewed <strong>{entry.data.lastReviewedAt}</strong></span>
-        {entry.data.lastTestedAt && <span class="meta-stat">last tested <strong>{entry.data.lastTestedAt}</strong></span>}
-      </div>
-      {entry.data.verificationNote && (
-        <div class="verif-note">
-          <strong>Note on verification:</strong> {entry.data.verificationNote}
-        </div>
-      )}
+      <VerificationBanner
+        state={entry.data.verificationState}
+        lastReviewedAt={entry.data.lastReviewedAt}
+        lastTestedAt={entry.data.lastTestedAt}
+        customNote={entry.data.verificationNote}
+      />
     </header>
 
     <div class="prose">

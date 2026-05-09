@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import SectionHead from '@components/SectionHead.astro';
-import SectionBlurb from '@components/SectionBlurb.astro';
+import SectionHero from '@components/SectionHero.astro';
 import CatalogTable from '@components/CatalogTable.astro';
 import { getCollection } from 'astro:content';
 
@@ -19,20 +18,18 @@ const catalogEntries = pluginEntries.map(e => ({
   date: e.data.lastReviewedAt,
 }));
 
-const verbCount = `${pluginEntries.length} field note${pluginEntries.length === 1 ? '' : 's'} · all sourced`;
+const tested = pluginEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
+const sourced = pluginEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const planned = pluginEntries.filter(e => e.data.verificationState === 'planned').length;
+
+const lede = `Independent <strong>field notes</strong>, not formal scorecards. Each entry declares what we checked, what we didn't, sources used, and a dispute link for the maintainer. We're not affiliated with any plugin author unless explicitly stated. Lighter editorial stance than a "verdict bands" review — more like research notes you can act on. See <a href="/methodology/">methodology</a> for how field notes work.`;
 ---
 
 <BaseLayout
   title="§ 4 Plugins"
   description="Independent field notes on OpenClaw skills, MCP servers, and channel connectors. Lighter than formal scorecards. Each declares what we checked, what we didn't, sources used, and a dispute link."
 >
-  <SectionHead num="4" title="Plugins" verb={verbCount} />
-  <SectionBlurb>
-    Independent <strong>field notes</strong>, not formal scorecards. Each entry declares what we
-    checked, what we didn't, sources used, and a dispute link for the maintainer. We're not
-    affiliated with any plugin author unless explicitly stated. Lighter editorial stance than a
-    "verdict bands" review — more like research notes you can act on. See <a href="/methodology/">methodology</a>
-    for how field notes work.
-  </SectionBlurb>
+  <SectionHero num="4" title="Plugins" lede={lede} tested={tested} sourced={sourced} planned={planned} />
   <CatalogTable entries={catalogEntries} />
 </BaseLayout>
+

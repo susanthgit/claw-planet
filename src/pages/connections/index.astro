@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import SectionHead from '@components/SectionHead.astro';
-import SectionBlurb from '@components/SectionBlurb.astro';
+import SectionHero from '@components/SectionHero.astro';
 import CatalogTable from '@components/CatalogTable.astro';
 import { getCollection } from 'astro:content';
 
@@ -19,20 +18,18 @@ const catalogEntries = connectionEntries.map(e => ({
   date: e.data.lastReviewedAt,
 }));
 
-const verbCount = `${connectionEntries.length} entries · all sourced`;
+const tested = connectionEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
+const sourced = connectionEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const planned = connectionEntries.filter(e => e.data.verificationState === 'planned').length;
+
+const lede = `The integration <em>patterns</em>, not the marketplace packages. <strong>Channels</strong> bring messages in and out (Slack, WhatsApp, Discord, etc.). <strong>Tools</strong> let the agent do work (browser, filesystem, web search, code exec). <strong>Models</strong> are the brains (Claude, GPT, local Ollama). <strong>Memory</strong> is what survives a restart (built-in, Honcho, QMD). For specific plugins/packages reviewed individually, see <a href="/plugins/">§4 Plugins</a>.`;
 ---
 
 <BaseLayout
   title="§ 3 Connections"
   description="Integration patterns for OpenClaw — channels, tools, models, memory. The categories that group what plugs in. §4 Plugins covers specific marketplace packages."
 >
-  <SectionHead num="3" title="Connections" verb={verbCount} />
-  <SectionBlurb>
-    The integration <em>patterns</em>, not the marketplace packages. <strong>Channels</strong> bring
-    messages in and out (Slack, WhatsApp, Discord, etc.). <strong>Tools</strong> let the agent do
-    work (browser, filesystem, web search, code exec). <strong>Models</strong> are the brains (Claude,
-    GPT, local Ollama). <strong>Memory</strong> is what survives a restart (built-in, Honcho, QMD).
-    For specific plugins/packages reviewed individually, see <a href="/plugins/">§4 Plugins</a>.
-  </SectionBlurb>
+  <SectionHero num="3" title="Connections" lede={lede} tested={tested} sourced={sourced} planned={planned} />
   <CatalogTable entries={catalogEntries} />
 </BaseLayout>
+

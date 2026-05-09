@@ -1,0 +1,147 @@
+---
+/**
+ * VerificationBanner — entry-page contract banner.
+ *
+ * Renders right under the H1 + lede on every entry page. Always visible (the
+ * brand contract is non-optional). State-specific default copy is used when
+ * the MDX file doesn't supply a custom verificationNote; if it does, the
+ * custom note replaces the default.
+ *
+ * Three colour variants:
+ *   - tested-by-us (olive)
+ *   - sourced-only (amber, default for unset)
+ *   - planned       (claw red)
+ *
+ * The state pill + "last reviewed/tested" meta now lives INSIDE this banner,
+ * so the previous .entry-meta row is replaced.
+ */
+
+export interface Props {
+  state?: 'tested-by-sush' | 'tested-by-contributor' | 'sourced-only' | 'planned';
+  lastReviewedAt?: string;
+  lastTestedAt?: string;
+  customNote?: string;
+}
+
+const { state = 'sourced-only', lastReviewedAt, lastTestedAt, customNote } = Astro.props;
+
+const variants = {
+  'tested-by-sush': {
+    klass: 'verif-t',
+    pillLabel: '● TESTED BY US',
+    headline: 'Sush ran this end-to-end.',
+    defaultBody: 'The commands and steps were executed on real hardware. Date and runtime version recorded below. If something looks off, dispute the entry on GitHub.',
+  },
+  'tested-by-contributor': {
+    klass: 'verif-t',
+    pillLabel: '● TESTED BY CONTRIBUTOR',
+    headline: 'A contributor ran this end-to-end.',
+    defaultBody: 'A community contributor verified this on real hardware. The PR or issue is linked in the source list below. Sush has not personally re-run it.',
+  },
+  'sourced-only': {
+    klass: 'verif-s',
+    pillLabel: '● SOURCED ONLY',
+    headline: 'Sush has not run this end-to-end yet.',
+    defaultBody: 'This page is compiled from official OpenClaw docs and the GitHub repository. When Sush runs it himself, the badge flips to tested-by-us with a date and a runtime version.',
+  },
+  'planned': {
+    klass: 'verif-e',
+    pillLabel: '● PLANNED',
+    headline: 'This page is a stub.',
+    defaultBody: 'The headline is committed; the substance is not yet written. Planned pages are excluded from search and from the top navigation until promoted.',
+  },
+};
+
+const v = variants[state];
+const body = customNote ?? v.defaultBody;
+---
+
+<aside class={`verif-banner ${v.klass}`} aria-label="Verification state">
+  <div class="vb-head">
+    <span class="vb-pill">{v.pillLabel}</span>
+    {lastReviewedAt && (
+      <span class="vb-meta">last reviewed <strong>{lastReviewedAt}</strong></span>
+    )}
+    {lastTestedAt && (
+      <span class="vb-meta">last tested <strong>{lastTestedAt}</strong></span>
+    )}
+  </div>
+  <p class="vb-body">
+    <strong class="vb-headline">{v.headline}</strong>
+    <span class="vb-text">{body}</span>
+  </p>
+</aside>
+
+<style>
+  .verif-banner {
+    display: grid;
+    gap: 8px;
+    margin: 18px 0 28px;
+    padding: 14px 18px 16px;
+    border-left: 3px solid var(--rule);
+    background: var(--paper-warm);
+  }
+  .verif-banner.verif-t {
+    border-left-color: var(--olive);
+    background: var(--olive-soft);
+  }
+  .verif-banner.verif-s {
+    border-left-color: var(--amber);
+    background: var(--amber-soft);
+  }
+  .verif-banner.verif-e {
+    border-left-color: var(--claw);
+    background: var(--claw-tint);
+  }
+
+  .vb-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+  .vb-pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: var(--ls-wider);
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    background: var(--canvas);
+    color: var(--ink);
+  }
+  .verif-banner.verif-t .vb-pill { color: var(--olive); }
+  .verif-banner.verif-s .vb-pill { color: var(--amber); }
+  .verif-banner.verif-e .vb-pill { color: var(--claw); }
+
+  .vb-meta {
+    font-size: 11px;
+    letter-spacing: var(--ls-wide);
+  }
+  .vb-meta strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .vb-body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-mid);
+    margin: 0;
+  }
+  .vb-headline {
+    color: var(--ink);
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  .vb-text { color: var(--ink-mid); }
+
+  @media (max-width: 640px) {
+    .verif-banner { padding: 12px 14px 14px; }
+    .vb-body { font-size: 13.5px; }
+  }
+</style>

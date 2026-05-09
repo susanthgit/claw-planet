@@ -1,0 +1,188 @@
+---
+/**
+ * SectionHero — destination-page hero used at the top of the 7 collection
+ * section indexes (overview / setup / connections / plugins / use-cases /
+ * security / compare). Brings these pages up to the same "destination feel"
+ * as the new home page.
+ *
+ * Layout:
+ *   §-tag (mono caps) → H1 (28px) → lede (17px) → verification-mix pill row.
+ *
+ * The pill row counts entries by verification state and links to the ?-state
+ * filter on the catalog table (visual only for now — counts always click
+ * through to the same catalog).
+ *
+ * Replaces SectionHead + SectionBlurb on those 7 pages. SectionHead remains
+ * for /about/, /updates/, /faq/, /resources/, /setup/compare/ — they have a
+ * different narrative shape.
+ */
+
+export interface Props {
+  num: string;          // "1"
+  title: string;        // "Overview"
+  lede: string;         // 17px paragraph (HTML allowed via the slot below if needed)
+  tested?: number;
+  sourced?: number;
+  planned?: number;
+}
+
+const { num, title, lede, tested = 0, sourced = 0, planned = 0 } = Astro.props;
+
+const total = tested + sourced + planned;
+const pills = [
+  { count: tested,  label: 'tested',  klass: 't' },
+  { count: sourced, label: 'sourced', klass: 's' },
+  { count: planned, label: 'planned', klass: 'e' },
+];
+---
+
+<header class="section-hero" id={`sec-${num}`}>
+  <span class="sh-tag">§ {num} · {title.toUpperCase()}</span>
+  <h1 class="sh-title">{title}</h1>
+  <p class="sh-lede" set:html={lede}></p>
+
+  {total > 0 && (
+    <div class="sh-mix" role="group" aria-label="Verification mix">
+      <span class="sh-mix-label">Verification mix</span>
+      <span class="sh-mix-pills">
+        {pills.filter(p => p.count > 0).map(p => (
+          <span class={`sh-pill sh-pill--${p.klass}`}>
+            <span class="sh-pill-count">{p.count}</span>
+            <span class="sh-pill-label">{p.label}</span>
+          </span>
+        ))}
+        <span class="sh-mix-total">
+          <span class="sh-pill-count">{total}</span>
+          <span class="sh-pill-label">{total === 1 ? 'entry' : 'entries'} total</span>
+        </span>
+      </span>
+    </div>
+  )}
+  <slot name="after-mix" />
+</header>
+
+<style>
+  .section-hero {
+    margin: 0 0 32px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sh-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--claw);
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .sh-title {
+    font-family: var(--sans);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: var(--ls-tight);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 12px;
+  }
+  .sh-lede {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-mid);
+    max-width: 760px;
+    margin: 0;
+  }
+  .sh-lede :global(strong) { color: var(--ink); font-weight: 700; }
+  .sh-lede :global(em) { color: var(--ink); font-style: italic; }
+  .sh-lede :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .sh-lede :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
+
+  .sh-mix {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--rule-faint);
+    flex-wrap: wrap;
+  }
+  .sh-mix-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-widest);
+    font-weight: 600;
+  }
+  .sh-mix-pills {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sh-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-pill);
+    background: var(--canvas);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .sh-pill-count {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .sh-pill-label {
+    color: var(--ink-mute);
+    letter-spacing: var(--ls-wide);
+  }
+
+  .sh-pill--t { border-color: var(--olive); background: var(--olive-soft); }
+  .sh-pill--t .sh-pill-count { color: var(--olive); }
+  .sh-pill--t .sh-pill-label { color: var(--olive); }
+
+  .sh-pill--s { border-color: var(--amber); background: var(--amber-soft); }
+  .sh-pill--s .sh-pill-count { color: var(--amber); }
+  .sh-pill--s .sh-pill-label { color: var(--amber); }
+
+  .sh-pill--e { border-color: var(--claw); background: var(--claw-tint); }
+  .sh-pill--e .sh-pill-count { color: var(--claw); }
+  .sh-pill--e .sh-pill-label { color: var(--claw); }
+
+  .sh-mix-total {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-left: 4px;
+    padding-left: 14px;
+    border-left: 1px solid var(--rule-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .sh-mix-total .sh-pill-count {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .sh-mix-total .sh-pill-label {
+    color: var(--ink-mute);
+    letter-spacing: var(--ls-wide);
+  }
+
+  @media (max-width: 640px) {
+    .sh-title { font-size: 26px; }
+    .sh-lede { font-size: 16px; }
+    .sh-mix { gap: 10px; }
+  }
+</style>
