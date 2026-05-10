@@ -208,3 +208,62 @@ main.main {
   .sources a { color: #333 !important; }
   .sources a::after { content: "" !important; }
 }
+
+/* ============================================================
+   COSMOS TOUR CTA — about page §0.7
+   Carries the cross-planet "tour cosmos" pattern Earth ships.
+   Sits below the cosmos map list. Bracket-Mark [*] marker keeps
+   the textbook/footnote voice of Claw Planet.
+   ============================================================ */
+.cosmos-tour-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0;
+  background: var(--claw-tint);
+  border: 1px solid var(--claw);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--claw);
+  text-decoration: none;
+  letter-spacing: 0.005em;
+  transition: background 200ms ease-out, color 200ms ease-out, transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+.cosmos-tour-cta:hover {
+  background: var(--claw);
+  color: var(--canvas);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cosmos-tour-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(255, 38, 38, 0.18);
+  }
+  .cosmos-tour-cta:hover .cosmos-tour-cta__arrow {
+    transform: translateX(2px);
+  }
+}
+.cosmos-tour-cta__marker {
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--claw-deep);
+}
+.cosmos-tour-cta:hover .cosmos-tour-cta__marker {
+  color: var(--canvas);
+}
+.cosmos-tour-cta__label { font-weight: 500; }
+.cosmos-tour-cta__arrow {
+  display: inline-block;
+  transition: transform 200ms ease-out;
+}
+
+/* Mobile — full-width tap target */
+@media (max-width: 640px) {
+  .cosmos-tour-cta {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    padding: var(--space-3) var(--space-4);
+  }
+}
