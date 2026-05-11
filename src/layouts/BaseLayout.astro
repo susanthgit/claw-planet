@@ -118,6 +118,22 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   {schemaJsonLd && <script type="application/ld+json" set:html={schemaJsonLd} />}
   <link rel="stylesheet" href="/cosmos-bar.css" />
   <link rel="stylesheet" href="/cosmos-footer.css" />
+
+  {/* Cosmos GA4 — aggregate analytics for cosmos-wide intelligence (prod only).
+      Single shared property G-2HWWZGWCD0 + event-scoped dim cosmos_planet.
+      Ad signals denied; purely analytics_storage. Added 12 May 2026. */}
+  {import.meta.env.PROD && (
+    <>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-2HWWZGWCD0" is:inline></script>
+      <script is:inline>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'granted'});
+        gtag('js', new Date());
+        gtag('config', 'G-2HWWZGWCD0', { cosmos_planet: 'claw', anonymize_ip: true });
+      </script>
+    </>
+  )}
 </head>
 
 <body class={bodyClass}>
