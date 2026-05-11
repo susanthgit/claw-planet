@@ -42,7 +42,7 @@ export interface Props {
 
 const {
   title,
-  description = 'A plain-English study reference for the OpenClaw agent runtime. Concepts, setup paths, connections, plugins, security gotchas, and what is currently changing.',
+  description = "A plain-English study reference for the OpenClaw agent runtime. Setup, connections, plugins, security gotchas, and what's currently changing — by Sush.",
   canonical,
   ogImage,
   noIndex = false,
@@ -53,9 +53,21 @@ const {
   margin,
 } = Astro.props;
 
-const fullTitle = title === 'Claw Planet'
-  ? title
-  : `${title} · Claw Planet`;
+// Word-boundary trim for SEO compliance (added 11 May 2026, Phase 3E sweep).
+// Same pattern as the Plain AI / Agentic Planet sweeps — trim long titles and
+// over-cap descriptions at the last whole word so SERPs stay clean.
+const trimToWord = (s: string, max: number): string => {
+  if (s.length <= max) return s;
+  const sliced = s.slice(0, max);
+  const lastSpace = sliced.lastIndexOf(' ');
+  const cut = lastSpace > max * 0.6 ? sliced.slice(0, lastSpace) : sliced;
+  return cut.replace(/[\s.,;:—–\-]+$/, '') + '…';
+};
+
+const hasBrand = title === 'Claw Planet' || title.includes('Claw Planet');
+const rawTitle = hasBrand ? title : `${title} · Claw Planet`;
+const fullTitle = trimToWord(rawTitle, 60);
+const trimmedDescription = trimToWord(description, 155);
 
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toString();
 ---
@@ -80,7 +92,7 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   <meta name="generator" content={Astro.generator} />
 
   <title>{fullTitle}</title>
-  <meta name="description" content={description} />
+  <meta name="description" content={trimmedDescription} />
   <link rel="canonical" href={canonicalUrl} />
 
   {noIndex && <meta name="robots" content="noindex, nofollow" />}
@@ -91,13 +103,13 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   <meta property="og:type" content="website" />
   <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content={fullTitle} />
-  <meta property="og:description" content={description} />
+  <meta property="og:description" content={trimmedDescription} />
   {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site).toString()} />}
   <meta property="og:site_name" content="Claw Planet" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={fullTitle} />
-  <meta name="twitter:description" content={description} />
+  <meta name="twitter:description" content={trimmedDescription} />
   {ogImage && <meta name="twitter:image" content={new URL(ogImage, Astro.site).toString()} />}
 
   <!-- RSS feed for /updates/ -->
