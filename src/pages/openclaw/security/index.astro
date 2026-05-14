@@ -6,7 +6,7 @@ import { getCollection } from 'astro:content';
 
 const allGotchas = await getCollection('gotchas');
 const securityEntries = allGotchas
-  .filter(e => e.data.section === 'Security' && e.data.status === 'published')
+  .filter(e => e.data.section === 'Security' && e.data.vendor === 'openclaw' && e.data.status === 'published')
   .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
 const catalogEntries = securityEntries.map(e => ({

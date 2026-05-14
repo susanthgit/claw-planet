@@ -30,12 +30,23 @@ const COVERAGE_TO_DIR = {
   // faq, updates, resources are single-page surfaces (src/pages/*) — no content collection. Counts maintained manually in coverage.json.
 };
 
-async function countMdx(dir) {
+async function countMdx(dir, vendor = 'openclaw') {
+  // Count .mdx entries whose frontmatter `vendor:` matches the given vendor
+  // (or has no vendor field — those default to 'openclaw' per content.config.ts).
+  // This keeps coverage.json (OpenClaw section counts) accurate after Anthropic
+  // (and later vendor) content lands in the same content directories.
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     let n = 0;
     for (const e of entries) {
-      if (e.isFile() && (e.name.endsWith('.mdx') || e.name.endsWith('.md'))) n++;
+      if (!e.isFile()) continue;
+      if (!(e.name.endsWith('.mdx') || e.name.endsWith('.md'))) continue;
+      const src = await fs.readFile(path.join(dir, e.name), 'utf8');
+      const fmMatch = src.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      const fm = fmMatch ? fmMatch[1] : '';
+      const vMatch = fm.match(/^\s*vendor\s*:\s*["']?([a-z]+)["']?\s*$/m);
+      const entryVendor = vMatch ? vMatch[1] : 'openclaw';
+      if (entryVendor === vendor) n++;
     }
     return n;
   } catch {

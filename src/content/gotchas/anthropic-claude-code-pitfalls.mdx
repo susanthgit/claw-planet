@@ -1,0 +1,152 @@
+---
+title: "Pitfalls and common errors"
+section: "Claude Code"
+sectionNumber: "CC.8"
+description: "The rough edges Claude Code users hit in week one — rate limits, context-window blowouts, hallucinated commands, MCP server hangs, auth confusion, runaway costs. What causes each and how to plan around it."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/claude-code, community discussions, and known limitations as of 14 May 2026. The list grows with each release — check the official troubleshooting page before relying on this."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/troubleshooting"
+  - "https://docs.anthropic.com/en/docs/claude-code/best-practices"
+  - "https://github.com/anthropics/claude-code/issues"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## The category map
+
+Most things that go wrong with Claude Code fall into one of these buckets:
+
+1. **Auth + tier** — wrong account, expired token, plan doesn't include the surface you're using
+2. **Rate limits** — daily or weekly cap hit
+3. **Context-window blowouts** — too many files read, conversation too long
+4. **Hallucinated commands or paths** — Claude invents a CLI flag that doesn't exist
+5. **MCP server hangs / misbehavior** — slow network, bad permissions, runaway output
+6. **Runaway cost** — automated loop burns through API credits
+7. **Sandbox / permission surprises** — tool tries to do something blocked by your settings
+8. **Stale `CLAUDE.md` or settings** — old instructions create wrong defaults
+
+## 1. Auth + tier
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Browser login redirects to an error page | Multiple Claude accounts; the wrong one is signed in to claude.ai in this browser | Open claude.ai → sign out → sign in to the right account → retry `claude` |
+| *"This account doesn't have access to Claude Code"* | Free tier (no CLI access) | Upgrade to Pro/Max OR use an API key |
+| API key set but `claude` still asks to log in | Env var not exported in current shell | `echo $ANTHROPIC_API_KEY` to confirm; reopen shell if blank |
+| *"Token expired"* mid-session | Refresh token revoked (account password change, security event) | `claude logout` then `claude` re-login |
+
+## 2. Rate limits
+
+Subscription tiers (Pro, Max, Team) have **weekly message + context budgets**. Once you hit the cap, you wait for the reset.
+
+Watch for:
+
+- **Warning at ~80%.** The CLI prints a yellow note. Don't kick off a giant refactor at this point.
+- **Hard stop at 100%.** Session ends mid-task. Use `/cost` to check usage proactively.
+- **Different limits per model.** Opus costs more "budget" per call than Sonnet. If you've been on Opus all day, expect the budget to drain faster.
+
+**API key path:** rate limits work differently — there are per-minute request caps but the bigger limit is your account's billing balance.
+
+> ⚠️ **Trick to extend a session past the cap:** switch the model mid-conversation (`/model sonnet`). Some budgets are model-specific, others aren't — check the Anthropic pricing page; the policy changes faster than this page can track.
+
+## 3. Context-window blowouts
+
+Claude has a fixed context window (200K tokens at time of writing for the API; subscription tiers may differ). When you fill it, the model starts forgetting earlier parts of the conversation.
+
+Symptoms:
+
+- Claude "forgets" your `CLAUDE.md` mid-session
+- The model gives inconsistent answers to similar questions
+- File edits start contradicting earlier edits
+
+Fixes:
+
+- **`/compact`** — summarises everything so far and continues with the summary. Loses fine detail but keeps the high-level thread.
+- **`/clear`** — start a fresh conversation in the same session. Use between unrelated tasks.
+- **Trim what Claude reads.** Add a `.claudeignore` file (same syntax as `.gitignore`) to exclude `node_modules`, build output, big binary blobs. Or scope the conversation with `claude --include 'src/**'`.
+
+## 4. Hallucinated commands or paths
+
+Claude sometimes invents a CLI flag, a function name, or a file path. Examples:
+
+- `git rebase --onto-base` (not a real flag)
+- `npm run dev --watch-quiet` (not a real script)
+- "Read `src/utils/validate.ts`" when no such file exists
+
+This is **model behavior, not a Claude Code bug.** It happens more often when:
+
+- The model has stale knowledge (asks about CLI version X but you're on Y)
+- The task is highly project-specific (custom build pipeline, internal tooling)
+- The context window is over-full and the model is reaching
+
+**Mitigations:**
+
+- Ask Claude to run the command and check the output before relying on it
+- Add the actual project commands to `CLAUDE.md` (*"the test script is `pnpm test`, NOT `npm test`"*)
+- Use MCP servers (filesystem, github) so the model is querying reality, not generating from memory
+
+## 5. MCP server hangs / misbehavior
+
+Symptoms:
+
+- Claude says "calling tool X..." and never returns
+- Tool returns a giant JSON blob that eats the context window
+- Tool returns *"permission denied"* even though you set it up
+
+| Cause | Fix |
+|---|---|
+| MCP server's process crashed | `Ctrl+C` to interrupt; `/mcp` to see status; restart the session |
+| Server returning unbounded output | Cap output in the server config (`maxResults`) or in `allowedTools` |
+| Wrong env vars (e.g. `GITHUB_PERSONAL_ACCESS_TOKEN` missing) | Check `~/.claude/settings.json`; restart Claude after fixing |
+| Server requires network and you're offline | Switch to a local MCP server, or skip the tool for now |
+
+> See [§CC.5 MCP integration](/anthropic/claude-code/mcp/) for how to scope tools tightly.
+
+## 6. Runaway cost (API key path)
+
+This is the #1 risk on pay-as-you-go. Scenarios:
+
+- A subagent loops because of bad termination conditions
+- A custom MCP server returns 100× the data Claude expected, each call costs more
+- A scripted `claude --print` run goes longer than planned
+
+**Set a billing cap.** Anthropic Console → Workspace → Spend Limits. Pick a number you can live with losing if something goes wrong. Without one, you're trusting the agent loop to terminate cleanly — which it usually does, until it doesn't.
+
+Also: monitor `/cost` mid-session. If the number climbs faster than you expected, stop and investigate.
+
+## 7. Sandbox / permission surprises
+
+Claude Code ships with per-tool approval gating (see [§CC.5 MCP integration](/anthropic/claude-code/mcp/) for the model). Two patterns bite people:
+
+- **Default-deny is too restrictive.** Every file edit prompts; you click through everything; security theatre + lost focus. Tune: allowlist common read-only tools.
+- **Default-allow is too permissive.** You set `"default": "always"` to skip confirms, then Claude `rm -rf`s something. Don't.
+
+The middle path: `"default": "ask"` for most tools, `"always"` for safe-list (read_file, search, list), `"never"` for destructive (force-push, delete-database).
+
+## 8. Stale `CLAUDE.md` or settings
+
+A `CLAUDE.md` that says *"the test command is `npm test`"* when the project moved to `pnpm test:unit` four months ago is worse than no `CLAUDE.md` at all. Claude follows the stale instructions confidently.
+
+**Hygiene:**
+
+- Treat `CLAUDE.md` like a real doc. Update it when conventions change.
+- Date the top of the file: *"last reviewed: 2026-05-14."*
+- When you join a new project, `/init` to scaffold a starter; then *delete* the lines that don't apply.
+
+## When something is broken and you can't tell
+
+```bash
+claude doctor
+```
+
+The diagnostic command. Surfaces auth state, model availability, MCP server health, settings file validation. **Run it after every config change** and as the first step when something feels off.
+
+If `doctor` is clean but behavior is still wrong: bisect. `/clear` to reset session, retry the prompt; if still broken, restart Claude Code; if still broken, check Anthropic status page; if still broken, file an issue on `github.com/anthropics/claude-code`.
+
+## What to do next
+
+- [§CC.7 Use cases](/anthropic/claude-code/use-cases/) — where Claude Code earns its keep
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — the surface most pitfalls touch
+- [§CC.4 Auth + API key](/anthropic/claude-code/auth/) — the credential side

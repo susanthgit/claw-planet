@@ -1,0 +1,97 @@
+---
+title: "Claude Code, plainly"
+section: "Claude Code"
+sectionNumber: "CC.1"
+description: "Five-minute orientation to Claude Code — what it is, where it runs, what it costs, and where it shines vs Codex CLI / Aider / Cursor / GitHub Copilot CLI."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/claude-code and the Anthropic engineering blog. Sush uses Claude through GitHub Copilot CLI today and hasn't standalone-installed Claude Code yet — this page flips to tried with a session log when he does."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/overview"
+  - "https://docs.anthropic.com/en/docs/claude-code/quickstart"
+  - "https://www.anthropic.com/news/claude-code"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## The thirty-second version
+
+Claude Code is **a terminal coding agent**. You install a CLI on your machine, run `claude` inside any project directory, and Claude reads your code, edits files, runs commands, and stays in the conversation until you're done. It speaks the Model Context Protocol natively (the standard Anthropic kicked off in late 2024), so you can wire in external tools — your filesystem, a database, a browser, a Jira queue — and Claude can drive them.
+
+Same engine ships in four other surfaces: a VS Code / Cursor / JetBrains extension, a desktop app (macOS · Windows), and a web surface at [claude.ai/code](https://claude.ai/code). Your `CLAUDE.md` project files and settings carry across all five surfaces — pick whichever fits the moment.
+
+## A real example
+
+You're staring at a Next.js project that's failing to build. You open a terminal, `cd` into the project, type:
+
+```
+claude
+```
+
+Then ask in plain English: *"the build is failing — figure out why."*
+
+What happens:
+
+1. Claude reads the error from `npm run build`.
+2. It opens `next.config.mjs`, sees an experimental flag that's been removed.
+3. It checks `package.json` to see what version of Next.js you're on (15.3 — the flag landed in 14.2).
+4. It edits the config file, removes the flag, runs `npm run build` again.
+5. Build passes. Claude tells you what it did.
+
+No screen-sharing with a colleague, no Stack Overflow rabbit hole. The agent ran in your terminal, with full read-write access to your repo, scoped to that one session.
+
+## Why this matters
+
+The interesting bit isn't "AI writes code" (every editor has that now). The interesting bit is **the loop tightens**: the agent reads → decides → runs → reads-the-result → decides-again, without you copying snippets back and forth. That's why people who use Claude Code daily talk about "delegating an hour" of work, not "getting autocomplete."
+
+Three things that fall out of this design:
+
+- **It's your repo, on your machine.** Files are edited locally. Commits happen through your normal git workflow. The agent doesn't push, doesn't open PRs unless you ask, doesn't phone home with your code (the network call is to Anthropic's API for the model; that part is unavoidable).
+- **Tools are pluggable via MCP.** The protocol exists exactly so you can teach Claude how to read your bug tracker, query your DB, or hit a private API — without Anthropic having to ship a specific integration for every tool that exists.
+- **You can run multiple agents at once.** The desktop app supports parallel sessions. The CLI supports `--print` (one-shot) mode that scripts can call. Aside-by-side investigation of two branches is a real workflow.
+
+## How it compares
+
+| | **Claude Code** | **Codex CLI** | **GitHub Copilot CLI** | **Cursor / Windsurf** |
+|---|---|---|---|---|
+| Shape | Terminal CLI + IDE ext + desktop + web | Terminal CLI + IDE ext | Terminal CLI + IDE ext | IDE-first (forked VS Code) |
+| Vendor | Anthropic | OpenAI | GitHub / Microsoft | Independent (Anysphere / Codeium) |
+| Model | Claude family | OpenAI GPT family | Multi-vendor (Claude · GPT · Gemini · others) | Multi-vendor |
+| MCP | Native | Supported | Supported | Supported (Cursor) |
+| Pricing | Subscription (Pro / Max / Team) + API tier | Subscription (Plus / Pro) + API tier | Subscription (Individual / Business) | Subscription (Pro / Business) |
+| Best at | Long agentic tasks, MCP-heavy workflows | Tight OpenAI-stack workflows | Multi-model flexibility · tight GitHub integration | In-editor flow with codebase indexing |
+| Tradeoff | One model family · pricing scales hard above Pro | One model family · narrower MCP catalogue | Less aggressive on multi-step agentic work | IDE lock-in |
+
+> **Sush's honest take (sourced, not yet tried):** the multi-model surface in GitHub Copilot CLI is genuinely useful — Sush uses Claude through it daily, and switches to GPT when Claude struggles or to Gemini when long context matters. Standalone Claude Code probably wins on agentic depth + the MCP catalogue is bigger; but the multi-model flexibility is a real reason to keep Copilot CLI in the toolbox.
+
+## What it costs
+
+There are two ways to pay:
+
+1. **Claude.com subscription** — Pro (\$20/mo), Max (5× Pro · \$100/mo), Team (per-seat). Higher tiers raise the per-week message + context budget. Subscription tiers are the most predictable cost if you use it daily.
+2. **Pay-as-you-go via Anthropic Console** — set a credit balance, get charged per-token. Useful for occasional heavy bursts; expensive if you forget to monitor.
+
+You can also point Claude Code at a **third-party provider** — Amazon Bedrock, Google Vertex AI, or a self-hosted Claude proxy — via env vars. Useful for enterprise/governance reasons; check `/docs/en/third-party-integrations` for the current list. Pricing on Bedrock/Vertex is the cloud's own per-token rate, not Anthropic's direct rate.
+
+> ⚠️ **Pricing changes faster than this page.** Always check [anthropic.com/pricing](https://www.anthropic.com/pricing) before committing.
+
+## What's "load-bearing" in your project
+
+Once you start using Claude Code seriously, three files matter:
+
+- `CLAUDE.md` — project-level instructions. Style guide, architecture notes, "always run `npm run lint` before committing," "the test command is `pnpm test:unit`." Claude reads this on every session.
+- `~/.claude/settings.json` — your personal config (model preferences, default thinking budget, MCP server allowlist).
+- `.claude/` directory in your project — slash command shortcuts, subagent definitions, project-scoped MCP server pins.
+
+These are the files you'll edit most as you tune the experience. See [§CC.4 Auth + API key](/anthropic/claude-code/auth/) for the credentials side and [§CC.5 MCP integration](/anthropic/claude-code/mcp/) for plugging tools in.
+
+## What to do next
+
+- [§CC.2 Install macOS](/anthropic/claude-code/install-macos/) — native install, Homebrew, daemon notes
+- [§CC.3 Install Windows](/anthropic/claude-code/install-windows/) — native install, WSL2, winget, Git for Windows
+- [§CC.4 Auth + API key](/anthropic/claude-code/auth/) — three ways to authenticate
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — wiring tools into Claude
+- [§CC.6 Slash commands + subagents](/anthropic/claude-code/slash-commands/) — the shortcuts that pay off
+- [§CC.7 Use cases](/anthropic/claude-code/use-cases/) — the kinds of work it's good for
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — the rough edges to plan around

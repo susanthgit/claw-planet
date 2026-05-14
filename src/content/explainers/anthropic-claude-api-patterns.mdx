@@ -1,0 +1,232 @@
+---
+title: "Common patterns — tool use, structured outputs, caching"
+section: "Claude API"
+sectionNumber: "API.4"
+description: "Four patterns that come up over and over building on the Claude API — the tool-use loop, structured JSON outputs, prompt caching for long system prompts, and message batches for bulk async work. Code in Python + TypeScript."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Patterns from docs.anthropic.com/api as of 14 May 2026. The API shape is stable for these patterns; cache pricing + batch pricing change — check anthropic.com/pricing before banking on numbers."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/build-with-claude/tool-use"
+  - "https://docs.anthropic.com/en/docs/build-with-claude/structured-outputs"
+  - "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"
+  - "https://docs.anthropic.com/en/api/creating-message-batches"
+vendor: "anthropic"
+product: "claude-api"
+---
+
+## Pattern 1 — Tool use
+
+The most-used pattern. You give Claude a list of tools (typed JSON schemas), Claude decides when to call them, you execute and feed results back. The loop continues until Claude gives a final text response.
+
+### The shape
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+tools = [
+    {
+        "name": "get_weather",
+        "description": "Get current weather for a city.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string", "description": "City name"},
+                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+            },
+            "required": ["city"],
+        },
+    },
+]
+
+messages = [{"role": "user", "content": "What's the weather in Auckland?"}]
+
+while True:
+    response = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=1024,
+        tools=tools,
+        messages=messages,
+    )
+
+    if response.stop_reason == "end_turn":
+        # Claude is done; print the final text
+        print(response.content[0].text)
+        break
+
+    if response.stop_reason == "tool_use":
+        # Claude wants to call a tool
+        tool_block = next(b for b in response.content if b.type == "tool_use")
+        result = run_tool(tool_block.name, tool_block.input)
+        # Append Claude's request AND the result, then loop
+        messages.append({"role": "assistant", "content": response.content})
+        messages.append({
+            "role": "user",
+            "content": [{
+                "type": "tool_result",
+                "tool_use_id": tool_block.id,
+                "content": str(result),
+            }],
+        })
+```
+
+### Why it loops
+
+Claude doesn't run tools — you do. After it asks for `get_weather`, you execute it (call your weather API, etc.), then send the result back as a `tool_result`. Claude reads the result and decides what's next: another tool call, or a final answer.
+
+### Why this matters
+
+This is **the foundation of agentic work**. Every "agent that does things" — Claude Code, Cursor's agent mode, an MCP server — is built on this loop. Once you understand it, every agent surface looks like the same protocol with different UIs around it.
+
+### Gotchas
+
+- **Always include the assistant's tool_use response in the next message.** Without it, you've lost the conversation thread.
+- **`tool_result` content must be a string** (or a list of content blocks). If your tool returns a complex object, `json.dumps()` it first.
+- **Multiple tool calls per turn.** Claude can return more than one `tool_use` block. Loop over all of them.
+
+## Pattern 2 — Structured outputs
+
+When you need the model's response in a specific JSON shape — for downstream parsing, storing in a DB, feeding into another API.
+
+### The naive way (sometimes works)
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=500,
+    messages=[{
+        "role": "user",
+        "content": "Return JSON: {\"sentiment\": \"positive\"|\"negative\", \"score\": 0..1}. Text: 'This product is amazing.'"
+    }],
+)
+
+import json
+data = json.loads(response.content[0].text)
+```
+
+This works most of the time. It fails when Claude adds prose around the JSON (*"Here's the result:"*), uses different field names, or wraps it in markdown code fences.
+
+### The reliable way: JSON mode
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=500,
+    response_format={"type": "json_object"},
+    messages=[{"role": "user", "content": "..."}],
+)
+```
+
+The model is constrained to output valid JSON. No prose wrapping, no code fences.
+
+### Even better: JSON schema mode
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=500,
+    response_format={
+        "type": "json_schema",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+                "score": {"type": "number", "minimum": 0, "maximum": 1},
+            },
+            "required": ["sentiment", "score"],
+        },
+    },
+    messages=[{"role": "user", "content": "..."}],
+)
+```
+
+The output is guaranteed to match the schema. If Claude can't produce a valid output, it errors rather than returning garbage.
+
+This is the right default for production. Spend the 5 minutes writing the schema; save the parsing headaches forever.
+
+## Pattern 3 — Prompt caching
+
+If your system prompt is large (long instructions, big knowledge dump, complex tool definitions) AND you call the API many times with the same prefix, **prompt caching makes the input ~10× cheaper** on subsequent calls.
+
+### How to mark a cache breakpoint
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=500,
+    system=[
+        {
+            "type": "text",
+            "text": "You are a customer support agent. Here are 50KB of FAQ docs: ...",
+            "cache_control": {"type": "ephemeral"},
+        },
+    ],
+    messages=[{"role": "user", "content": "How do I cancel my subscription?"}],
+)
+```
+
+The system prompt section with `cache_control` is hashed and cached server-side. The next call within the cache lifetime (~5 minutes by default) reuses the cache; only the new tokens (the user message) are billed at the full input rate.
+
+### When it pays off
+
+- **Long system prompt + many calls** (chatbot with 20KB of instructions, called thousands of times)
+- **Tool definitions that don't change** (cache the tool array)
+- **RAG with stable context** (you injected the same 10K of docs into 50 questions)
+
+### When it doesn't
+
+- Conversations where the system prompt changes per call
+- Single-shot scripts that make one request
+
+### Cost math
+
+Cache writes are slightly more expensive than fresh input. Cache reads are ~10% of fresh input. Break-even is typically at **2 calls hitting the same cache.** Anything beyond is pure savings.
+
+## Pattern 4 — Message batches (async bulk work)
+
+For when you have 1,000 prompts to run and they're not time-sensitive.
+
+### The flow
+
+```python
+batch = client.messages.batches.create(
+    requests=[
+        {"custom_id": "ticket_1", "params": {"model": "claude-sonnet-4-5", "max_tokens": 200, "messages": [{"role": "user", "content": "Classify: ..."}]}},
+        {"custom_id": "ticket_2", "params": {"model": "claude-sonnet-4-5", "max_tokens": 200, "messages": [{"role": "user", "content": "Classify: ..."}]}},
+        # ... up to 10,000 per batch
+    ],
+)
+
+# Poll for completion (typically minutes to a few hours)
+while True:
+    status = client.messages.batches.retrieve(batch.id)
+    if status.processing_status == "ended":
+        break
+    time.sleep(60)
+
+# Stream the results
+for result in client.messages.batches.results(batch.id):
+    print(result.custom_id, result.result.message.content[0].text)
+```
+
+### Why use batches
+
+Batch calls are billed at **~50% off the non-batch rate**. For bulk classification, summarisation, or any non-interactive work, this is a real cost lever.
+
+### Tradeoffs
+
+- **Slower.** Batches can take minutes to hours to complete.
+- **No streaming.** You wait for the whole thing.
+- **No mid-batch reaction.** Can't adjust based on early results.
+
+If your workload tolerates latency, the savings are significant.
+
+## What to do next
+
+- [§API.2 Getting started](/anthropic/claude-api/getting-started/) — if you haven't made your first call
+- [§API.3 Models](/anthropic/claude-api/models/) — picking which tier for each pattern
+- [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) — the protocol built on top of pattern 1
+- [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — once you've written tool servers, MCP is how you reuse them

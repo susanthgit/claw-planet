@@ -6,7 +6,7 @@ import { getCollection } from 'astro:content';
 
 const allUseCases = await getCollection('use-cases');
 const useCaseEntries = allUseCases
-  .filter(e => e.data.section === 'Use cases' && e.data.status === 'published')
+  .filter(e => e.data.section === 'Use cases' && e.data.vendor === 'openclaw' && e.data.status === 'published')
   .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
 const catalogEntries = useCaseEntries.map(e => ({

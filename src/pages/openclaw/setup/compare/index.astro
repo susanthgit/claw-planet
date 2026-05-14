@@ -6,7 +6,7 @@ import SectionBlurb from '@components/SectionBlurb.astro';
 
 const all = await getCollection('setups');
 const setups = all
-  .filter((e: any) => e.data.section === 'Setup' && e.data.status === 'published')
+  .filter((e: any) => e.data.section === 'Setup' && e.data.vendor === 'openclaw' && e.data.status === 'published')
   .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
 const stateLabel: Record<string, string> = {

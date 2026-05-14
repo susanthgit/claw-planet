@@ -1,0 +1,127 @@
+---
+title: "Claude API, plainly"
+section: "Claude API"
+sectionNumber: "API.1"
+description: "Five-minute orientation to the Claude API — what shape it takes, what it can do (tool use, structured outputs, vision, streaming, prompt caching), what it costs, and where it fits vs Claude Code or Claude.ai."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/api as of 14 May 2026. Sush has used the API through Anthropic Console for casual testing but hasn't built a production app on it yet."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/api/getting-started"
+  - "https://docs.anthropic.com/en/api/overview"
+  - "https://docs.anthropic.com/en/api/messages"
+vendor: "anthropic"
+product: "claude-api"
+---
+
+## The thirty-second version
+
+The Claude API is the HTTP surface (plus official Python and TypeScript SDKs) you call when you want to **build your own apps on top of Claude**. The core endpoint is `POST /v1/messages` — you send a system prompt, a list of messages, optional tools, and an inference config; you get back a structured message with the model's response.
+
+Everything else on Claude.ai and Claude Code is built on this API. Same models. Same context windows. Same tool-use protocol.
+
+## When you'd reach for the API vs the alternatives
+
+| You want to... | Use |
+|---|---|
+| Code in your terminal with an agentic loop | **Claude Code** |
+| Chat with Claude through a polished UI | **Claude.ai** |
+| Build a custom app that talks to Claude | **Claude API** |
+| Build an MCP server that any AI client can use | **Claude API + MCP SDK** |
+| Run Claude through your cloud's billing + governance | **Claude API on Bedrock or Vertex** |
+
+If your end-product is "an app I'm shipping to users," you're on the API. If your end-product is "I want Claude to help me work today," you're probably on Claude Code or Claude.ai.
+
+## What you can do with it
+
+### Core: messages
+
+```bash
+curl https://api.anthropic.com/v1/messages \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 1024,
+    "messages": [
+      {"role": "user", "content": "Explain MCP in three sentences."}
+    ]
+  }'
+```
+
+That's the floor — a chat completion.
+
+### Tool use
+
+You define a tool schema (JSON), include it in the request. Claude decides whether to call the tool, returns a structured `tool_use` block; you execute the tool, send the result back with the conversation. Loop until Claude gives a final text response.
+
+This is the foundation MCP is built on. Same protocol, just standardised so you can write the tool server once and plug it into multiple clients.
+
+### Structured outputs
+
+Send `response_format: {"type": "json_schema", ...}` and Claude returns JSON that validates against your schema. Useful for "I want fields X, Y, Z out of unstructured text."
+
+### Vision
+
+Send images inline (base64) or by URL. Claude reads them, captions them, extracts text, answers questions. Mix images and text in the same prompt.
+
+### Streaming
+
+`"stream": true` returns Server-Sent Events. You see tokens as they're generated. Useful for chat UIs (felt latency drops dramatically).
+
+### Prompt caching
+
+Mark portions of your prompt with `cache_control: {"type": "ephemeral"}`. Anthropic caches them server-side. Subsequent calls within the cache lifetime cost ~10% the input token price. Big win for chatbots with long system prompts that repeat.
+
+### Files API + Message batches
+
+For workflows where you want to upload a file once and reference it from many prompts (files), or queue thousands of requests for cheaper async processing (batches). Both lower the per-token cost vs naive synchronous calls.
+
+## What it costs
+
+Pricing is per-million-input-tokens and per-million-output-tokens, varies by model:
+
+| Tier | Use case | Pricing shape |
+|---|---|---|
+| **Haiku** | Cheap, fast — classification, simple Q&A, batch processing | Lowest per-token |
+| **Sonnet** | Sweet spot — most production work | Mid |
+| **Opus** | Hardest reasoning · long planning · complex code | Highest per-token |
+
+> ⚠️ **Pricing changes faster than this page.** Always check [anthropic.com/pricing](https://www.anthropic.com/pricing) before committing.
+
+Cache writes are cheaper than fresh input; cache reads are cheaper still. Batch processing is ~50% off non-batch. Bedrock + Vertex pricing is the cloud's own (typically a small premium over direct Anthropic).
+
+## Where to call from
+
+| Place | What you need |
+|---|---|
+| Direct (api.anthropic.com) | API key from console.anthropic.com |
+| AWS Bedrock | AWS account · Claude models enabled in your region |
+| Google Vertex AI | GCP project · Claude in Vertex Model Garden · ADC auth |
+| Self-hosted (Enterprise) | Custom proxy — Anthropic Enterprise contracts only |
+
+Most personal + small-team work goes direct. Enterprise pushes you toward Bedrock/Vertex for governance reasons.
+
+## SDKs
+
+Two official:
+
+- **Python:** `pip install anthropic`. Sync + async clients, streaming support, file uploads, message batches.
+- **TypeScript / JavaScript:** `npm install @anthropic-ai/sdk`. Same surface, Node and Deno compatible.
+
+Community SDKs exist for Go, Rust, Ruby, Java, .NET — varying levels of maintenance. Check `github.com/anthropics` for the official ones; treat community ones like any other community library.
+
+## Why this matters
+
+The pattern that's emerged: **Claude is the smart layer, your app is the boring layer**. Auth, billing, persistence, the UI, the integrations — all of that is your code. The API call is the inflection point where "answer this question" goes to the model.
+
+If you've used the OpenAI API or Google's Gemini API, the shape will feel familiar. The differences are at the edges — tool use protocols, caching semantics, content types in messages — not the core shape.
+
+## What to do next
+
+- [§API.2 Getting started](/anthropic/claude-api/getting-started/) — minimal hello-world with both SDKs
+- [§API.3 Models](/anthropic/claude-api/models/) — current Sonnet · Opus · Haiku lineup, context windows, vision support
+- [§API.4 Common patterns](/anthropic/claude-api/patterns/) — tool use loop, structured outputs, prompt caching strategy
+- [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) — the protocol built on top of the API's tool-use surface

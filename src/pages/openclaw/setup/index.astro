@@ -6,7 +6,7 @@ import { getCollection } from 'astro:content';
 
 const allSetups = await getCollection('setups');
 const setupEntries = allSetups
-  .filter(e => e.data.section === 'Setup' && e.data.status === 'published')
+  .filter(e => e.data.section === 'Setup' && e.data.vendor === 'openclaw' && e.data.status === 'published')
   .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
 const catalogEntries = setupEntries.map(e => ({

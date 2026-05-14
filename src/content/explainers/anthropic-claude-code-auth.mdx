@@ -1,0 +1,158 @@
+---
+title: "Auth — login, API key, or Bedrock/Vertex"
+section: "Claude Code"
+sectionNumber: "CC.4"
+description: "Three ways to authenticate Claude Code — claude.ai subscription login (easiest), Anthropic Console API key (pay-as-you-go), or third-party provider via Bedrock or Vertex (enterprise / governance). Pros, cons, where credentials live."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/claude-code/setup and the Anthropic Console third-party integrations docs. None of the three paths run by Sush yet."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/setup"
+  - "https://docs.anthropic.com/en/docs/claude-code/third-party-integrations"
+  - "https://docs.anthropic.com/en/api/getting-started"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## The three paths at a glance
+
+| Path | When to use | Cost model | Setup time |
+|---|---|---|---|
+| **Subscription login** | You use Claude daily and have a Pro / Max / Team account | Flat monthly fee · most predictable | 30 seconds |
+| **API key** | You want pay-as-you-go OR you're scripting Claude Code for CI / automation | Per-token · cheap for light use · expensive for heavy | 2 minutes |
+| **Bedrock or Vertex** | Your org requires the call to go through AWS or Google Cloud (compliance / billing reasons) | Cloud's per-token rate · billed via your cloud account | 10 minutes + cloud setup |
+
+You can switch between paths by setting environment variables — they're not exclusive. Many people log in with a subscription locally and override to an API key for scripted CI runs.
+
+## Path 1 — Subscription login (the easy one)
+
+If you have a Claude Pro / Max / Team / Enterprise subscription, this is the simplest. From any directory:
+
+```bash
+claude
+```
+
+On first launch, it opens a browser to `claude.ai`. You sign in (or pick the account you're already in), confirm the device, and the CLI gets a token. Token lives at `~/.claude/credentials.json` (Linux/macOS) or `%USERPROFILE%\.claude\credentials.json` (Windows). It's encrypted at rest with the OS keychain on macOS; on Windows + Linux it's a JSON file with a refresh token.
+
+**Why this matters:** subscription tokens **inherit your tier's rate limits**. Pro is roughly "individual daily use," Max is "all-day heavy use," Team adds shared billing + per-seat. If you hit the weekly cap mid-task, you wait — the CLI tells you when the reset is.
+
+### Switching accounts
+
+```bash
+claude logout
+claude   # opens the browser again
+```
+
+### What the token can do
+
+Anything your subscription can — chat, edit files in projects, call MCP servers, use Computer Use (if your account has access). It **cannot** transfer to other tools — the token is scoped to Claude Code.
+
+## Path 2 — Anthropic Console API key
+
+For pay-as-you-go billing or CI/scripting.
+
+1. Sign in to [console.anthropic.com](https://console.anthropic.com).
+2. Workspaces → API Keys → **Create Key**. Give it a name like `claude-code-laptop`.
+3. Copy the key (starts with `sk-ant-...`). You'll see it once — copy now or you'll have to rotate.
+4. Set it as an environment variable:
+
+   ```bash
+   # macOS / Linux — add to ~/.zshrc or ~/.bashrc
+   export ANTHROPIC_API_KEY=sk-ant-...
+
+   # Windows PowerShell — persistent
+   [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-ant-...", "User")
+   ```
+
+5. Restart your shell. Run `claude` — it'll detect the env var and skip the browser login.
+
+### What the key can do
+
+Everything the API can do, billed against the credit balance on the Console workspace the key belongs to. **Set a billing cap** in Console → Workspace Settings → Spend Limits. Without one, an over-eager agent loop can burn through real money fast.
+
+### Rotating
+
+```bash
+# In Console: revoke the old key, create a new one
+export ANTHROPIC_API_KEY=sk-ant-NEW...
+# Update your shell config so it persists
+```
+
+> ⚠️ **Never commit `sk-ant-...` to a repo.** Add `.env*` to `.gitignore`. If a key leaks, revoke it in Console immediately — it's a billable credential.
+
+## Path 3 — Third-party provider (Bedrock or Vertex)
+
+If your organisation requires Claude calls to go through AWS Bedrock or Google Vertex (for governance, billing, or data-residency reasons), Claude Code supports both as drop-in replacements for the direct API.
+
+### Amazon Bedrock
+
+```bash
+export CLAUDE_CODE_USE_BEDROCK=1
+export AWS_REGION=us-east-1
+# Standard AWS credentials picked up from ~/.aws or env vars
+```
+
+You need:
+
+- AWS credentials with permission to call Bedrock model invocations (`bedrock:InvokeModel`, `bedrock:InvokeModelWithResponseStream`)
+- The Claude models you want to use **enabled** in your AWS account (Bedrock → Model access)
+- A region that has the model you need (US East and US West have the broadest coverage)
+
+Pricing follows AWS Bedrock's per-token rate (typically a slight premium over Anthropic direct). Billing goes through your AWS account.
+
+### Google Vertex AI
+
+```bash
+export CLAUDE_CODE_USE_VERTEX=1
+export CLOUD_ML_REGION=us-central1
+export ANTHROPIC_VERTEX_PROJECT_ID=your-gcp-project-id
+# Standard gcloud auth: gcloud auth application-default login
+```
+
+You need:
+
+- A GCP project with the Vertex AI API enabled
+- Claude models enabled in Vertex Model Garden
+- ADC (application default credentials) set up via `gcloud auth application-default login`
+
+Pricing follows Vertex's per-token rate. Billing goes through your GCP account.
+
+### Why pick a third-party provider
+
+- **Compliance:** your security team requires LLM calls through a cloud they've already audited.
+- **Billing consolidation:** Anthropic calls land on the same invoice as the rest of your cloud spend.
+- **Existing private networking:** you've already set up Bedrock/Vertex VPC endpoints; Claude Code rides on top.
+
+### Why NOT to pick a third-party provider
+
+- **Lag.** New Anthropic models reach the direct API first; Bedrock + Vertex catch up days-to-weeks later.
+- **Slightly more expensive per token** on average.
+- **Feature gaps.** Some surfaces (e.g. the newest Computer Use beta tools) may not be available through Bedrock / Vertex yet.
+
+For personal projects: don't bother. For org work: probably worth it for the audit trail alone.
+
+## Where credentials live (summary)
+
+| Path | Storage |
+|---|---|
+| Subscription | `~/.claude/credentials.json` (encrypted on macOS) |
+| API key | `ANTHROPIC_API_KEY` env var (shell config) |
+| Bedrock | `~/.aws/credentials` + `CLAUDE_CODE_USE_BEDROCK=1` env var |
+| Vertex | gcloud ADC + `CLAUDE_CODE_USE_VERTEX=1` + project env vars |
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Browser login redirects to white screen | Multiple Claude accounts — wrong one selected | Open `claude.ai` in same browser, sign in correctly, retry `claude` |
+| API key set but Claude still asks to log in | Env var not exported in current shell | `echo $ANTHROPIC_API_KEY` to confirm; reopen shell if blank |
+| Bedrock returns *"AccessDeniedException"* | Model not enabled in your AWS region | Bedrock → Model access → enable Claude |
+| Vertex returns *"PERMISSION_DENIED"* | ADC pointing at wrong project | `gcloud config get-value project`, verify against `ANTHROPIC_VERTEX_PROJECT_ID` |
+| Subscription token "expired" mid-session | Refresh token revoked (account password change, security event) | `claude logout` + `claude` to re-login |
+
+## What to do next
+
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — adding external tools once you're authenticated
+- [§CC.6 Slash commands + subagents](/anthropic/claude-code/slash-commands/) — workflow shortcuts
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — rate-limit and pricing surprises in week one

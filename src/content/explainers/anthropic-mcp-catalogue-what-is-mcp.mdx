@@ -1,0 +1,144 @@
+---
+title: "What MCP is, plainly"
+section: "MCP catalogue"
+sectionNumber: "MCP.1"
+description: "Model Context Protocol — what it is, why Anthropic kicked it off, what it actually does for an agent app, and why other vendors (OpenAI, Google, Microsoft) have adopted it. Plus the architecture in one diagram."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from modelcontextprotocol.io and the Anthropic blog announcement as of 14 May 2026. The spec is at v1.x; minor changes ship regularly — check the spec before relying on protocol details."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://modelcontextprotocol.io/introduction"
+  - "https://modelcontextprotocol.io/specification"
+  - "https://www.anthropic.com/news/model-context-protocol"
+vendor: "anthropic"
+product: "mcp-catalogue"
+---
+
+## The thirty-second version
+
+**MCP — Model Context Protocol — is an open standard for connecting AI applications to external tools, data sources, and prompts.** Anthropic shipped it in late 2024. The pitch: every AI app needs the same five things (file system, database, GitHub, calendar, browser, etc.); without a standard, every vendor writes them N times. With a standard, you write the integration once and plug it into Claude, ChatGPT, VS Code Copilot, Cursor, Copilot Studio — they all speak it.
+
+> *"Think of MCP like a USB-C port for AI applications. Just as USB-C provides a standardized way to connect electronic devices, MCP provides a standardized way to connect AI applications to external systems."* — [modelcontextprotocol.io](https://modelcontextprotocol.io)
+
+## The shape
+
+Three pieces:
+
+| Piece | Role | Example |
+|---|---|---|
+| **MCP host** | The AI app the user interacts with | Claude Code · ChatGPT · Cursor · VS Code Copilot |
+| **MCP client** | The bit of the host that speaks MCP | Built into the host; you don't write this |
+| **MCP server** | A small program that exposes tools / resources / prompts | `server-filesystem` · `server-postgres` · your own |
+
+The host runs the client. The client talks to one-or-many servers. Each server exposes:
+
+- **Tools** — functions the model can call (e.g. `search_repositories`, `read_file`, `query_database`)
+- **Resources** — data the model can read (e.g. files, DB rows, API responses)
+- **Prompts** — pre-baked templates the user can invoke (e.g. *"summarise this codebase"*)
+
+## Why this matters
+
+Before MCP, every AI app had its own integration story:
+
+- ChatGPT had "plugins" (deprecated), then "GPTs" with "Actions"
+- Claude.ai had its own "Tools"
+- Cursor had its own protocol
+- VS Code Copilot had `agent.md` files and a different shape
+- Each one had a different API for "let the model talk to GitHub"
+
+With MCP:
+
+- You write `server-github` once
+- It works in Claude Code, ChatGPT, Cursor, VS Code, Copilot Studio — same code, same config shape
+- New AI hosts that ship MCP support inherit the entire catalogue
+- New servers ship and immediately work in every MCP-aware host
+
+This is the genuinely-important bit. The protocol's quality is fine. The fact that **the major vendors agreed on a standard** is unusual in this space.
+
+## A real example
+
+You want Claude Code to read your team's notion docs.
+
+**Without MCP:** you'd either (a) wait for Anthropic to ship a Notion integration, or (b) copy-paste relevant docs into your prompts.
+
+**With MCP:**
+
+1. Install the official Notion MCP server: `npx -y @notionhq/notion-mcp-server`
+2. Add to `~/.claude/settings.json`:
+
+   ```json
+   "notion": {
+     "command": "npx",
+     "args": ["-y", "@notionhq/notion-mcp-server"],
+     "env": { "NOTION_API_KEY": "secret_..." }
+   }
+   ```
+
+3. Restart Claude Code.
+
+Now Claude can search Notion, read pages, and (if you allow) write to them. **And the same Notion server works in any MCP-aware host** — drop the same config into ChatGPT's MCP settings or VS Code Copilot's mcp.json.
+
+## The protocol in one diagram
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  HOST (e.g. Claude Code)                                │
+│  ┌──────────────────┐                                   │
+│  │  Model (Claude)  │                                   │
+│  └────────┬─────────┘                                   │
+│           │                                             │
+│  ┌────────▼─────────┐    JSON-RPC over stdio/HTTP/SSE  │
+│  │  MCP Client      │ ◄─────────────────────────────┐  │
+│  └──────────────────┘                                │  │
+└──────────────────────────────────────────────────────│──┘
+                                                       │
+                                ┌──────────────────────┴──┐
+                                │                         │
+            ┌───────────────────▼──┐       ┌──────────────▼──────┐
+            │  MCP Server          │       │  MCP Server         │
+            │  (filesystem)        │       │  (github)           │
+            │                      │       │                     │
+            │  Tools:              │       │  Tools:             │
+            │   • read_file        │       │   • search_repos    │
+            │   • write_file       │       │   • create_issue    │
+            │   • list_dir         │       │   • read_pr_diff    │
+            │  Resources: ...      │       │  Resources: ...     │
+            └──────────────────────┘       └─────────────────────┘
+```
+
+- **Transport:** typically stdio (server is a subprocess of the host). HTTP and Server-Sent Events transports exist for remote servers.
+- **Protocol:** JSON-RPC 2.0 over the transport.
+- **Discovery:** on connection, the host asks the server "what tools / resources / prompts do you expose?" The server responds with a manifest. The host tells the model what's available.
+
+You can read the full spec at [modelcontextprotocol.io/specification](https://modelcontextprotocol.io/specification).
+
+## Cross-vendor support
+
+As of May 2026, MCP is supported by:
+
+| Host | Status |
+|---|---|
+| **Claude Code · Claude.ai · Anthropic API** | Native (Anthropic kicked it off) |
+| **ChatGPT (OpenAI)** | Supported via the OpenAI Apps SDK |
+| **VS Code GitHub Copilot** | Supported via the GitHub Copilot Chat MCP extension |
+| **Cursor** | Supported via Cursor's MCP settings |
+| **Copilot Studio (Microsoft)** | Supported via the MCP plugin in M365 Agents Toolkit |
+| **Gemini CLI (Google)** | MCP support landed in late 2025 |
+| **Many community hosts** | Continuum, MCPJam, Cody, Aider, others |
+
+The protocol is genuinely portable. Write a server once; the same binary works across all of these.
+
+## Why it isn't all upside
+
+- **MCP servers are arbitrary code.** Installing one is like installing any other unverified package. Read the source. See [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) for the trust gates.
+- **Tool definitions affect cost.** Big tool manifests inflate every input token count. Don't load tools you don't need.
+- **The protocol evolves.** Breaking changes have shipped between versions; servers and hosts must be on compatible versions.
+- **Performance varies.** A slow MCP server (heavy CPU work, slow network calls) blocks every model turn that uses it.
+
+## What to do next
+
+- [§MCP.2 Official Anthropic MCP servers](/anthropic/mcp-catalogue/official-servers/) — the curated set, what each one does
+- [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) — where to find them, how to vet them
+- [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — the 30-minute walkthrough
+- [§CC.5 MCP integration in Claude Code](/anthropic/claude-code/mcp/) — wiring it up specifically in Claude Code

@@ -1,0 +1,267 @@
+---
+/**
+ * /anthropic/[product]/ — product hub.
+ *
+ * Lists every entry tagged vendor:"anthropic" + product:<product> across the
+ * shared content collections. The 5 products are hard-coded (claude-code ·
+ * claude-api · mcp-catalogue · claude-ai · computer-use) so getStaticPaths
+ * always renders the 5 hubs even before all entries land.
+ *
+ * Entry filenames follow `anthropic-<product>-<slug>.mdx`; the short slug is
+ * extracted by stripping that prefix.
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// NOTE: Astro 5 runs getStaticPaths in a separate evaluation scope, so it
+// can't reach module-level const declarations from outside the function.
+// Inline the product key list.
+export async function getStaticPaths() {
+  const PRODUCT_KEYS = ['claude-code', 'claude-api', 'mcp-catalogue', 'claude-ai', 'computer-use'];
+  return PRODUCT_KEYS.map(product => ({ params: { product } }));
+}
+
+const PRODUCT_META: Record<string, { title: string; code: string; lede: string; description: string }> = {
+  'claude-code': {
+    title: 'Claude Code',
+    code: 'CC',
+    lede: `Claude Code is Anthropic's terminal coding agent. It installs in your shell, reads your repo, edits files, runs commands, and calls Claude with tool use. It speaks MCP natively (the protocol it kicked off). The native install handles macOS, Linux, WSL, and Windows; there's also a Homebrew cask, a winget package, a VS Code / Cursor / JetBrains extension, a desktop app, and a web surface. Every page below is <strong>sourced</strong> from <a href="https://docs.anthropic.com/en/docs/claude-code/overview">docs.anthropic.com/claude-code</a>. Sush hasn't standalone-installed it yet — he uses Claude through GitHub Copilot CLI today.`,
+    description: 'Claude Code — install, auth, MCP integration, slash commands, use cases, and pitfalls. Sourced from docs.anthropic.com.',
+  },
+  'claude-api': {
+    title: 'Claude API',
+    code: 'API',
+    lede: `The Claude API is the HTTP surface + Python/TypeScript SDKs you use when you want to build your own apps. Tool use, structured outputs, streaming, vision, prompt caching, the message batches API, the files API, the agent skills surface. Pricing is per-token; the Sonnet 4.5 tier hits the right cost/quality balance for most work today (verify before committing — model lineup changes faster than Claw can keep up). All entries below are <strong>sourced</strong> from <a href="https://docs.anthropic.com/en/api">docs.anthropic.com/api</a>.`,
+    description: 'Claude API — overview, getting started, models, common patterns. Sourced from docs.anthropic.com.',
+  },
+  'mcp-catalogue': {
+    title: 'MCP server catalogue',
+    code: 'MCP',
+    lede: `The <strong>Model Context Protocol</strong> is Anthropic's open standard for wiring tools, data, and prompts into agents. The spec is at <a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a>; servers exist for filesystems, git repos, databases, Slack, Notion, browser automation, calendars, and dozens of other surfaces. Cross-vendor support is broad — Claude, ChatGPT, VS Code, Cursor, Copilot Studio, and others all speak MCP. Below: what MCP is, the official Anthropic servers, where to find community servers (and trust gates), and how to build your own.`,
+    description: 'MCP — what it is, official Anthropic servers, community catalogues, and how to build your own server. Sourced from modelcontextprotocol.io and github.com/anthropics.',
+  },
+  'claude-ai': {
+    title: 'Claude.ai',
+    code: 'WEB',
+    lede: `<a href="https://claude.ai">Claude.ai</a> is the hosted chat product — web app, desktop apps (macOS · Windows), iOS app. Two of its features are worth a dossier each: <strong>Projects</strong> (long-lived context with files + custom instructions) and <strong>Skills</strong> (custom callable tools you write once and reuse across chats). Plus an integrated Computer Use surface. Honest take: the free tier limits are tight; the Pro tier is generous for individuals but the Team/Enterprise tiers have very different feature flags — read the pricing page carefully before assuming what you can use.`,
+    description: 'Claude.ai web — overview, Projects feature, Skills feature. Sourced from anthropic.com.',
+  },
+  'computer-use': {
+    title: 'Computer Use',
+    code: 'CU',
+    lede: `Computer Use is Anthropic's "agent that controls a computer" capability. The model gets a screenshot, decides where to click / what to type / when to scroll, and the host application executes the actions. <strong>Beta surface — status as of May 2026.</strong> Treat the docs date and the model version as load-bearing details; what works today may not work next week. Use cases are narrow (form filling, repetitive UI work, accessibility), failure modes are obvious (the agent sees pixels, not semantics), and you need a sandboxed environment to run it safely.`,
+    description: 'Computer Use — overview and getting started. Heavy beta caveat. Sourced from docs.anthropic.com.',
+  },
+};
+
+const { product } = Astro.params;
+const meta = PRODUCT_META[product as string];
+
+const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+type Entry = { num: string; title: string; href: string; description: string; state: string; date: string };
+const entries: Entry[] = [];
+for (const col of collections) {
+  const all = await getCollection(col as any);
+  for (const e of all as any[]) {
+    if (e.data.vendor !== 'anthropic') continue;
+    if (e.data.product !== product) continue;
+    if (e.data.status !== 'published') continue;
+    const fullSlug = e.id.replace(/\.mdx?$/, '');
+    const shortSlug = fullSlug.replace(new RegExp(`^anthropic-${product}-`), '');
+    entries.push({
+      num: e.data.sectionNumber,
+      title: e.data.title,
+      href: `/anthropic/${product}/${shortSlug}/`,
+      description: e.data.description,
+      state: e.data.verificationState,
+      date: e.data.lastReviewedAt,
+    });
+  }
+}
+entries.sort((a, b) => a.num.localeCompare(b.num));
+
+const sourcedCount = entries.filter(e => e.state === 'sourced').length;
+const triedCount = entries.filter(e => e.state === 'tried' || e.state === 'verified').length;
+const plannedCount = entries.filter(e => e.state === 'planned' || e.state === 'disputed').length;
+---
+
+<BaseLayout
+  title={`${meta.title} · Anthropic — Claw`}
+  description={meta.description}
+  ogImage="/og/home.png"
+>
+  <section class="product-hub">
+    <div class="crumb">
+      <a href="/anthropic/">Anthropic</a>
+      <span>/</span>
+      <span class="num">{meta.code}</span>
+    </div>
+
+    <h1>{meta.title}</h1>
+    <p class="lede" set:html={meta.lede}></p>
+
+    <div class="counts">
+      <span class="count-pill count-sourced"><strong>{sourcedCount}</strong> sourced</span>
+      {triedCount > 0 && <span class="count-pill count-tried"><strong>{triedCount}</strong> tried</span>}
+      {plannedCount > 0 && <span class="count-pill count-planned"><strong>{plannedCount}</strong> planned</span>}
+    </div>
+
+    {entries.length === 0 ? (
+      <p class="empty">No entries yet. Batch A is mid-build — check back shortly.</p>
+    ) : (
+      <ul class="entries">
+        {entries.map(e => (
+          <li class="entry-row">
+            <a href={e.href}>
+              <div class="entry-line">
+                <span class="entry-num">{e.num}</span>
+                <span class="entry-title">{e.title}</span>
+                <span class={`entry-state state-${e.state}`}>{e.state}</span>
+              </div>
+              <p class="entry-desc">{e.description}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .product-hub { max-width: 760px; }
+
+  .crumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    letter-spacing: var(--ls-wide);
+  }
+  .crumb a { color: var(--ink-mute); text-decoration: none; }
+  .crumb a:hover { color: var(--claw); }
+  .crumb .num { color: var(--claw); font-weight: 600; }
+
+  .product-hub h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    max-width: 680px;
+    margin-bottom: 20px;
+  }
+  .lede :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .lede :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
+  .lede :global(strong) { color: var(--ink); font-weight: 700; }
+
+  .counts {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .count-pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-wide);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    background: var(--canvas);
+    text-transform: uppercase;
+  }
+  .count-pill strong { font-weight: 700; }
+  .count-sourced { color: var(--amber); }
+  .count-tried { color: var(--olive); }
+  .count-planned { color: var(--claw); }
+
+  .empty {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    color: var(--ink-mid);
+    font-size: 14px;
+  }
+
+  .entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .entry-row {
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .entry-row a {
+    display: block;
+    padding: 16px 0;
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--dur-base) var(--ease);
+  }
+  .entry-row a:hover {
+    background: var(--paper-warm);
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .entry-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .entry-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    letter-spacing: var(--ls-wide);
+  }
+  .entry-title {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    flex: 1;
+  }
+  .entry-state {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: 600;
+    background: var(--canvas);
+  }
+  .state-sourced { color: var(--amber); }
+  .state-tried, .state-verified { color: var(--olive); }
+  .state-planned, .state-disputed { color: var(--claw); }
+  .entry-desc {
+    font-size: 13.5px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+    margin: 6px 0 0;
+  }
+
+  @media (max-width: 640px) {
+    .product-hub h1 { font-size: 26px; }
+    .lede { font-size: 15px; }
+  }
+</style>

@@ -1,0 +1,140 @@
+---
+title: "Computer Use, plainly"
+section: "Computer Use"
+sectionNumber: "CU.1"
+description: "Anthropic's beta capability where Claude takes screenshots, decides where to click / what to type / when to scroll, and an executor runs the actions. What works, what doesn't, where the limits bite, and the safety pattern you must use."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/computer-use as of 14 May 2026. Computer Use is BETA. Model + tool capabilities change rapidly; what's listed here may be out of date by the time you read it. Always check the official docs."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/build-with-claude/computer-use"
+  - "https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo"
+  - "https://www.anthropic.com/news/3-5-models-and-computer-use"
+vendor: "anthropic"
+product: "computer-use"
+---
+
+## The thirty-second version
+
+Computer Use is **Claude controlling a computer** — taking screenshots, deciding where to click, what to type, when to scroll, until a task is done. You wire Claude up to a virtual machine (or a sandboxed real machine), Claude calls three tools (`screenshot`, `mouse_action`, `keyboard_action`), and your harness executes them against the OS.
+
+**This is beta.** Sonnet 4.5 + Opus 4.7 currently support the tools. Capability is real for narrow use cases; failure modes are loud for most things. Don't put it in front of customers; do experiment with it for personal automation.
+
+## The shape
+
+```
+┌─────────────────────────┐
+│  Your harness           │
+│  (a Python script)      │
+│                         │
+│  ┌──────────────────┐   │       ┌──────────────────┐
+│  │  Claude API call │ ◄─┼────── │  Claude model    │
+│  └────────┬─────────┘   │       │  (Sonnet 4.5)    │
+│           │             │       └──────────────────┘
+│           │ "click here"
+│           ▼
+│  ┌──────────────────┐   │
+│  │  Action executor │   │
+│  │  (pyautogui /    │   │
+│  │   xdotool / etc) │   │
+│  └────────┬─────────┘   │
+│           │ click happens
+│           ▼
+│  ┌──────────────────┐   │
+│  │  The OS          │   │
+│  │  (in a VM!)      │   │
+│  └──────────────────┘   │
+│           │             │
+│           ▼ screenshot  │
+│  ┌──────────────────┐   │
+│  │  Back to Claude  │   │
+│  └──────────────────┘   │
+└─────────────────────────┘
+```
+
+Claude sees the screenshot, decides the next action, returns a `tool_use` block. Your harness executes the action (click X,Y · type "hello" · scroll down 300px), takes another screenshot, sends it back. Loop until Claude says "done."
+
+## What it can do (today, narrow)
+
+- **Repeat UI tasks** — open an app, click a sequence of menus, type into a form
+- **Form filling from structured data** — read a CSV, fill out a web form for each row
+- **Accessibility-style flows** — operate apps that don't have APIs but do have UIs
+- **Test web apps** end-to-end (alternative to Playwright when the test scenarios are exploratory)
+- **Data scraping** from interfaces that block APIs
+
+## What it can't / shouldn't do
+
+- **Anything where mistakes are expensive.** It clicks the wrong button regularly. Don't let it operate your bank.
+- **Anything time-sensitive.** Each step costs a Claude call (~5–15 seconds). A 50-click task takes minutes.
+- **Long tasks.** Context fills, decisions degrade. 20-30 actions is realistic; 200+ rarely is.
+- **High-precision pixel work.** Drawing, design, anything that needs sub-pixel accuracy.
+- **Tasks where the UI changes.** Claude memorises positions; a layout shift between runs confuses it.
+
+## The safety pattern (mandatory)
+
+> ⚠️ **Computer Use needs a sandbox. Not optional.**
+
+The model can click anywhere on the screen it sees. If you point it at your daily-driver desktop:
+
+- It might click on your password manager and read your vault
+- It might send your real email
+- It might accept terms of service on your behalf
+- It might `rm -rf` something if you have a terminal open
+
+The Anthropic reference implementation runs Claude against a **disposable Docker container** with a virtual desktop (Xvfb + a window manager). When the task is done, you nuke the container. Anthropic's quickstart at [github.com/anthropics/anthropic-quickstarts](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo) ships exactly this.
+
+**Variations that are also OK:**
+
+- A real laptop dedicated to Claude (no real accounts, no sensitive data, scope limited)
+- A VM (VirtualBox, Parallels, Hyper-V) with a snapshot you can revert
+- A cloud sandbox (e.g. an Anthropic-provided sandbox once that ships at GA)
+
+**Variations that are NOT OK:**
+
+- Your daily-driver computer with your real accounts logged in
+- A shared machine
+- Anything where the agent's mistake costs you real money or data
+
+## What it actually costs
+
+Computer Use is expensive per task:
+
+- Each step = one Claude API call with a screenshot
+- Screenshots count as image tokens (~ a few thousand tokens each)
+- A 30-step task could easily burn 100K+ input tokens
+
+This is the trade-off. You're paying for the model's vision + reasoning on every step. For a 1-minute manual task, it's not worth automating. For a tedious 30-minute task you'll repeat 20 times, the math works out.
+
+## A scenario that's working today
+
+You want to bulk-update product descriptions in an internal admin tool. The tool has no API. The descriptions live in a spreadsheet you've prepared.
+
+The harness:
+
+1. Reads row 1 from the spreadsheet
+2. Boots a sandboxed container with a Chromium pointed at the admin tool (already logged in via a session cookie)
+3. Asks Claude: *"navigate to the product editor for SKU `<row.sku>`, update the description field to `<row.description>`, save, then close the editor"*
+4. Claude takes screenshots, clicks through, types, saves
+5. The harness moves to row 2, repeat
+
+Reliability is "good enough to save time but you spot-check 10% by hand." That's the sweet spot.
+
+## A scenario that's NOT working today
+
+You want to use Computer Use as your daily assistant — *"read my emails and reply to the ones from clients."*
+
+Failure modes:
+
+- Misclicks (the wrong email gets opened)
+- Sends drafts that read off-tone for real client communication
+- Doesn't know context that lives in your head (which client is which)
+- Operates 10× slower than you would
+
+This is what "narrow use case beta" means. Wait for GA or use something purpose-built (a real email assistant with proper hooks into your inbox).
+
+## What to do next
+
+- [§CU.2 Getting started with Computer Use](/anthropic/computer-use/getting-started/) — clone the demo, run a first task
+- [§API.4 Common patterns](/anthropic/claude-api/patterns/) — the tool-use loop Computer Use builds on
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — many same gotchas apply (rate limits, runaway cost)

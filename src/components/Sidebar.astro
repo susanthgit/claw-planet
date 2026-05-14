@@ -20,10 +20,20 @@ function badge(state: string | undefined): { state: 't' | 's' | 'e'; label: stri
   return { state: 's', label: 'sourced' };
 }
 
-async function loadChildren(name: string, baseHref: string) {
+// Detect the active vendor from the URL prefix. The Sidebar shape varies per
+// vendor (OpenClaw has §1-§10 sections, Anthropic has product-shaped nav, etc.).
+// Multi-vendor expansion v0b — Batch A added Anthropic product nav.
+const path = Astro.url.pathname;
+const activeVendor = path.startsWith('/anthropic/') ? 'anthropic'
+  : path.startsWith('/openai/') ? 'openai'
+  : path.startsWith('/google/') ? 'google'
+  : path.startsWith('/microsoft/') ? 'microsoft'
+  : 'openclaw';
+
+async function loadChildren(name: string, baseHref: string, vendor: string = 'openclaw') {
   const all = await getCollection(name as any);
   return all
-    .filter((e: any) => e.data.status === 'published')
+    .filter((e: any) => e.data.status === 'published' && e.data.vendor === vendor)
     .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber))
     .map((e: any) => {
       const slug = e.id.replace(/\.mdx?$/, '');
@@ -38,28 +48,82 @@ async function loadChildren(name: string, baseHref: string) {
     });
 }
 
-const overviewKids = await loadChildren('explainers', '/openclaw/overview/');
-const setupKids = await loadChildren('setups', '/openclaw/setup/');
-const connectionsKids = await loadChildren('connections', '/openclaw/connections/');
-const pluginsKids = await loadChildren('plugins', '/openclaw/plugins/');
-const useCasesKids = await loadChildren('use-cases', '/openclaw/use-cases/');
-const securityKids = await loadChildren('gotchas', '/openclaw/security/');
-const compareKids = await loadChildren('compares', '/compare/');
+// Anthropic loader — entries live in the shared collections but are tagged by
+// product. We strip the `anthropic-<product>-` prefix from the file id to get
+// the short URL slug (matches the route at /anthropic/[product]/[slug]/).
+async function loadAnthropicProductChildren(productKey: string, productHref: string) {
+  const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+  const out: any[] = [];
+  for (const col of collections) {
+    const entries = await getCollection(col as any);
+    for (const e of entries as any[]) {
+      if (e.data.vendor !== 'anthropic') continue;
+      if (e.data.product !== productKey) continue;
+      if (e.data.status !== 'published') continue;
+      const fullSlug = e.id.replace(/\.mdx?$/, '');
+      const shortSlug = fullSlug.replace(new RegExp(`^anthropic-${productKey}-`), '');
+      const b = badge(e.data.verificationState);
+      out.push({
+        num: e.data.sectionNumber,
+        title: e.data.title,
+        href: `${productHref}${shortSlug}/`,
+        state: b.state,
+        label: b.label,
+      });
+    }
+  }
+  return out.sort((a, b) => a.num.localeCompare(b.num));
+}
 
-const sections = [
-  { num: '§1', title: 'Overview', count: overviewKids.length, slug: '/openclaw/overview/', children: overviewKids },
-  { num: '§2', title: 'Setup', count: setupKids.length, slug: '/openclaw/setup/', children: setupKids },
-  { num: '§3', title: 'Connections', count: connectionsKids.length, slug: '/openclaw/connections/', children: connectionsKids },
-  { num: '§4', title: 'Plugins', count: pluginsKids.length, slug: '/openclaw/plugins/', children: pluginsKids },
-  { num: '§5', title: 'Use cases', count: useCasesKids.length, slug: '/openclaw/use-cases/', children: useCasesKids },
-  { num: '§6', title: 'Security', count: securityKids.length, slug: '/openclaw/security/', children: securityKids },
-  { num: '§7', title: 'Compare', count: compareKids.length, slug: '/compare/', children: compareKids },
-  { num: '§8', title: 'Updates', count: coverage.sections.updates.current, slug: '/updates/' },
-  { num: '§9', title: 'Resources', count: coverage.sections.resources.current, slug: '/openclaw/resources/' },
-  { num: '§10', title: 'FAQ', count: coverage.sections.faq.current, slug: '/openclaw/faq/' },
-];
+let sections: any[] = [];
 
-const currentPath = Astro.url.pathname.replace(/\/$/, '') + '/';
+if (activeVendor === 'openclaw') {
+  const overviewKids = await loadChildren('explainers', '/openclaw/overview/');
+  const setupKids = await loadChildren('setups', '/openclaw/setup/');
+  const connectionsKids = await loadChildren('connections', '/openclaw/connections/');
+  const pluginsKids = await loadChildren('plugins', '/openclaw/plugins/');
+  const useCasesKids = await loadChildren('use-cases', '/openclaw/use-cases/');
+  const securityKids = await loadChildren('gotchas', '/openclaw/security/');
+  const compareKids = await loadChildren('compares', '/compare/');
+
+  sections = [
+    { num: '§1', title: 'Overview', count: overviewKids.length, slug: '/openclaw/overview/', children: overviewKids },
+    { num: '§2', title: 'Setup', count: setupKids.length, slug: '/openclaw/setup/', children: setupKids },
+    { num: '§3', title: 'Connections', count: connectionsKids.length, slug: '/openclaw/connections/', children: connectionsKids },
+    { num: '§4', title: 'Plugins', count: pluginsKids.length, slug: '/openclaw/plugins/', children: pluginsKids },
+    { num: '§5', title: 'Use cases', count: useCasesKids.length, slug: '/openclaw/use-cases/', children: useCasesKids },
+    { num: '§6', title: 'Security', count: securityKids.length, slug: '/openclaw/security/', children: securityKids },
+    { num: '§7', title: 'Compare', count: compareKids.length, slug: '/compare/', children: compareKids },
+    { num: '§8', title: 'Updates', count: coverage.sections.updates.current, slug: '/updates/' },
+    { num: '§9', title: 'Resources', count: coverage.sections.resources.current, slug: '/openclaw/resources/' },
+    { num: '§10', title: 'FAQ', count: coverage.sections.faq.current, slug: '/openclaw/faq/' },
+  ];
+} else if (activeVendor === 'anthropic') {
+  // Anthropic — product-shaped nav. 5 products, each with its own short-list
+  // of entries. Sush is in Batch A (Day-1 sourced seed); entries flip to
+  // tried as he experiments.
+  const claudeCodeKids = await loadAnthropicProductChildren('claude-code', '/anthropic/claude-code/');
+  const claudeApiKids = await loadAnthropicProductChildren('claude-api', '/anthropic/claude-api/');
+  const mcpKids = await loadAnthropicProductChildren('mcp-catalogue', '/anthropic/mcp-catalogue/');
+  const claudeAiKids = await loadAnthropicProductChildren('claude-ai', '/anthropic/claude-ai/');
+  const computerUseKids = await loadAnthropicProductChildren('computer-use', '/anthropic/computer-use/');
+
+  sections = [
+    { num: 'AN', title: 'Hub', count: undefined, slug: '/anthropic/' },
+    { num: 'CC', title: 'Claude Code', count: claudeCodeKids.length, slug: '/anthropic/claude-code/', children: claudeCodeKids },
+    { num: 'API', title: 'Claude API', count: claudeApiKids.length, slug: '/anthropic/claude-api/', children: claudeApiKids },
+    { num: 'MCP', title: 'MCP catalogue', count: mcpKids.length, slug: '/anthropic/mcp-catalogue/', children: mcpKids },
+    { num: 'WEB', title: 'Claude.ai', count: claudeAiKids.length, slug: '/anthropic/claude-ai/', children: claudeAiKids },
+    { num: 'CU', title: 'Computer Use', count: computerUseKids.length, slug: '/anthropic/computer-use/', children: computerUseKids },
+  ];
+} else {
+  // openai / google / microsoft hubs — placeholder until those batches land
+  sections = [
+    { num: '·', title: 'Hub', count: undefined, slug: `/${activeVendor}/` },
+  ];
+}
+
+const currentPath = path.replace(/\/$/, '') + '/';
 
 const readingAids = [
   { title: 'Methodology', slug: '/methodology/' },

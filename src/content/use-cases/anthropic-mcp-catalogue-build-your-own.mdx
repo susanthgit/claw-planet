@@ -1,0 +1,280 @@
+---
+title: "Build your own MCP server"
+section: "MCP catalogue"
+sectionNumber: "MCP.4"
+description: "Thirty-minute walkthrough — write an MCP server in Python (or TypeScript) that exposes one tool, wire it into Claude Code, and confirm it works. Plus where to extend from there (resources, prompts, multi-tool servers)."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Code shape and SDK usage from modelcontextprotocol.io tutorials and the official Python + TS SDKs as of 14 May 2026. Sush hasn't published an MCP server publicly yet — code is from the official docs."
+lastReviewedAt: "2026-05-14"
+estimatedTimeMinutes: 30
+sources:
+  - "https://modelcontextprotocol.io/quickstart/server"
+  - "https://github.com/modelcontextprotocol/python-sdk"
+  - "https://github.com/modelcontextprotocol/typescript-sdk"
+vendor: "anthropic"
+product: "mcp-catalogue"
+---
+
+## What you'll have at the end
+
+An MCP server you wrote, exposing one tool (`get_weather` — the classic example), wired into Claude Code, returning real values when Claude asks. About 30 minutes for someone who's written a CLI before. The same shape extends to any tool / resource / prompt you want to expose.
+
+## When you'd write your own
+
+- **No existing server matches your need.** Internal API, niche SaaS, custom CLI tool.
+- **You don't trust an existing server enough.** Writing a narrow replacement is safer than installing one with 200 dependencies.
+- **You're building a product.** Companies are shipping MCP servers as the standard way to integrate their service with AI hosts.
+- **You're learning the protocol.** Best way to internalise it is to build one.
+
+## Before you start
+
+- **Python 3.10+** OR **Node 18+** (pick whichever you're comfortable in).
+- **An MCP host** to test against — Claude Code is fine, Claude.ai desktop also works, MCP Inspector (a dev tool) is excellent.
+- **A real thing to integrate** — for this tutorial we'll mock a weather API; in real use, you'd integrate against an actual service.
+
+## Python path
+
+### Step 1 — Install the SDK
+
+```bash
+pip install "mcp[cli]"
+```
+
+The `[cli]` extra includes the `mcp` dev command for testing servers in isolation.
+
+### Step 2 — Write the server
+
+`weather_server.py`:
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("weather-server")
+
+@mcp.tool()
+def get_weather(city: str, unit: str = "celsius") -> dict:
+    """
+    Get the current weather for a city.
+
+    Args:
+        city: City name (e.g. "Auckland")
+        unit: Temperature unit, either "celsius" or "fahrenheit"
+
+    Returns:
+        Dict with temperature, condition, and humidity.
+    """
+    # In real code: call an actual weather API.
+    # Mock for the tutorial:
+    return {
+        "city": city,
+        "temperature": 18 if unit == "celsius" else 64,
+        "unit": unit,
+        "condition": "partly cloudy",
+        "humidity": 72,
+    }
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+That's the entire server.
+
+**What `FastMCP` is doing:**
+
+- Reads the function signature + docstring
+- Generates the JSON schema for the tool from the type hints
+- Sets up the JSON-RPC transport over stdio (the host launches this script as a subprocess and talks to it via stdin/stdout)
+- Handles protocol details (initialization handshake, capability negotiation, tool list response)
+
+### Step 3 — Test in isolation
+
+The `mcp` CLI has a built-in inspector:
+
+```bash
+mcp dev weather_server.py
+```
+
+Opens a local web UI where you can see what tools the server exposes, send sample calls, watch responses. **Always test here first.** Debugging in the AI host is harder than debugging in the inspector.
+
+Confirm: the inspector shows `get_weather` with the right schema; calling it returns the mock response.
+
+### Step 4 — Wire into Claude Code
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "python",
+      "args": ["/absolute/path/to/weather_server.py"]
+    }
+  }
+}
+```
+
+Restart Claude Code. Run:
+
+```
+claude
+> what's the weather in Auckland?
+```
+
+Claude calls `get_weather("Auckland")`, gets the mock response, replies *"It's 18°C and partly cloudy in Auckland."* If you see that, your server works.
+
+## TypeScript path
+
+### Step 1 — Install the SDK
+
+```bash
+mkdir weather-server && cd weather-server
+npm init -y
+npm install @modelcontextprotocol/sdk zod
+```
+
+### Step 2 — Write the server
+
+`server.ts`:
+
+```typescript
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+const server = new McpServer({
+  name: "weather-server",
+  version: "1.0.0",
+});
+
+server.tool(
+  "get_weather",
+  "Get the current weather for a city.",
+  {
+    city: z.string().describe("City name"),
+    unit: z.enum(["celsius", "fahrenheit"]).default("celsius"),
+  },
+  async ({ city, unit }) => {
+    // Real code: call a weather API.
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            city,
+            temperature: unit === "celsius" ? 18 : 64,
+            unit,
+            condition: "partly cloudy",
+            humidity: 72,
+          }),
+        },
+      ],
+    };
+  }
+);
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+Compile with `tsx server.ts` or set up tsc to emit JS.
+
+### Step 3 — Test + wire
+
+Same as Python — use the `mcp` CLI inspector (works against any language), then configure Claude Code:
+
+```json
+"weather": {
+  "command": "node",
+  "args": ["/absolute/path/to/server.js"]
+}
+```
+
+## Beyond one tool — what else you can expose
+
+### Multiple tools
+
+Just add more `@mcp.tool()` decorated functions (Python) or `server.tool()` calls (TS). The host shows all of them; the model picks which to call.
+
+### Resources
+
+Resources are data the model can read (vs tools which it calls):
+
+```python
+@mcp.resource("weather://city/{city}")
+def weather_resource(city: str) -> str:
+    return f"Current weather for {city}: ..."
+```
+
+The model treats this like a file it can read. Useful for "give the model access to this dataset" without making it a tool.
+
+### Prompts
+
+Pre-baked prompt templates the user can invoke:
+
+```python
+@mcp.prompt()
+def weather_report(city: str) -> str:
+    return f"Give me a detailed weather report for {city}, including 5-day forecast suggestions."
+```
+
+In the host, the user picks this from a list; it expands into a full prompt.
+
+### Authentication
+
+For servers that talk to APIs:
+
+```python
+import os
+
+API_KEY = os.environ["WEATHER_API_KEY"]
+```
+
+Configure the env var in the host's MCP config:
+
+```json
+"weather": {
+  "command": "python",
+  "args": ["..."],
+  "env": {
+    "WEATHER_API_KEY": "secret_..."
+  }
+}
+```
+
+Don't hardcode keys in the server source. Don't commit the host config to a public repo if it has secrets.
+
+### Logging
+
+Log to **stderr**, not stdout. Stdout is the JSON-RPC channel; anything you print there breaks the protocol.
+
+```python
+import sys
+print("starting weather server", file=sys.stderr)
+```
+
+## Where to go next with the server
+
+- **Real integrations.** Replace the mock with a call to OpenWeatherMap, your internal API, a DB.
+- **Caching.** Cache responses to avoid hammering the upstream service.
+- **Rate limiting.** Protect against the agent looping.
+- **Multi-tool composition.** Build servers around domains (weather + calendar + commute) so the agent has a coherent surface.
+- **Publish.** When solid, publish to npm / PyPI so others can use it. Submit to smithery.ai for discoverability.
+
+## Common pitfalls
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Inspector shows no tools | Decorator missing or `mcp.run()` not called | Check syntax; rerun |
+| Host says "server crashed" | Exception in tool function | Run in inspector with same input to debug |
+| Tool runs but Claude doesn't use it | Description too vague | Better docstring; add hint in `CLAUDE.md` |
+| Tool output garbled in Claude's reply | Returning non-string from Python tool | Wrap in `dict` or `str()`; TS tools must return `content` array |
+| Server starts twice on Claude restart | Bad `command` path | Use absolute paths; check `which python` for the right binary |
+| Logs disappear | Logging to stdout breaks JSON-RPC | Switch to `sys.stderr` (Python) or `console.error` (TS) |
+
+## What to do next
+
+- [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) — protocol orientation if you skipped it
+- [§MCP.2 Official Anthropic MCP servers](/anthropic/mcp-catalogue/official-servers/) — reference implementations to crib from
+- [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) — trust gates if you'll publish yours
+- [§CC.5 MCP integration in Claude Code](/anthropic/claude-code/mcp/) — wiring it specifically

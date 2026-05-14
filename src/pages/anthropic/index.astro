@@ -1,29 +1,55 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import VendorHub from '@components/VendorHub.astro';
+import { getCollection } from 'astro:content';
+
+// Count Anthropic entries per product to decide which cards are "live" already
+// (Batch A landed) vs "coming-in-batch".
+async function countByProduct(productKey: string): Promise<number> {
+  const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+  let n = 0;
+  for (const col of collections) {
+    const entries = await getCollection(col as any);
+    for (const e of entries as any[]) {
+      if (e.data.vendor === 'anthropic' && e.data.product === productKey && e.data.status === 'published') {
+        n++;
+      }
+    }
+  }
+  return n;
+}
+
+const ccCount = await countByProduct('claude-code');
+const apiCount = await countByProduct('claude-api');
+const mcpCount = await countByProduct('mcp-catalogue');
+const waCount = await countByProduct('claude-ai');
+const cuCount = await countByProduct('computer-use');
+const total = ccCount + apiCount + mcpCount + waCount + cuCount;
 
 const vendor = {
   slug: 'anthropic',
   name: 'Anthropic',
-  blurb: 'Claude, the model family — plus the developer surfaces that wrap it: Claude Code (CLI for coding agents that lives in your terminal), Claude API (HTTP API + SDKs for building your own apps), the MCP server catalogue (open standard for agent ↔ tool communication that Anthropic kicked off), and Claude.ai (the hosted chat product with Projects, Skills, and Computer Use). Used by Sush daily through GitHub Copilot CLI today; standalone Claude Code is on the roadmap.',
+  blurb: `Claude — the model family Sush uses daily through GitHub Copilot CLI. This hub covers the developer surfaces wrapping it: <strong>Claude Code</strong> (terminal CLI that reads your repo, edits files, calls Claude with tool use), the <strong>Claude API</strong> (HTTP + Python/TypeScript SDKs for building your own apps), the <strong>MCP server catalogue</strong> (Anthropic's open standard for agent ↔ tool wiring), the <strong>Claude.ai</strong> hosted product (Projects + Skills + Computer Use), and the standalone <strong>Computer Use</strong> beta. Honest take? Anthropic's docs are some of the cleanest in the space, the API ergonomics are stable, and the Sonnet 4.5 tier hits the right cost/quality balance for daily coding work. Pricing scales hard above the Pro tier — read the limits before committing.`,
   officialUrl: 'https://docs.anthropic.com',
   officialLabel: 'docs.anthropic.com',
-  status: 'coming-in-batch' as const,
-  statusNote: 'Day-1 sourced seed shipping in Batch A (~22 pages: Claude Code · API · MCP catalogue · Claude.ai · Computer Use).',
+  status: total >= 20 ? 'live' as const : 'coming-in-batch' as const,
+  statusNote: total >= 20
+    ? `Batch A shipped — ${total} sourced entries live across 5 products. Sush hasn't personally re-run every command yet; entries flip from <em>sourced</em> to <em>tried</em> as he experiments. PRs with verification notes welcome.`
+    : `Day-1 sourced seed is mid-build (Batch A — ${total}/21 pages so far). Pages all start as <em>sourced</em> with citations; Sush upgrades to <em>tried</em> over time.`,
 };
 
 const products = [
-  { slug: 'claude-code', name: 'Claude Code', type: 'CLI' as const, status: 'coming-in-batch' as const, batchHint: 'Batch A', description: 'CLI for coding agents — installs in your terminal, reads your repo, calls Claude with tool use, edits files. MCP-native. Subagents + slash commands. Anthropic\'s answer to Codex CLI / Aider.' },
-  { slug: 'claude-api', name: 'Claude API', type: 'API / SDK' as const, status: 'coming-in-batch' as const, batchHint: 'Batch A', description: 'HTTP API + Python/TypeScript SDKs for building your own Claude-powered apps. Tool use, structured outputs, streaming, vision, prompt caching.' },
-  { slug: 'mcp-catalogue', name: 'MCP server catalogue', type: 'Catalogue' as const, status: 'coming-in-batch' as const, batchHint: 'Batch A', description: 'The Model Context Protocol — Anthropic\'s open standard for agent ↔ tool communication. Official Anthropic MCP servers + community catalogue + build-your-own guide.' },
-  { slug: 'claude-ai', name: 'Claude.ai', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch A', description: 'Hosted chat product — Projects (long-running context with files), Skills (custom callable tools), the web/desktop apps. Dossier on what it\'s good at, what it\'s not, and the privacy posture.' },
-  { slug: 'computer-use', name: 'Computer Use', type: 'API / SDK' as const, status: 'coming-in-batch' as const, batchHint: 'Batch A', description: 'Anthropic\'s "agent that controls a computer" capability — clicks, types, scrolls, takes screenshots. Beta surface. Notes on what works today + the obvious limits.' },
+  { slug: 'claude-code', name: 'Claude Code', type: 'CLI' as const, status: (ccCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch A', href: '/anthropic/claude-code/', description: `CLI for coding agents — installs in your terminal, reads your repo, edits files, runs commands. MCP-native (it speaks the protocol it kicked off). Subagents + slash commands. Also ships as a VS Code extension and a Mac/Windows desktop app. ${ccCount} pages so far: overview · install (mac · win) · auth · MCP · slash commands · use cases · pitfalls.` },
+  { slug: 'claude-api', name: 'Claude API', type: 'API / SDK' as const, status: (apiCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch A', href: '/anthropic/claude-api/', description: `HTTP API + Python/TypeScript SDKs for building your own Claude-powered apps. Tool use, structured outputs, streaming, vision, prompt caching. ${apiCount} pages: overview · getting started · model lineup · common patterns.` },
+  { slug: 'mcp-catalogue', name: 'MCP server catalogue', type: 'Catalogue' as const, status: (mcpCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch A', href: '/anthropic/mcp-catalogue/', description: `The Model Context Protocol — Anthropic's open standard for agent ↔ tool communication. Spec at modelcontextprotocol.io. Official MCP servers + community catalogue + build-your-own walkthrough. ${mcpCount} pages.` },
+  { slug: 'claude-ai', name: 'Claude.ai', type: 'Hosted product' as const, status: (waCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch A', href: '/anthropic/claude-ai/', description: `The hosted chat product — claude.ai on the web + desktop apps + iOS. Projects (long-lived context with files), Skills (custom callable tools), and Computer Use surface (beta). ${waCount} pages: overview · Projects · Skills.` },
+  { slug: 'computer-use', name: 'Computer Use', type: 'API / SDK' as const, status: (cuCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch A', href: '/anthropic/computer-use/', description: `Anthropic's "agent that controls a computer" capability — clicks, types, scrolls, takes screenshots. Beta surface (status as of May 2026 — verify before relying on it). ${cuCount} pages: overview · getting started.` },
 ];
 ---
 
 <BaseLayout
   title="Anthropic — Claw"
-  description="Anthropic vendor hub on Claw — plain-English field notes on Claude Code, Claude API, the MCP server catalogue, Claude.ai (Projects, Skills), and Computer Use. Day-1 sourced seed shipping in Batch A."
+  description="Anthropic vendor hub on Claw — plain-English field notes on Claude Code, Claude API, the MCP server catalogue, Claude.ai (Projects, Skills), and Computer Use. Day-1 sourced seed."
   ogImage="/og/home.png"
 >
   <VendorHub vendor={vendor} products={products} />

@@ -1,0 +1,120 @@
+---
+title: "Claude.ai — the hosted chat product, plainly"
+section: "Claude.ai"
+sectionNumber: "WEB.1"
+description: "What Claude.ai is, the surfaces it ships on (web · desktop · iOS), what the tiers actually unlock, and how it relates to Claude Code, the API, and the Anthropic Console. Plus the privacy posture in plain terms."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from claude.ai/help-center, anthropic.com/pricing, and the privacy + usage policies as of 14 May 2026. Sush has used Claude.ai's free + Pro tiers; hasn't used Team or Enterprise."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://claude.ai"
+  - "https://www.anthropic.com/pricing"
+  - "https://privacy.anthropic.com"
+  - "https://support.anthropic.com"
+vendor: "anthropic"
+product: "claude-ai"
+---
+
+## The thirty-second version
+
+[Claude.ai](https://claude.ai) is Anthropic's **hosted chat product** — the place you go in a browser (or desktop app, or iOS app) to talk to Claude. Same model family as the API. Different interface, different feature set, different pricing.
+
+- **Web app** — the canonical surface, at claude.ai
+- **Desktop apps** — macOS (Intel + Apple Silicon) and Windows (x64 + ARM64), same UI as the web app plus integrations
+- **iOS app** — mobile chat, voice mode, image input
+
+All three sync your conversation history, your Projects, and your account settings. Pick whichever fits the device.
+
+## What you can do that's not in the API
+
+The API is "send a message, get a response." Claude.ai is **the API plus a bunch of product features**:
+
+| Feature | What it adds |
+|---|---|
+| **Projects** | Long-lived context — drop files, set instructions, keep coming back to the same conversation surface |
+| **Skills** | Custom callable tools the model can use across chats — your "team-specific" extension surface |
+| **Artifacts** | Auto-generated side panels for code, docs, diagrams · live-edits as you iterate |
+| **File uploads** | Drop PDFs, spreadsheets, images directly · Claude reads them inline |
+| **Computer Use (beta)** | The agent controls a virtual computer · still beta, narrow use cases |
+| **Voice mode** (iOS) | Talk to Claude verbally · transcript shows in chat |
+| **Web search** | When relevant · grounds Claude's answers in current pages |
+
+See [§WEB.2 Projects](/anthropic/claude-ai/projects/) and [§WEB.3 Skills](/anthropic/claude-ai/skills/) for the two features worth a deep dive.
+
+## The tier matrix
+
+Pricing as of 14 May 2026 — always verify against [anthropic.com/pricing](https://www.anthropic.com/pricing) before committing.
+
+| Tier | Cost (USD/mo) | Best for | What changes |
+|---|---|---|---|
+| **Free** | \$0 | Casual use | Limited messages/day · Sonnet only · no Projects · no Computer Use |
+| **Pro** | \$20 | Daily individual use | 5× free message limit · Sonnet + Opus · Projects · longer context · early access to features |
+| **Max** | \$100 (5×) or \$200 (20×) | Heavy individual use | 5× or 20× the Pro limits · priority access during peak times · more Computer Use |
+| **Team** | \$30/seat (5+ seats) | Small teams | Pro features per user · shared billing · admin controls · workspace-level Projects · audit logs |
+| **Enterprise** | Custom | Larger orgs | SSO/SAML · SCIM · custom data retention · dedicated support · contracts |
+
+The non-obvious thing: **Free and Pro use the same models**, the difference is throughput. Free isn't "worse Claude," it's "less Claude per day."
+
+## Free vs Pro — the practical difference
+
+The Free tier resets quickly enough for occasional questions (5–10 short conversations a day). Where Pro pays off:
+
+- You use it as a daily-driver assistant
+- You upload files often (Free has tighter file size limits)
+- You need Projects (Free can't create them)
+- You want the option to switch to Opus on hard problems
+
+Don't pay for Pro to "try Claude." Pay for it once Free is consistently limiting you.
+
+## Where it sits vs the rest of Anthropic's surfaces
+
+| If you want to... | Use |
+|---|---|
+| Chat through a polished UI | **Claude.ai** |
+| Code in your terminal with agentic loops | **Claude Code** (auth with your Claude.ai subscription) |
+| Build your own app on top of Claude | **Claude API** |
+| Make Claude controllable by other AI tools | **MCP server** (talks to Claude.ai + Claude Code + others) |
+
+**Important:** your Claude.ai Pro subscription **gives you access to Claude Code without paying separately**. Pro entitles you to a weekly Claude Code budget. Max raises the cap; Team pools across users; Enterprise customises everything. If you're already paying for Pro, your Claude Code is paid for too — log in with the subscription.
+
+## Privacy in plain terms
+
+The privacy story is the question people ask most often. Reading [privacy.anthropic.com](https://privacy.anthropic.com) carefully:
+
+- **By default, Anthropic does NOT train on your conversations.** Free, Pro, Team, and Enterprise tiers all have conversations excluded from training data by default (as of May 2026; verify the current policy).
+- **Anthropic does retain conversations** for at least 30 days for trust & safety + operational reasons. Longer for paid tiers depending on settings.
+- **You can opt out** of even the safety retention in Enterprise contracts.
+- **Conversations CAN be flagged** by automated abuse-detection systems and reviewed by humans if flagged.
+- **You can delete conversations** from your own history at any time; what's retained server-side varies by tier.
+
+> ⚠️ **What Anthropic says vs what they could change.** This is policy, not technical guarantee. If your data sensitivity makes that uncomfortable, use Bedrock or Vertex (the data stays in your AWS or GCP account) OR self-host (Enterprise only, on contract).
+
+## Honest takes
+
+**What it's genuinely good at:**
+
+- Long, file-heavy projects via Projects (better than ChatGPT's projects feature in many people's daily use)
+- Multi-step reasoning when you give it room to think
+- Code review and analysis when you can drop the codebase as files
+- Artifacts — the side-panel rendering for docs/code/diagrams is consistently useful
+
+**What's frustrating:**
+
+- The desktop app has a heavier resource footprint than expected (~500 MB RAM idle)
+- File upload limits feel tight at the Pro tier when working with many docs
+- Voice mode on iOS is improving but still trails ChatGPT's voice mode
+- Computer Use is genuinely beta — most tasks fail more than they succeed
+
+**What you'd switch to if not Claude.ai:**
+
+- ChatGPT (OpenAI) — similar shape, different model strengths, broader feature surface today
+- Gemini chat (Google) — best at very-long-document handling + the audio overview workflow via NotebookLM
+- Self-hosted via API — when privacy/data needs override polish
+
+## What to do next
+
+- [§WEB.2 Projects feature](/anthropic/claude-ai/projects/) — the high-value paid-tier feature
+- [§WEB.3 Skills feature](/anthropic/claude-ai/skills/) — the custom-tool extension surface
+- [§CC.1 Claude Code overview](/anthropic/claude-code/overview/) — the same engine for terminal-shaped work
+- [§API.1 Claude API overview](/anthropic/claude-api/overview/) — the same engine for build-your-own apps

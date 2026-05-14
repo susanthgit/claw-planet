@@ -1,0 +1,154 @@
+---
+title: "MCP integration in Claude Code"
+section: "Claude Code"
+sectionNumber: "CC.5"
+description: "Claude Code speaks MCP natively. How to add servers (filesystem, git, browser, Slack, custom), where they're configured, project-scoped vs global, and the trust gates Anthropic ships."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/claude-code/mcp and modelcontextprotocol.io as of 14 May 2026. The MCP protocol moves fast; verify specific server names + permissions against current docs before relying on this page."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/mcp"
+  - "https://modelcontextprotocol.io/introduction"
+  - "https://github.com/modelcontextprotocol/servers"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## What MCP gives Claude Code
+
+By default, Claude Code can read your files, run shell commands (in the working directory), edit code, and call the model. That's the built-in toolset. **MCP — the Model Context Protocol — is how you bolt on everything else.**
+
+An MCP server is a small program (Node, Python, Go, anything) that exposes a typed set of tools and resources over a standard JSON-RPC protocol. Claude reads the manifest, learns what the tools do, and calls them when the conversation calls for it. The server runs locally (stdio transport) or remotely (HTTP / SSE transport); Claude just sees a tool list.
+
+**Why this matters:** instead of every IDE-style tool reimplementing "talk to GitHub Issues" or "query Postgres" or "read my calendar," there's now one protocol. Write the integration once, plug it into Claude / ChatGPT / Cursor / VS Code Copilot / Copilot Studio — they all speak MCP.
+
+> See [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) for the protocol's why-it-exists explainer.
+
+## Three ways to add a server
+
+### Global — in your personal config
+
+For tools you'll want in every project. Edit `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/sush/Documents"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_..."
+      }
+    }
+  }
+}
+```
+
+Restart Claude Code. The new servers show up in `/mcp` (the slash command that lists active servers).
+
+### Project-scoped — in `.claude/`
+
+For tools specific to one project — say, a DB connection to that project's local Postgres. Create `.claude/mcp.json` in the project root:
+
+```json
+{
+  "mcpServers": {
+    "postgres-local": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost:5432/myapp_dev"]
+    }
+  }
+}
+```
+
+This is checked into the repo (without secrets — load secrets via env vars in your shell, NOT in the JSON). When teammates clone the repo, they pick up the same MCP servers automatically.
+
+### Inline — for one session
+
+```bash
+claude --mcp-server filesystem npx -y @modelcontextprotocol/server-filesystem /tmp/scratch
+```
+
+Useful for experimenting before you commit a server to your config.
+
+## Useful built-in servers (official Anthropic + community)
+
+Anthropic and the MCP community maintain a list of "reference" servers at [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers). The high-value ones for Claude Code:
+
+| Server | What it adds | Trust level |
+|---|---|---|
+| **filesystem** | Read/write outside the working directory (e.g. read from `~/Documents`) | Official |
+| **github** | Issues, PRs, repo search across all your GitHub orgs | Official |
+| **git** | Deep git operations (rebase, cherry-pick, complex logs) beyond the shell tool | Official |
+| **postgres / sqlite** | Query a DB; Claude returns the schema, runs queries, suggests indexes | Official |
+| **fetch** | HTTP requests beyond the model's default web fetch (custom auth, internal endpoints) | Official |
+| **slack** | Read channels, send messages, summarise conversations | Community |
+| **puppeteer / playwright** | Browser automation — open a URL, click, screenshot, scrape | Community |
+| **time** | Reliable timezone math (the model is bad at this without a tool) | Community |
+
+Run `npx -y @modelcontextprotocol/server-<name> --help` to see what each one exposes.
+
+> ⚠️ **Community servers are NOT trust-reviewed by Anthropic.** Read the source before installing. An MCP server can do anything a regular npm package can. See [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) for the trust gates that actually matter.
+
+## What happens when you add a server
+
+Claude doesn't auto-load every tool. When you start a session, it sees the **tool list** (names + descriptions) from each configured server. Tools are **invoked on demand** — the model decides "this question needs the github tool" and calls it. You see the call in the terminal, can approve / reject (depending on your settings), and the result feeds back to the model.
+
+You can scope what Claude can do per-server:
+
+```json
+"github": {
+  "command": "...",
+  "args": ["..."],
+  "allowedTools": ["search_repositories", "search_issues", "list_pull_requests"]
+}
+```
+
+If `allowedTools` is set, Claude can only call those tools — even if the server exposes more. This is how you cap an MCP server's blast radius.
+
+## Approvals — what gets confirmed by default
+
+Claude Code ships with a per-tool approval model. By default:
+
+- **Read-only tools** (search, list, fetch): no confirm prompt
+- **Write tools** (edit_file, create_issue, send_message): confirm before each call
+- **Destructive tools** (delete, force_push): confirm + explicit per-call ack
+
+You can tune this via `~/.claude/settings.json`:
+
+```json
+"toolApprovals": {
+  "default": "ask",
+  "byTool": {
+    "filesystem:read_file": "always",
+    "github:search_repositories": "always",
+    "filesystem:write_file": "ask",
+    "git:force_push": "never"   // never allow, even if asked
+  }
+}
+```
+
+Sensible defaults are good. The danger pattern is `"default": "always"` — that's the agent equivalent of `chmod 777`. Don't.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Server in config but `/mcp` doesn't list it | `npx` couldn't fetch the package (no network, registry down) | `npx -y @modelcontextprotocol/server-X` manually; check error |
+| Server lists but tools never get called | Tool descriptions too vague; model doesn't know when to use it | Edit the server's tool descriptions OR add a hint in `CLAUDE.md` |
+| Tokens burn through fast | Server returns huge JSON blobs that fill the context window | Cap tool output (most servers have a `maxResults` arg), or use `--exclude-tools` |
+| Claude calls a tool you didn't authorise | `allowedTools` not set, or `toolApprovals.default = "always"` | Set explicit `allowedTools` per server |
+| Postgres MCP returns *"permission denied"* | Connection string user lacks SELECT on the schema Claude is querying | Grant the right perms, OR use a read-only role |
+
+## What to do next
+
+- [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) — the protocol's design + cross-vendor support
+- [§MCP.2 Official Anthropic MCP servers](/anthropic/mcp-catalogue/official-servers/) — the curated set
+- [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) — where to find them, how to vet them
+- [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — the 30-minute walkthrough
+- [§CC.6 Slash commands + subagents](/anthropic/claude-code/slash-commands/) — the other extension surface

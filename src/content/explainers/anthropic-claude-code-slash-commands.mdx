@@ -1,0 +1,157 @@
+---
+title: "Slash commands and subagents"
+section: "Claude Code"
+sectionNumber: "CC.6"
+description: "Two extension surfaces that pay off in week one — slash commands for quick custom prompts, and subagents for delegating sub-tasks to a scoped instance of Claude. Where they live, when to use each."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/claude-code/slash-commands and the subagents docs as of 14 May 2026."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/slash-commands"
+  - "https://docs.anthropic.com/en/docs/claude-code/subagents"
+  - "https://docs.anthropic.com/en/docs/claude-code/settings"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## The 30-second framing
+
+- **Slash commands** are saved prompts. You type `/review` and it expands to a longer prompt you've pre-written.
+- **Subagents** are spawned worker instances of Claude with their own scope (different tools, different model, different instructions). Useful for "go investigate X while I keep working on Y."
+
+Slash commands are a five-minute habit that compounds. Subagents are a heavier pattern you reach for on bigger tasks.
+
+## Built-in slash commands
+
+A few ship with Claude Code:
+
+| Command | What it does |
+|---|---|
+| `/clear` | Start a fresh conversation in the same session (keeps `CLAUDE.md` context) |
+| `/compact` | Summarise the conversation so far and continue with the summary (saves tokens on long sessions) |
+| `/cost` | Show how many tokens this session has used |
+| `/mcp` | List active MCP servers + tools |
+| `/model` | Switch model mid-session (`/model sonnet`, `/model opus`) |
+| `/help` | List all available commands |
+| `/init` | Generate a starter `CLAUDE.md` for the current project |
+| `/exit` | Quit |
+
+The full set drifts with each release; `/help` is the source of truth.
+
+## Custom slash commands — the high-leverage move
+
+You write a markdown file. The filename (minus `.md`) becomes the command name. The file content becomes the prompt.
+
+### Global custom commands
+
+Live in `~/.claude/commands/`. Available in every project.
+
+Example: `~/.claude/commands/review.md`
+
+```markdown
+Review the latest commit on this branch:
+
+1. Run `git show HEAD --stat` and read the changed files.
+2. For each non-trivial change, ask:
+   - Is the change correct?
+   - Does it introduce a regression?
+   - Is there a test gap?
+3. Reply with a short bullet list of findings, severity-tagged: 🔴 must-fix · 🟡 worth-flagging · 🟢 nit.
+4. Don't comment on style or formatting — assume the linter handles that.
+```
+
+Run with `/review` in any project. Claude reads the .md, treats it as your prompt, and works through it.
+
+### Project custom commands
+
+Live in `<project>/.claude/commands/`. Only available in this project. **Checked into git** — so your team gets the same shortcuts.
+
+Example: `.claude/commands/deploy-check.md`
+
+```markdown
+We're about to deploy to production. Walk through the pre-deploy checklist:
+
+1. Check `package.json` `version` field has been bumped vs the last git tag.
+2. Read `CHANGELOG.md`; does it have a section for this version?
+3. Run `pnpm test:unit` and `pnpm test:e2e:smoke`. Report failures.
+4. Check the `.env.production.example` against `.env.production` — flag any missing vars.
+5. Reply with a green / yellow / red status + specific blocking items.
+```
+
+This becomes part of the repo's culture: every new joiner inherits the team's workflow shortcuts.
+
+### Arguments
+
+Custom commands can take arguments via `$ARGUMENTS`:
+
+`~/.claude/commands/fix-issue.md`:
+
+```markdown
+Look at GitHub issue #$ARGUMENTS in this repo. Read the description and any
+comments. Investigate the relevant code paths. Propose a fix. Don't push the
+fix — just walk me through what you'd change and why.
+```
+
+Then: `/fix-issue 1234` → expands `$ARGUMENTS` to `1234`.
+
+## Subagents — the heavier extension
+
+A subagent is a **fresh Claude instance spawned inside your session** with its own scoped configuration. The parent agent (the one you're talking to) can delegate a sub-task to it.
+
+### When to use a subagent
+
+- **Long investigations.** "Find every place this deprecated API is called across the monorepo" — a subagent can run for 10 minutes without filling your main conversation's context window.
+- **Different tool set.** Subagent X gets the `playwright` MCP server but not `github`. Subagent Y gets the opposite. Useful for least-privilege scoping.
+- **Different model.** Spawn a Haiku subagent for cheap classification work; keep Sonnet for the main session.
+
+### Defining subagents
+
+Project-level: `<project>/.claude/agents/<name>.json` (or `.md` for prompt-only subagents).
+
+Example: `.claude/agents/test-runner.md`
+
+```markdown
+---
+description: Runs the test suite and reports failures. Doesn't edit code.
+model: claude-haiku-4-5
+tools:
+  - read_file
+  - run_command
+---
+
+You are a test runner. Your only job:
+
+1. Run `pnpm test:unit` (or detect the test script from package.json).
+2. Read the output.
+3. Report which tests failed, which files they're in, and the error message.
+4. Do NOT propose fixes. Do NOT edit code. Just report.
+
+The main agent will decide what to do with the failures.
+```
+
+The main session can now invoke: *"hand this off to the test-runner subagent and tell me what comes back."*
+
+### Why subagents matter
+
+- **Context isolation.** The main session's context window stays clean. The subagent finishes, returns a summary, exits.
+- **Parallel work.** You can have two subagents running while you talk to the main agent.
+- **Cheaper models for narrower jobs.** The classifier doesn't need Opus; let it run on Haiku.
+
+The pattern is *delegation*, not *cloning*. Subagents are best for narrow, well-defined jobs — not "go do half the project."
+
+## Pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Custom command "not found" | File in wrong directory OR has wrong extension | Files must be `.md` in `~/.claude/commands/` or `<project>/.claude/commands/` |
+| Slash command runs but seems to ignore the body | Filename starts with `.` or has spaces | Use kebab-case filenames; no spaces, no leading dot |
+| Subagent fails on first invocation | Model name in frontmatter doesn't match your tier | Check `model:` against what your subscription / API key can call |
+| Subagent calls a tool you didn't allow | `tools:` list missing the right entries | Spell out every tool the subagent needs; default is none |
+| `$ARGUMENTS` shows up literally in the output | Old Claude Code version (pre-arg-substitution) | Upgrade Claude Code |
+
+## What to do next
+
+- [§CC.7 Use cases](/anthropic/claude-code/use-cases/) — the kinds of work slash commands + subagents shine on
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — the other extension surface
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — when shortcuts overcompound and the agent loses the plot

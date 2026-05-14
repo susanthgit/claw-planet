@@ -41,7 +41,7 @@ const { vendor, products } = Astro.props;
   <div class="vh-banner">
     <div class="vh-banner-tag">VENDOR · {vendor.slug.toUpperCase()}</div>
     <h1 class="vh-title">{vendor.name}</h1>
-    <p class="vh-blurb">{vendor.blurb}</p>
+    <p class="vh-blurb" set:html={vendor.blurb}></p>
     <div class="vh-meta">
       {vendor.officialUrl && (
         <span class="vh-meta-item">
@@ -60,7 +60,7 @@ const { vendor, products } = Astro.props;
       {vendor.statusNote && (
         <span class="vh-meta-item">
           <strong>Note</strong>
-          <span>{vendor.statusNote}</span>
+          <span set:html={vendor.statusNote}></span>
         </span>
       )}
     </div>
@@ -73,8 +73,9 @@ const { vendor, products } = Astro.props;
         : p.status === 'coming-in-batch' ? 'vh-card vh-card-pending'
         : p.status === 'phase-2' ? 'vh-card vh-card-phase2'
         : 'vh-card vh-card-planned';
-      const Tag = (p.status === 'live' && p.href) ? 'a' : 'div';
-      const TagProps = (p.status === 'live' && p.href) ? { href: p.href } : {};
+      const isLinkable = (p.status === 'live' || p.status === 'coming-in-batch') && p.href;
+      const Tag = isLinkable ? 'a' : 'div';
+      const TagProps = isLinkable ? { href: p.href } : {};
       return (
         <Tag class={cardClass} {...TagProps}>
           <div class="vh-card-meta">

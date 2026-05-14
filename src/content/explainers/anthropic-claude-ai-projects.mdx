@@ -1,0 +1,111 @@
+---
+title: "Claude.ai Projects — long-lived context with files"
+section: "Claude.ai"
+sectionNumber: "WEB.2"
+description: "Projects are Claude.ai's headline paid-tier feature — long-running conversations with attached files, custom instructions, and consistent context across sessions. What they're good for, how to set one up well, where the limits bite."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from claude.ai help center + support.anthropic.com Projects docs as of 14 May 2026. Sush uses Projects on Pro tier daily; sourced status because the feature evolves with each release."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://support.anthropic.com/en/articles/9519177-using-projects"
+  - "https://www.anthropic.com/news/projects"
+vendor: "anthropic"
+product: "claude-ai"
+---
+
+## What a Project is
+
+A **Project** in Claude.ai is a workspace that bundles three things:
+
+1. **Custom instructions** — a system prompt that applies to every conversation in the Project
+2. **Project knowledge** — files you upload once (PDFs, docs, spreadsheets, code) that Claude reads on every conversation
+3. **Conversations** — a history of chats, all sharing the above
+
+You start a new conversation inside a Project; Claude reads the instructions + knowledge fresh each time, then talks with you. Conversations stay listed in the Project sidebar — you can pick one back up days later and Claude still has the same context.
+
+## The four real use cases
+
+### 1. "My ongoing work on X"
+
+Best example: a Project called *"Writing my novel"* with instructions like *"You're my writing partner. Voice is dry · British · understated. Don't be enthusiastic. Critique honestly. No marketing language."* Plus all the chapter drafts as files. Every chat in the Project inherits the voice + has the manuscript context.
+
+Other versions: *"Studying for SC-500,"* *"Tax planning 2026,"* *"This codebase refactor"* — anything you'll come back to over weeks.
+
+### 2. "Everything about this client / project / case"
+
+Particularly good when there's a stable knowledge base. Drop all the customer docs, set instructions like *"This is for ACME client work. They use Azure, not AWS. Their billing rules are X."* Every chat inherits that grounding.
+
+> ⚠️ **For Sush specifically:** customer engagement detail does NOT go in Anthropic Projects. WorkIQ + Microsoft-side surfaces handle that. Claude.ai is for personal work + public knowledge. Don't mix data classifications.
+
+### 3. "My reference shelf"
+
+A Project loaded with reference material you query often — your company's style guide, a technical spec you're learning, a textbook. Treat Claude as a librarian who's read all of it.
+
+### 4. "My team's shared workspace" (Team / Enterprise tier)
+
+On Team and Enterprise, Projects can be shared across the workspace. Useful for "all of engineering uses this Project for runbook lookups." Members can read; admins control who can edit instructions / files.
+
+## Setting one up well
+
+**The instructions matter more than you think.** A vague *"You help me with my novel"* gets you vague help. A specific *"You're a hard-nosed editor. Critique structure, dialogue rhythm, and pacing. Don't praise. Suggest cuts."* gets you sharp help.
+
+Worth including in custom instructions:
+
+- **Voice / tone** — how should Claude speak (concise · honest · British English · technical · etc.)
+- **What NOT to do** — "no marketing language," "no emoji," "don't start replies with 'Great question'"
+- **Domain hints** — "I work in cloud security · Azure Copilot specifically · NZ context"
+- **Output preferences** — "tables when comparing, lists when listing, prose only when narrative makes sense"
+- **Tools / commands** — if you give Claude specific commands ("/critique," "/diff," "/checklist"), define them in instructions
+
+**Project knowledge — what to upload:**
+
+- **Reference docs** that don't change much (style guides, specs, manuals)
+- **Past work** Claude should know about (previous drafts, prior conversations summarised as a doc)
+- **Datasets** Claude will query repeatedly
+
+**What NOT to upload:**
+
+- Anything sensitive (the threat model is "Anthropic's server has this file in its retention window")
+- Massive single files (chunk them; a 500-page PDF makes every conversation slow)
+- Frequently-changing data (you'll re-upload constantly and stale versions will leak in)
+
+## Limits to watch
+
+| Limit | Where it bites |
+|---|---|
+| **Project knowledge size** | Pro tier ~10× the per-message context · Team/Enterprise higher · check current limits in your account |
+| **Number of conversations per Project** | Soft limit — Projects with 500+ convos get slow to navigate |
+| **File types** | PDF, txt, md, code files, spreadsheets · NOT video, audio, executables |
+| **Per-file size** | Typically 30 MB · larger files require splitting |
+
+When you bump the knowledge limit, Claude prunes intelligently (drops files it thinks are less relevant to the current question). You can sometimes tell — Claude misses a detail that's in a file you uploaded. Fix: either trim less-used files, or paste the relevant bit directly in the conversation.
+
+## When to use a Project vs a one-off chat
+
+**One-off chat:** the question stands alone, no follow-up expected, no files needed beyond what fits in one prompt.
+
+**Project:** any of the following are true:
+
+- You'll come back to this topic over multiple sessions
+- There are reference files you'd otherwise paste every time
+- The instructions are non-trivial and you don't want to rewrite them
+- You want conversations grouped together for later browsing
+
+The cost of creating a Project is essentially zero — over-create rather than under-create. Worst case, you delete it later.
+
+## Common pitfalls
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Claude ignores instructions partway through a conversation | Conversation got long; instructions fell out of context | Use shorter chats, or use `/clear` in long Projects, or paste key instructions inline |
+| Newly uploaded file isn't reflected in answers | File not yet indexed; conversation pre-dates the upload | New conversation, OR ask "what files do you have access to?" to force a re-read |
+| Multiple files repeat the same info; Claude gets confused | Versioning of overlapping docs | Delete old versions; keep one source of truth per topic |
+| Project knowledge "feels stale" | Files were updated locally but not re-uploaded | Re-upload; the file content is snapshotted at upload time |
+| Hit the knowledge limit | Too many big files | Trim or chunk; keep references-of-references rather than full docs |
+
+## What to do next
+
+- [§WEB.3 Skills feature](/anthropic/claude-ai/skills/) — custom callable tools across conversations
+- [§WEB.1 Claude.ai overview](/anthropic/claude-ai/overview/) — the wider surface
+- [§API.1 Claude API overview](/anthropic/claude-api/overview/) — when you outgrow Projects and want programmatic control

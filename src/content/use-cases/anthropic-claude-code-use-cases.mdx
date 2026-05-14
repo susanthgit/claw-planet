@@ -1,0 +1,120 @@
+---
+title: "What Claude Code is good at (and where it isn't)"
+section: "Claude Code"
+sectionNumber: "CC.7"
+description: "Real use cases where Claude Code earns its keep — refactoring across many files, investigating bugs in unfamiliar code, generating tests, drafting docs from code, scripted batch fixes. Plus the kinds of work where it gets in the way."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.anthropic.com/claude-code use-case pages + community posts. Sush has used Claude through GitHub Copilot CLI for daily work but hasn't run standalone Claude Code yet — patterns transfer well but specifics may differ."
+lastReviewedAt: "2026-05-14"
+estimatedTimeMinutes: 0
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/use-cases"
+  - "https://docs.anthropic.com/en/docs/claude-code/best-practices"
+  - "https://www.anthropic.com/news/claude-code"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## Six use cases that earn their keep
+
+### 1. Refactor across many files
+
+Classic example: you renamed a function, but it's called from 47 places in a sprawling monorepo. Find-and-replace would catch most; some are dynamic dispatches, some are in strings, some are in test fixtures. Claude reads each call site, decides whether it's a true reference, and edits with awareness of context.
+
+**Why this works:** the agent loop tightens — it reads, edits, runs the build, sees what broke, fixes the rest. You'd otherwise iterate the find-replace loop manually 5–8 times.
+
+### 2. Investigate a bug in code you don't own
+
+Open-source library throws a strange error. Documentation is sparse. Stack trace points 12 frames deep into a file you've never seen.
+
+```
+claude
+> the cli I just installed errors with "TypeError: input.split is not a function" when I run `foo build` — figure out why
+```
+
+Claude clones the lib if you point it at the repo, reads the relevant file, walks the call chain, finds the place where `input` is a Buffer (not a string), and explains the input you're passing is the wrong shape. The fix is often a one-liner; the investigation is 80% of the work.
+
+### 3. Generate tests from existing code
+
+Untested helper module, 200 lines of logic. You're not sure where to start.
+
+```
+> read src/lib/parse-query.ts and propose a Vitest suite covering the
+  branches I'm missing. Don't write them yet — list the cases first.
+```
+
+You get a list of branch + edge case tests. You pick the 8 that matter, ask Claude to write them, run the suite, fix the failures. About 20 minutes of work that would otherwise be a 2-hour grind.
+
+### 4. Draft docs from code
+
+`CLAUDE.md` itself is a great example — start with `/init`, get a starter file, edit. Same for `README.md`, `CHANGELOG.md` entries, or that ADR you've been putting off.
+
+```
+> read src/billing/ — there's no docs explaining the price calculation flow.
+  Write a 1-page overview I can drop into docs/architecture/billing.md.
+```
+
+Output isn't final-quality, but it's a 70%-there draft you edit, not a blank page you stare at.
+
+### 5. Scripted batch fixes
+
+Run Claude Code in `--print` mode (one-shot, non-interactive) from a script:
+
+```bash
+for repo in repo-1 repo-2 repo-3; do
+  cd $repo
+  claude --print "upgrade the eslint config to flat-config format and verify the build still passes" > ../$repo-changes.md
+  cd ..
+done
+```
+
+One pass, three repos, three change reports. Pair with `git diff` review before merging anything.
+
+### 6. Plan a feature before writing it
+
+```
+> I want to add CSV export to this Astro site's analytics page. Read
+  the existing code, propose 2-3 architectures, list the tradeoffs.
+  Don't write code yet.
+```
+
+You get an architecture conversation. The agent reads what's there, proposes options, you push back. Once you've picked, you say "go" and it implements.
+
+This is genuinely the highest-value pattern. Most of the bad code Claude writes comes from skipping this step.
+
+## Where it gets in the way
+
+### When the codebase is large and the task is narrow
+
+If you know exactly what you want changed in one file, just edit it. Spinning up Claude, waiting for it to read context, debating with the model — that's 5 minutes of overhead to save 90 seconds of typing. Use the IDE.
+
+### When correctness is critical and unverifiable
+
+Financial calculations, cryptography, safety-critical control loops. Claude can be wrong, and the wrongness might not show up in tests. Use it to draft; have a human review every line; never trust it as the sole signal.
+
+### When context lives in heads, not code
+
+Why did the team pick database X over database Y two years ago? Claude can't read your historical Slack threads. It'll make up plausible-sounding reasoning. Ask a person, then ask Claude to help you write the ADR.
+
+### When you're learning
+
+Claude solves the problem. You don't. If your goal is "understand React hooks," asking Claude to fix your hook bug means you skipped the learning. Use sparingly while you're still building intuition.
+
+### Long-horizon agentic tasks (today)
+
+"Build me an entire app from this spec" sometimes works for trivial apps. For non-trivial, Claude loses the plot around hour two — context fills, decisions stop being consistent, dead-ends accumulate. Better pattern: break the work yourself, let Claude do 30-minute slices, review each.
+
+## Practical hygiene
+
+- **Read what it wrote.** Don't auto-merge agent changes. Diff every commit.
+- **Keep `CLAUDE.md` current.** Stale instructions create wrong defaults. Update when the project's conventions change.
+- **Use `/clear` between unrelated tasks.** Carrying yesterday's context into today's bug is a recipe for confusion.
+- **Track cost.** `/cost` mid-session, monthly review against your subscription limits or API spend.
+- **Pair with a real test suite.** Claude lets you ship faster; tests are how you ship faster *without breaking things*.
+
+## What to do next
+
+- [§CC.6 Slash commands + subagents](/anthropic/claude-code/slash-commands/) — the shortcuts that pay off in week one
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — extending what Claude can reach for
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — the rough edges from people who use it daily

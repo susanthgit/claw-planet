@@ -6,7 +6,7 @@ import { getCollection } from 'astro:content';
 
 const allPlugins = await getCollection('plugins');
 const pluginEntries = allPlugins
-  .filter(e => e.data.section === 'Plugins' && e.data.status === 'published')
+  .filter(e => e.data.section === 'Plugins' && e.data.vendor === 'openclaw' && e.data.status === 'published')
   .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
 const catalogEntries = pluginEntries.map(e => ({

@@ -1,0 +1,145 @@
+---
+title: "Getting started with Computer Use"
+section: "Computer Use"
+sectionNumber: "CU.2"
+description: "Clone Anthropic's quickstart, run the demo Docker container, get Claude clicking through a sandboxed desktop in 15 minutes. Plus how to start adapting it for your own task — and the four checks before you let it run."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Quickstart instructions from github.com/anthropics/anthropic-quickstarts as of 14 May 2026. Computer Use is beta — both the protocol and the demo can change. Always read the quickstart's current README before relying on this page."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/build-with-claude/computer-use"
+  - "https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo"
+vendor: "anthropic"
+product: "computer-use"
+---
+
+## What you'll have at the end
+
+A Docker container running a sandboxed Ubuntu desktop, with Claude clicking through it from your terminal, doing whatever task you ask. About 15 minutes if Docker is already installed.
+
+## Before you start
+
+- **An Anthropic API key with access to a Computer Use-capable model** (Sonnet 4.5 or Opus 4.7 at time of writing — verify at [docs.anthropic.com](https://docs.anthropic.com))
+- **Docker Desktop installed** (macOS / Windows / Linux)
+- **About 8 GB RAM free** for the desktop container
+- **A spending cap on your API key** — Computer Use burns tokens fast (see [§CU.1](/anthropic/computer-use/overview/) for why)
+
+## Step 1 — Clone the quickstart
+
+```bash
+git clone https://github.com/anthropics/anthropic-quickstarts.git
+cd anthropic-quickstarts/computer-use-demo
+```
+
+Read the README. It is the source of truth for the demo's current state; this page is a tour, not a substitute.
+
+## Step 2 — Set your API key
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+If you want to use Bedrock or Vertex instead:
+
+```bash
+export CLAUDE_CODE_USE_BEDROCK=1   # or CLAUDE_CODE_USE_VERTEX=1
+# plus the relevant cloud auth
+```
+
+## Step 3 — Run the container
+
+```bash
+docker run \
+    -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+    -v $HOME/.anthropic:/home/computeruse/.anthropic \
+    -p 5900:5900 \
+    -p 8501:8501 \
+    -p 6080:6080 \
+    -p 8080:8080 \
+    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+```
+
+(Check the README for the current image name + ports — the above is a snapshot.)
+
+The container boots a virtual desktop (Xvfb + a window manager + Firefox + LibreOffice + a file manager). It exposes:
+
+- **Port 8080** — the demo web UI (open this in your browser)
+- **Port 6080** — a noVNC view of the desktop (live screen the agent sees)
+- **Port 8501** — Streamlit chat surface
+- **Port 5900** — raw VNC (optional, for connecting with a desktop VNC client)
+
+Open `http://localhost:8080` in your browser. You should see a split-pane UI: chat on the left, the live virtual desktop on the right.
+
+## Step 4 — Run your first task
+
+In the chat panel:
+
+> Open Firefox and search for "what is MCP" on Google. Show me the first result.
+
+What happens (you watch in real time via the right pane):
+
+1. Claude takes a screenshot
+2. Decides to click the Firefox icon in the dock
+3. Your harness clicks, takes another screenshot
+4. Claude sees the new Firefox window, clicks the URL bar, types "google.com"
+5. Hits Enter, sees Google, clicks the search box, types the query
+6. Hits Enter, sees results, reads the first one, summarises in chat
+
+Each step takes 5–15 seconds (the API call dominates). The full task is maybe 90 seconds.
+
+## Step 5 — Watch the cost
+
+In a second terminal:
+
+```bash
+# If you logged usage from the demo, tail it:
+docker logs <container-id> | grep "usage"
+```
+
+Or check the Anthropic Console → Usage. Computer Use tasks are EXPENSIVE per session. A 30-action task could be \$1–\$5 depending on which model + how many screenshots. Across many runs, this adds up.
+
+## Adapting for your own task
+
+The quickstart's harness is in `computer_use_demo/loop.py` (Python). The pattern:
+
+1. **System prompt** describing what you want
+2. **Tool list** (`computer`, `bash`, `text_editor`) — Claude can use any combination
+3. **Loop**: call API → execute returned tool actions → screenshot → call API again
+
+To adapt:
+
+- **Change the system prompt** to match your task
+- **Mount additional volumes** if your task needs access to data on your host
+- **Pre-install software** in a derived Docker image (custom Dockerfile FROM the demo image)
+- **Add tools** if Claude needs more than computer + bash + text_editor (e.g. a custom API call)
+
+## The four checks before each run
+
+1. **What's the worst case if it goes wrong?** If the answer is "loses a day's work" or "sends real money" — back to sandbox-design. The agent will make mistakes.
+2. **What's logged in / authenticated in the sandbox?** Real session cookies = real consequences. Use throwaway accounts where possible.
+3. **What's the spend cap?** Set it BEFORE the run, not after.
+4. **Is there a kill switch?** A way to stop the agent mid-action if it goes off-rails. `Ctrl+C` works; sometimes you want a faster signal (close the container window).
+
+## Common pitfalls
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Container crashes immediately | Insufficient RAM | Bump Docker Desktop's memory limit to 8+ GB |
+| `Permission denied` on the mounted volume | macOS / Linux file ownership mismatch | Add `--user $(id -u):$(id -g)` to docker run |
+| Claude clicks the wrong button | UI layout doesn't match what Claude expected | Tighten the prompt; describe the UI more explicitly |
+| Long task fails halfway | Context window filling up | Break into shorter subtasks; reset the context periodically |
+| Screenshots show black/blank desktop | Xvfb / display server not started | Restart container; check logs for "xvfb: started" |
+| API returns 400 about tool definitions | Wrong API version or wrong tool schema | Check the README for the exact `anthropic-version` header to use |
+
+## What's NOT in the demo (and you'd have to build)
+
+- **Persistent state.** Each container restart is fresh. To persist (browser history, app state), use a Docker volume.
+- **Real apps / accounts.** The demo has Firefox + LibreOffice; if your task needs Slack, Photoshop, your bank's app — you install + configure those.
+- **Production-grade safety rails.** Approvals on dangerous actions, audit logging, kill-switch UI. The demo is for learning; production needs more.
+
+## What to do next
+
+- [§CU.1 Computer Use overview](/anthropic/computer-use/overview/) — the wider context if you skipped it
+- [§API.4 Common patterns](/anthropic/claude-api/patterns/) — the tool-use loop in detail
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — if your task is "let Claude Code drive my computer," MCP is often a better fit

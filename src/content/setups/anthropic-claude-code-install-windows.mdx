@@ -1,0 +1,131 @@
+---
+title: "Install Claude Code on Windows"
+section: "Claude Code"
+sectionNumber: "CC.3"
+description: "Three install paths for Windows — winget (recommended), PowerShell installer, and WSL2 + native Linux script. Plus the Git for Windows requirement and PowerShell-vs-CMD trap."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Commands taken verbatim from docs.anthropic.com/claude-code/setup as of 14 May 2026. Windows native and WSL2 paths both documented; Sush has not yet run either."
+lastReviewedAt: "2026-05-14"
+environment: "laptop"
+os: "Windows 11 (x64 + ARM64)"
+estimatedTimeMinutes: 15
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/overview"
+  - "https://docs.anthropic.com/en/docs/claude-code/setup"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## What you'll have at the end
+
+A `claude` binary you can run from PowerShell, CMD, or a WSL2 shell, signed in and ready. About 15 minutes including the Git for Windows side-quest if you don't already have it.
+
+## Before you start
+
+- **Windows 10 22H2 or Windows 11** (x64 or ARM64).
+- **A Claude subscription, API key, or Bedrock/Vertex access.**
+- **Git for Windows** — strongly recommended on native Windows so Claude Code can use the `Bash` tool. Without it, Claude falls back to PowerShell as the shell, which works for simple commands but breaks scripts written for bash. Download from [git-scm.com/downloads/win](https://git-scm.com/downloads/win). WSL2 setups don't need it (you've got bash already).
+
+## Option A — winget (recommended for native Windows)
+
+PowerShell or CMD, run:
+
+```powershell
+winget install Anthropic.ClaudeCode
+```
+
+This installs the latest stable build and registers `claude.exe` on your PATH. Open a fresh PowerShell window (PATH refresh) and:
+
+```powershell
+claude --version
+```
+
+You should see a version number. If `claude` is not recognised, restart PowerShell or sign out and in again.
+
+## Option B — PowerShell installer script
+
+For machines where winget isn't available (corporate-managed boxes, older Windows builds):
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+> ⚠️ **The PowerShell vs CMD trap.** This command only works in **PowerShell**. If you paste it into CMD, you'll get *"'irm' is not recognized as an internal or external command."* Look at your prompt — `PS C:\` is PowerShell, plain `C:\` is CMD.
+>
+> The CMD equivalent uses a different command:
+>
+> ```cmd
+> curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+> ```
+>
+> If you see *"The token '&&' is not a valid statement separator,"* you ran the CMD line in PowerShell. Switch to a CMD window and retry.
+
+## Option C — WSL2 (recommended for heavy users)
+
+If you already use WSL2 for development, install Claude Code inside WSL — the experience is closer to macOS/Linux because the shell is bash, not PowerShell.
+
+In a WSL2 Ubuntu/Debian shell:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+The CLI is now installed inside the WSL distro. Run `claude` from any WSL directory. Note that the binary is WSL-local — you can't run it from PowerShell. If you want both, install both (winget on the Windows side + script in WSL).
+
+> **Why WSL2 if both work?** Anthropic's docs note that the native Windows path "has more rough edges." Some tools Claude calls (grep, sed, awk, git in interactive mode) work better in bash. If your day-to-day shell is already WSL2, stick with it.
+
+## First run
+
+Same as macOS. From any project directory:
+
+```powershell
+cd C:\code\your-project
+claude
+```
+
+You'll be prompted to log in. Three auth paths — covered in [§CC.4 Auth + API key](/anthropic/claude-code/auth/).
+
+## Where files land
+
+| File / dir | Location (native Windows) | Location (WSL2) |
+|---|---|---|
+| Binary | `%LOCALAPPDATA%\Anthropic\ClaudeCode\claude.exe` (winget) | `~/.local/bin/claude` |
+| Personal config | `%USERPROFILE%\.claude\settings.json` | `~/.claude/settings.json` |
+| Credentials | `%USERPROFILE%\.claude\credentials.json` | `~/.claude/credentials.json` |
+| Project config | `<project>\CLAUDE.md` + `<project>\.claude\` | `<project>/CLAUDE.md` + `<project>/.claude/` |
+
+The native-Windows and WSL2 installs maintain **separate** config directories. Settings, credentials, MCP server lists — none of it crosses between them. If you log in once in WSL and once on the Windows side, you're authenticating twice.
+
+## Upgrading later
+
+```powershell
+# winget
+winget upgrade Anthropic.ClaudeCode
+
+# Native installer / PowerShell script
+claude update
+```
+
+```bash
+# WSL2
+claude update
+```
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `'irm' is not recognized` | Ran the PowerShell line in CMD | Switch to PowerShell, retry |
+| `The token '&&' is not a valid statement separator` | Ran the CMD line in PowerShell | Switch to CMD, retry |
+| `Bash tool not available` | Git for Windows not installed | Install Git for Windows, restart Claude |
+| `claude` only sees half your files | Path with non-ASCII chars in project directory | Move project to ASCII-only path, OR use WSL2 |
+| Long commands time out | Windows Defender real-time scan on the repo | Add `.git/` and `node_modules/` to Defender exclusions |
+| Permission denied on `%USERPROFILE%\.claude\credentials.json` | OneDrive Known Folder Move is syncing your profile | Move the credentials path with `claude config set credentialsPath ...` OR pause OneDrive |
+
+## What to do next
+
+- [§CC.4 Auth + API key](/anthropic/claude-code/auth/) — three login paths in detail
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — adding tools (filesystem, git, browser)
+- [§CC.6 Slash commands + subagents](/anthropic/claude-code/slash-commands/) — the workflow shortcuts
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — the rough edges to plan around

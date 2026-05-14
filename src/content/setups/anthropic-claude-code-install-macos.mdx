@@ -1,0 +1,144 @@
+---
+title: "Install Claude Code on macOS"
+section: "Claude Code"
+sectionNumber: "CC.2"
+description: "Three install paths for macOS — native installer (recommended), Homebrew cask, and a manual npm fallback. Auth on first run, sanity-check, and where files land."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Commands come verbatim from docs.anthropic.com/claude-code/setup as of 14 May 2026. Sush hasn't run this on his M2 MacBook yet — page flips to tried with a session log when he does."
+lastReviewedAt: "2026-05-14"
+environment: "laptop"
+os: "macOS 13+ (Intel and Apple Silicon)"
+estimatedTimeMinutes: 10
+sources:
+  - "https://docs.anthropic.com/en/docs/claude-code/overview"
+  - "https://docs.anthropic.com/en/docs/claude-code/setup"
+  - "https://docs.anthropic.com/en/docs/claude-code/quickstart"
+vendor: "anthropic"
+product: "claude-code"
+---
+
+## What you'll have at the end
+
+A `claude` binary on your PATH, signed in to your Anthropic account (or pointed at an API key / Bedrock / Vertex), ready to run in any project directory. About 10 minutes including authentication.
+
+## Before you start
+
+- **macOS 13 or later** (works on both Intel and Apple Silicon).
+- **A Claude subscription OR an Anthropic Console API key OR access to Bedrock / Vertex.** Subscription is easiest if you'll use it daily; API key is fine for testing.
+- **Optional: Git for the project you'll work in** (Claude doesn't require it, but every useful workflow assumes it).
+
+## Option A — Native install (recommended)
+
+This is the path Anthropic documents first. Single command in Terminal:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+The script downloads the latest stable build, places the binary at `~/.local/bin/claude`, and adds that directory to your shell's PATH (it edits your `~/.zshrc` or `~/.bash_profile`).
+
+**Sanity check:**
+
+```bash
+claude --version
+```
+
+You should see a version number. If you get *"command not found,"* either the PATH edit didn't apply to your current shell (close and reopen Terminal) or the script wrote to a profile your shell doesn't read (run `echo $PATH` and look for `~/.local/bin`).
+
+## Option B — Homebrew
+
+If you keep your macOS tooling in Homebrew, two casks are available:
+
+```bash
+# Stable channel — typically ~1 week behind, skips releases with major regressions
+brew install --cask claude-code
+
+# Latest channel — ships as soon as Anthropic releases
+brew install --cask claude-code@latest
+```
+
+The stable cask is the safer default for daily-driver work. The `@latest` cask is useful if you're chasing a specific new feature or filing bug reports.
+
+To upgrade later: `brew upgrade --cask claude-code` (or the `@latest` variant).
+
+## Option C — npm (fallback)
+
+The CLI ships as an npm package. Use this if you already manage Node tooling with `nvm` and prefer to keep Claude Code there too:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+Sanity-check the same way: `claude --version`.
+
+> **Why this isn't the recommended path:** the native installer + Homebrew cask track stable releases by default; the npm package tracks the latest channel and updates more aggressively. If you don't mind that — fine. If you want predictable releases — pick A or B.
+
+## First run
+
+In any project directory:
+
+```bash
+cd ~/code/your-project
+claude
+```
+
+You'll be prompted to log in on first use. There are three paths — covered in detail in [§CC.4 Auth + API key](/anthropic/claude-code/auth/):
+
+1. **Subscription login** (the easy path) — opens a browser, you sign in to claude.ai, the CLI stores a token.
+2. **API key** — paste a key from console.anthropic.com.
+3. **Third-party provider** — set env vars to point at Bedrock or Vertex.
+
+After login, you'll see a prompt. Try:
+
+```
+how does this project's auth work?
+```
+
+Claude reads your repo's `README.md`, walks the auth-related files, and replies. If you see the answer in 5–15 seconds, the install is healthy.
+
+## Where files land
+
+| File | Purpose |
+|---|---|
+| `~/.local/bin/claude` | The binary itself (native install) |
+| `~/.claude/settings.json` | Personal config — default model, thinking budget, MCP server allowlist |
+| `~/.claude/credentials.json` | Stored login token (subscription path) — never commit this anywhere |
+| `~/.claude/sessions/` | Session history (transcripts of past conversations) |
+| `<project>/CLAUDE.md` | Project-scoped instructions — Claude reads this on every session in this project |
+| `<project>/.claude/` | Project-scoped slash commands + subagent definitions + MCP pins |
+
+The first two are private. Don't share `credentials.json`. Do version-control `CLAUDE.md` and `.claude/` — they're meant to be team-shared (without secrets).
+
+## Upgrading later
+
+```bash
+# Native install
+claude update
+
+# Homebrew
+brew upgrade --cask claude-code      # stable
+brew upgrade --cask claude-code@latest
+
+# npm
+npm install -g @anthropic-ai/claude-code@latest
+```
+
+Read the release notes before upgrading on a Friday afternoon. The cadence is fast — breaking changes are rare but not zero.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `claude: command not found` after native install | New PATH not loaded in current shell | Close + reopen Terminal, or `source ~/.zshrc` |
+| Login fails in browser | Pop-up blocker | Allow popups for `claude.ai`, retry |
+| `claude` runs but says "no model available" | Logged in with a Free tier that doesn't include the CLI | Upgrade to Pro/Max OR use an API key |
+| Hangs on first prompt for >60s | Repo has many large files; Claude is scanning | Wait, or interrupt + add path exclusions in `CLAUDE.md` |
+| Wrong model running | `~/.claude/settings.json` has a stale default | `claude config set model sonnet` (or `opus`) |
+
+## What to do next
+
+- [§CC.3 Install Windows](/anthropic/claude-code/install-windows/) — the Windows / WSL2 cousin
+- [§CC.4 Auth + API key](/anthropic/claude-code/auth/) — the three login paths in detail
+- [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — wire in your filesystem, git, browser, calendar
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — the rough edges that bite people in week one

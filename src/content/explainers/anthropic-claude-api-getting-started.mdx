@@ -1,0 +1,180 @@
+---
+title: "Getting started with the Claude API"
+section: "Claude API"
+sectionNumber: "API.2"
+description: "From zero to a working API call in 5 minutes. Get a key, install the SDK, make your first request in Python or TypeScript, handle the response, and set a billing cap."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Commands and code from docs.anthropic.com/api/getting-started as of 14 May 2026. The SDK API shape is stable; pricing + model names drift — verify before using in production."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/api/getting-started"
+  - "https://docs.anthropic.com/en/api/messages"
+  - "https://docs.anthropic.com/en/api/client-sdks"
+vendor: "anthropic"
+product: "claude-api"
+---
+
+## What you'll have at the end
+
+A working "hello, Claude" request from your laptop, using either Python or TypeScript. Plus a billing cap so a runaway script can't drain your card.
+
+## Step 1 — Get an API key
+
+1. Sign in to [console.anthropic.com](https://console.anthropic.com).
+2. **Add a payment method** (Workspaces → Billing → Add payment method). You can't make requests without one. Anthropic gives small free credits for new accounts, but they expire.
+3. **Set a spend limit.** Workspaces → Settings → Spend Limits → pick a monthly cap. Do this BEFORE the next step. If a script goes wrong, this is the line between "annoyance" and "expensive Sunday."
+4. **Create a key.** Workspaces → API Keys → Create Key. Name it for the project (`claude-api-laptop-2026-05`). Copy the `sk-ant-...` value — you'll only see it once.
+
+Set it in your shell:
+
+```bash
+# macOS / Linux — add to ~/.zshrc or ~/.bashrc
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Windows PowerShell — persistent
+[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-ant-...", "User")
+```
+
+Restart your shell. Confirm: `echo $ANTHROPIC_API_KEY` (or `$env:ANTHROPIC_API_KEY` in PowerShell) — should print the key.
+
+> ⚠️ **Never commit the key.** Add `.env*` and `*.secret` to `.gitignore`. If a key leaks, revoke it in Console immediately. Treat it like a database password.
+
+## Step 2 — Install an SDK
+
+### Python
+
+```bash
+pip install anthropic
+```
+
+### TypeScript / Node
+
+```bash
+npm install @anthropic-ai/sdk
+# or pnpm add @anthropic-ai/sdk / bun add @anthropic-ai/sdk
+```
+
+## Step 3 — Make your first call
+
+### Python (sync)
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()  # picks up ANTHROPIC_API_KEY from env
+
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=200,
+    messages=[
+        {"role": "user", "content": "Reply with exactly: hello from the API"}
+    ],
+)
+
+print(message.content[0].text)
+```
+
+Run it: `python hello.py` → you should see `hello from the API` (or close to it; the model rarely deviates from instructions this specific).
+
+### TypeScript
+
+```typescript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic();  // picks up ANTHROPIC_API_KEY from env
+
+const message = await client.messages.create({
+  model: 'claude-sonnet-4-5',
+  max_tokens: 200,
+  messages: [
+    { role: 'user', content: 'Reply with exactly: hello from the API' },
+  ],
+});
+
+console.log(message.content[0].type === 'text' ? message.content[0].text : '');
+```
+
+Run it: `tsx hello.ts` → same output.
+
+## Step 4 — Read the response
+
+The `message` object has more than just text. The shape:
+
+```json
+{
+  "id": "msg_01ABC...",
+  "model": "claude-sonnet-4-5-...",
+  "role": "assistant",
+  "stop_reason": "end_turn",
+  "content": [
+    { "type": "text", "text": "hello from the API" }
+  ],
+  "usage": {
+    "input_tokens": 24,
+    "output_tokens": 7
+  }
+}
+```
+
+Worth understanding:
+
+- **`content` is an array of blocks.** Most simple cases have one `text` block. With tool use, you'll see `tool_use` blocks mixed in.
+- **`stop_reason`** tells you why the model stopped. `end_turn` (clean finish), `max_tokens` (you hit the limit), `tool_use` (model is asking you to run a tool), `stop_sequence` (custom stop sequence matched).
+- **`usage`** is your billing signal. Multiply input/output tokens × current pricing → cost of this call. Log it.
+
+## Step 5 — Add a system prompt
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=200,
+    system="You are a concise technical writer. No marketing language.",
+    messages=[
+        {"role": "user", "content": "Define MCP in two sentences."}
+    ],
+)
+```
+
+The system prompt sets the assistant's persona / constraints for the whole conversation. Use it for "voice" instructions, output format rules, and "what not to do" guards.
+
+## Step 6 — Streaming (felt-latency win)
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-5",
+    max_tokens=500,
+    messages=[{"role": "user", "content": "Explain RAG."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+Tokens appear as they're generated. For UIs, this transforms the experience: 800ms felt latency vs 6 seconds of waiting.
+
+## Step 7 — Cost guardrails
+
+Before you put this in production:
+
+1. **Spend Limits set** (Step 1.3 — but double-check)
+2. **Budget alerts** — Console → Billing → Alert when monthly spend hits N% of cap
+3. **Per-request tracking** — log `message.usage` somewhere queryable. A simple file or a real DB; either works
+4. **Retry logic with backoff** — Anthropic rate-limits per-minute. Don't hammer; the SDKs have built-in retry
+5. **Timeout** — set `timeout=30` on the client. Without it, a stuck connection waits forever
+
+## Common pitfalls
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `AuthenticationError` | Key wrong, expired, or revoked | Check `echo $ANTHROPIC_API_KEY`; create a new key if needed |
+| `BadRequestError: model not found` | Model name has changed or is region-restricted | Check `docs.anthropic.com/en/docs/about-claude/models` for current names |
+| Empty response | `max_tokens` too low for the answer | Bump `max_tokens`; check `stop_reason` |
+| Slow response | First call to a model after a long idle period (cold start) | Acceptable on first request; should not persist |
+| 429 rate limit | Too many concurrent requests | Add retry-with-backoff (SDK does this automatically by default) |
+| Cost much higher than expected | Verbose responses, repeated system prompts (no caching) | Check usage logs; add prompt caching if system prompt is large |
+
+## What to do next
+
+- [§API.3 Models](/anthropic/claude-api/models/) — the current lineup and what each is good for
+- [§API.4 Common patterns](/anthropic/claude-api/patterns/) — tool use, structured outputs, prompt caching
+- [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) — once you've built one app with tools, MCP is how you reuse them

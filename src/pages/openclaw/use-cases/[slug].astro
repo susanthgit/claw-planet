@@ -14,7 +14,7 @@ const cfg = sectionConfig['use-cases'];
 export async function getStaticPaths() {
   const all = await getCollection('use-cases');
   return all
-    .filter((e) => e.data.section === 'Use cases' && e.data.status === 'published')
+    .filter((e) => e.data.section === 'Use cases' && e.data.vendor === 'openclaw' && e.data.status === 'published')
     .map((entry) => ({
       params: { slug: entry.id.replace(/\.mdx?$/, '') },
       props: { entry },
@@ -39,7 +39,7 @@ const sectionPairs = [
 ];
 const allCollections = await Promise.all(
   sectionPairs.map(async ([col, href, name]) => ({
-    entries: (await getCollection(col)).filter((e) => e.data.status === 'published'),
+    entries: (await getCollection(col)).filter((e) => e.data.status === 'published' && e.data.vendor === 'openclaw'),
     sectionHref: href,
     sectionName: name,
   }))

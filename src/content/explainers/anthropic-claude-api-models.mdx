@@ -1,0 +1,122 @@
+---
+title: "Claude models — Sonnet, Opus, Haiku"
+section: "Claude API"
+sectionNumber: "API.3"
+description: "What each Claude tier is good for, what they cost in relative terms, how to pick between them, and the always-changing context window + vision support matrix. Pricing and model names drift fast — verify before committing."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Model lineup as of 14 May 2026. Anthropic changes model names + pricing on a roughly quarterly cadence; check anthropic.com/pricing before relying on specific numbers."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://docs.anthropic.com/en/docs/about-claude/models"
+  - "https://www.anthropic.com/pricing"
+  - "https://docs.anthropic.com/en/docs/about-claude/models/all-models"
+vendor: "anthropic"
+product: "claude-api"
+---
+
+## The three-tier mental model
+
+Claude ships in three tiers — same family, different cost/quality balance:
+
+| Tier | What it's for | Vibe |
+|---|---|---|
+| **Haiku** | Cheap, fast tasks. Classification, simple Q&A, batch jobs, lightweight tool calls. | "I need quick answers at scale." |
+| **Sonnet** | The default for production. Most coding, agentic work, complex Q&A. | "Pick this unless you have a reason not to." |
+| **Opus** | Hardest reasoning. Long planning, multi-step analysis, complex code refactors. | "Worth the cost when correctness matters." |
+
+You pick the tier in your API request (`model: "claude-sonnet-4-5"` etc.). Each tier ships in multiple **generations** (3.5, 4, 4.5...). Newer generations are usually better at everything but cost more — for a while.
+
+## What changes between generations
+
+When Anthropic ships a new Sonnet (say, Sonnet 4.5 → Sonnet 5), you get some mix of:
+
+- **Higher quality** on hard tasks
+- **Better instruction following** (less prompting needed for the same output)
+- **Wider context window** (the latest tiers are at 200K tokens; some experimental builds reach 1M)
+- **New capabilities** (vision support, computer-use APIs, new tool-use modes)
+- **Different pricing** (often a small bump on the latest, with the previous one becoming a bargain)
+
+The old generation usually stays available for at least 6–12 months. Plan upgrades; don't be forced into them.
+
+## The matrix (as of 14 May 2026 — verify against [anthropic.com/pricing](https://www.anthropic.com/pricing))
+
+| Model | Strengths | Context | Vision | Computer Use |
+|---|---|---|---|---|
+| **claude-opus-4-7** | Hardest reasoning · long horizon planning | 200K | Yes | Yes (beta) |
+| **claude-sonnet-4-5** | Default — production sweet spot | 200K | Yes | Yes (beta) |
+| **claude-haiku-4-5** | Fast + cheap · batch + classification | 200K | Yes | No |
+| **claude-opus-4-6** | Older Opus · still solid · cheaper | 200K | Yes | No |
+| **claude-sonnet-4** | Older Sonnet · stable · low cost | 200K | Yes | No |
+| **claude-haiku-3-5** | Oldest Haiku still supported · cheapest | 200K | No | No |
+
+(Generation numbers drift; this is a snapshot.)
+
+## How to pick
+
+### Default = Sonnet
+
+If you don't have a strong reason otherwise, start on Sonnet. It handles 80% of tasks well at a mid price. Most production apps live here.
+
+### Reach for Opus when...
+
+- The task is **inherently hard reasoning** — proof generation, complex multi-step planning, deep code refactors across many files
+- You're seeing **bad output on Sonnet** that isn't fixable with a better prompt
+- You're doing **agentic work where decisions cascade** — early-step errors compound across a long session
+- **Correctness > cost** for this particular call
+
+### Reach for Haiku when...
+
+- The task is **shallow** — labelling tickets, extracting names, picking from N choices
+- You're doing **bulk work** — 10,000 small classifications per night
+- Latency matters more than reasoning depth (Haiku is meaningfully faster)
+- You can **filter to Sonnet** for the cases Haiku flags as uncertain
+
+The pattern that emerges in production: **Haiku for triage, Sonnet for work, Opus when stakes are high.** Many apps use two or three tiers based on the call.
+
+## What "better at X" actually means
+
+Vendors publish benchmarks. They're a starting signal, not the truth. Real-world quality differences show up in:
+
+- **How often you have to retry or correct** the output
+- **How verbose** the model is (more output = more cost + more parsing)
+- **How well it follows format constraints** (does it actually return valid JSON when you asked?)
+- **How it handles ambiguity** (does it ask a clarifying question, or guess?)
+
+Bench against your own task. A 10-prompt suite that's representative of your real workload tells you more than every leaderboard.
+
+## Context windows
+
+All current Claude tiers are at **200K tokens**. Some experimental builds reach 1M. Rule of thumb: 200K tokens ≈ 500 pages of text or about 50K lines of code (varies by language).
+
+> ⚠️ **Long-context performance ≠ short-context performance.** A model can technically *read* 200K tokens but reason worse over the late content. If quality drops near the end of your prompt, try splitting the task — chunk the input, summarise, then ask the question over the summary.
+
+## Vision
+
+Current Sonnet + Opus + recent Haiku tiers all accept images. Use cases:
+
+- OCR (read text from screenshots)
+- Chart analysis ("what does this graph say?")
+- UI debugging ("why does this layout look broken?")
+- Document understanding (PDFs as image arrays)
+
+Limits: ~20 images per message, ~5 MB per image, png/jpg/gif/webp. Charged at a per-image token cost on top of the text tokens.
+
+## Computer Use
+
+Sonnet 4.5 + Opus 4.7 currently expose the **Computer Use** beta — the agent can see screenshots, decide where to click, type, scroll. See [§CU.1 Computer Use overview](/anthropic/computer-use/overview/) for what works today.
+
+## Model deprecation
+
+Anthropic deprecates older models on a published schedule (check the [deprecations page](https://docs.anthropic.com/en/docs/legacy-model-deprecations) for current dates). When a model is deprecated:
+
+1. **Announce** — usually 6+ months out
+2. **Sunset** — calls start returning errors or get auto-routed to the next tier
+
+Your code should **read the model name from a config**, not hardcode it inline. When deprecation lands, you update one place.
+
+## What to do next
+
+- [§API.4 Common patterns](/anthropic/claude-api/patterns/) — how to actually use these models well
+- [§API.2 Getting started](/anthropic/claude-api/getting-started/) — if you haven't made a call yet
+- [§API.1 Claude API overview](/anthropic/claude-api/overview/) — the wider picture

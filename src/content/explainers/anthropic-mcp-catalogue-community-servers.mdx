@@ -1,0 +1,118 @@
+---
+title: "Community MCP servers — where to find them, how to vet them"
+section: "MCP catalogue"
+sectionNumber: "MCP.3"
+description: "Community-maintained MCP servers extend Claude / ChatGPT / Cursor / VS Code Copilot far beyond the official set. Where to discover them (smithery.ai, awesome-mcp lists, GitHub), trust signals to look for, and the questions to ask before installing one."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Catalogues + trust patterns from public sources as of 14 May 2026. The MCP space is growing fast — new servers ship daily — so 'check current signals' beats any specific server recommendation here."
+lastReviewedAt: "2026-05-14"
+sources:
+  - "https://smithery.ai"
+  - "https://github.com/punkpeye/awesome-mcp-servers"
+  - "https://github.com/wong2/awesome-mcp-servers"
+  - "https://modelcontextprotocol.io/clients"
+vendor: "anthropic"
+product: "mcp-catalogue"
+---
+
+## The catalogues worth knowing
+
+There's no single "MCP marketplace" with reviewed listings. Discovery happens across a few places:
+
+| Source | What it is | Maintained by |
+|---|---|---|
+| **[github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers)** | The reference + official set | MCP working group (Anthropic-led) |
+| **[smithery.ai](https://smithery.ai)** | Searchable directory with one-click install configs | Community-run · independent |
+| **[awesome-mcp-servers (punkpeye)](https://github.com/punkpeye/awesome-mcp-servers)** | Curated awesome-list | Community contributors |
+| **[awesome-mcp-servers (wong2)](https://github.com/wong2/awesome-mcp-servers)** | Alternative curated list | Community contributors |
+| **Vendor catalogues** | Each major vendor sometimes publishes its own (e.g. Notion MCP, Linear MCP) | Vendor itself |
+| **GitHub search** | `topic:mcp-server` | Anyone |
+
+**Smithery.ai** is the closest thing to a polished catalogue today — search, filters, install instructions, sometimes community ratings. The awesome-lists are denser but unstructured.
+
+## What "community-maintained" means in practice
+
+A community MCP server is **arbitrary code** that runs locally on your machine, reads / writes data, makes network calls, and gets invoked by Claude when the conversation calls for it. There is no review, no signing, no vendor-side allowlist. It's like installing any npm/pip package — you trust the maintainer or you don't.
+
+The risk surface:
+
+- **Credentials.** If a server takes a `SLACK_TOKEN` or a DB connection string, that secret is in the server's env. A malicious server could exfiltrate it.
+- **File access.** A `filesystem`-shaped server can do anything a process running as you can do — including reading SSH keys, browser cookies, or `.env` files.
+- **Network egress.** A server can phone home with whatever it sees. Anthropic's host can't tell the difference between "tool is fetching the requested page" and "tool is exfiltrating my source code to a webhook."
+- **Supply chain.** Even a well-intentioned server can be compromised through a malicious dependency or a hijacked publisher account.
+
+The threat model isn't paranoid; it's the same threat model as any code you `npm install`.
+
+## Trust signals to look for
+
+These don't guarantee safety — nothing does — but they raise or lower confidence:
+
+### Higher confidence
+
+- **Published by the service vendor themselves** (e.g. Notion's official `@notionhq/notion-mcp-server`, GitHub's official server). The vendor has reputational and legal stakes.
+- **In an awesome-list curated by a recognised name** (punkpeye, wong2 — both maintain regularly and remove broken/abandoned entries).
+- **Active maintenance** — last commit in the last 60 days, issues being responded to, version cadence regular.
+- **Clear README** — what it does, what permissions it asks for, what env vars it reads, what data it sends where.
+- **Open source** — you can read the code. (Closed-source MCP servers exist but are a higher-trust ask.)
+- **High install count + low issue ratio.**
+- **Documented in your AI host's official docs** as a recommended integration.
+
+### Lower confidence
+
+- **Single-commit repo with no README.**
+- **Author has only this one project + recent GitHub account.**
+- **Asks for broad credentials** (full GitHub admin, full Slack workspace) when a narrow scope would suffice.
+- **Pulls dependencies from unusual registries.**
+- **No license file** OR license that conflicts with use (some "free for non-commercial" code in repos that look open).
+- **Recommended only in random Reddit threads.**
+
+## The five questions to ask before installing
+
+1. **What does it do?** Read the README; if vague, read the source.
+2. **What credentials does it need?** Token? DB password? OAuth? Match the scope of credentials to the scope of the task.
+3. **What network calls does it make?** Run with network logging on for the first session.
+4. **Who maintains it?** Check the GitHub profile of the maintainer. Other projects? Other contributions?
+5. **What's the worst case if it goes wrong?** A server reading the filesystem and a server with your DB admin password are very different blast radii.
+
+If you can't answer all five comfortably, don't install. Find an alternative or build your own narrowly-scoped version (see [§MCP.4 Build your own](/anthropic/mcp-catalogue/build-your-own/)).
+
+## Sandboxing patterns
+
+When you do install a community server, contain it:
+
+- **Scope tools.** In your host's config, set `allowedTools` to only the tools you need. If a `database` server exposes 12 tools but you only need 2, allowlist those 2.
+- **Use restricted credentials.** Create a read-only API token, a service-account user, a fine-grained PAT. Match the credential to the task.
+- **Limit filesystem reach.** If the server takes paths, give it specific subdirectories — not `~` or `/`.
+- **Run in a container** when you can. Some hosts let you point the MCP `command` at `docker run ...`, which lets you contain the process.
+- **Watch the first session.** Verbose logs on, see what calls it actually makes. If it phones home to an unexpected domain, uninstall immediately.
+
+## When community > official
+
+Sometimes the community server is the right call:
+
+- **The vendor doesn't have an official one** (most don't, yet).
+- **The community version is more battle-tested** (more contributors, more iteration).
+- **The official one is missing features you need.**
+- **You need cross-platform support the vendor hasn't shipped.**
+
+Just apply the trust gates honestly. The Notion server published by Notion is probably safer than `notion-tools-pro` published by `randomdev_2024` even if the second has more stars.
+
+## A practical workflow
+
+When evaluating a new community MCP server:
+
+1. **Skim the README.** If it explains what it does in 60 seconds, good sign.
+2. **Open `package.json` / `pyproject.toml`.** Look at dependencies. Anything weird?
+3. **Open the main source file.** You don't need to read every line; you're looking for "is the code shape what the README describes?"
+4. **Check recent commits.** Active? Single-commit ghost town? Force-pushed history that hides changes?
+5. **Install with narrowest credentials + tool allowlist.**
+6. **Run for one session, watch network and disk activity.**
+7. **Use it for a week before adding to your standard config.**
+
+## What to do next
+
+- [§MCP.2 Official Anthropic MCP servers](/anthropic/mcp-catalogue/official-servers/) — the safer default starting point
+- [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — when nothing fits or trust is the blocker
+- [§CC.5 MCP integration in Claude Code](/anthropic/claude-code/mcp/) — wiring in Claude Code specifically
+- [§CC.8 Pitfalls](/anthropic/claude-code/pitfalls/) — the operational gotchas, including MCP-specific ones
