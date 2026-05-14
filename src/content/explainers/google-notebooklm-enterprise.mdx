@@ -1,0 +1,107 @@
+---
+title: "NotebookLM Enterprise"
+section: "NotebookLM"
+sectionNumber: "NLM.3"
+description: "NotebookLM Enterprise on Google Cloud — $9 USD per licence per month, your files stay inside your GCP project, data regionalisation honoured, no human review, no model training. VPC Service Controls, IAM, CMEK. How it differs from the consumer / Workspace tiers."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from cloud.google.com/resources/notebooklm-enterprise and support.google.com/notebooklm pages (15 May 2026). Sush hasn't tried the Enterprise tier himself; verify pricing on the Google Cloud page before quoting it."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://cloud.google.com/resources/notebooklm-enterprise"
+  - "https://support.google.com/notebooklm/answer/16213268"
+  - "https://support.google.com/notebooklm/answer/17004255"
+vendor: "google"
+product: "notebooklm"
+---
+
+## What "Enterprise" buys you over the consumer tiers
+
+The five pillars Google leans on for the Enterprise pitch:
+
+1. **Data stays inside your GCP project.** Uploaded files don't traverse the consumer Google infrastructure.
+2. **Data regionalisation is honoured.** Pick your GCP region; data lives there.
+3. **No human review of any uploads, queries, or outputs.** Even if you give thumbs-up / thumbs-down feedback.
+4. **No use of your data to train Google's foundational AI models.** Hard "no," not "no unless you opt in."
+5. **VPC Service Controls + IAM + CMEK + audit logging.** Standard GCP enterprise security posture.
+
+## Pricing
+
+**$9 USD per licence per month** (discounted yearly available). Billed via Google Cloud, not via Google One.
+
+Available plans (different bundles, different feature sets):
+
+- NotebookLM for Enterprise (the standalone product)
+- Gemini Enterprise Standard (NotebookLM bundled in)
+- Gemini Enterprise Plus (NotebookLM + advanced enterprise controls)
+- Gemini Enterprise Frontline (lower-cost option for frontline workers)
+
+Check the [cloud.google.com NotebookLM Enterprise page](https://cloud.google.com/resources/notebooklm-enterprise) for the current pricing matrix; it shifts.
+
+## What you get vs the consumer Standard tier
+
+| Dimension | Standard (free Gmail) | Enterprise ($9/seat/month) |
+|---|---|---|
+| Data stays inside your project | ❌ | ✅ |
+| Region-pinning | ❌ | ✅ |
+| Human review of feedback | ✅ (consumer feedback may be reviewed) | ❌ (none, ever) |
+| Used to train Google AI | ❌ unless you give feedback | ❌ never |
+| VPC Service Controls | ❌ | ✅ |
+| IAM controls | ❌ | ✅ (org-level) |
+| CMEK (Customer-Managed Encryption Keys) | ❌ | ✅ |
+| Source / notebook limits | Standard quotas | "5× Standard or more" |
+| ToS | Google Terms of Service | Google Cloud Platform / SecOps ToS |
+| Public "anyone with a link" sharing | ✅ | ❌ (disabled) |
+| Workspace / Google Groups sharing | Limited | ✅ Unlimited org users + Google Groups |
+| Admin controls | None | Workspace admins toggle access org-wide |
+| Support | Help centre | Cloud Customer Care |
+
+## What gets reviewed (or doesn't)
+
+Verbatim from `support.google.com/notebooklm/answer/16213268` (Enterprise section):
+
+> *"Your uploaded files will remain within your GCP project. Data regionalization is honored. Additionally all files, chats and model outputs won't be reviewed by human reviewers or used to improve generative AI models."*
+
+This is the strongest data-handling commitment Google publishes for NotebookLM. It's stronger than:
+
+- Standard / Plus consumer tiers (data may be reviewed if you give feedback)
+- Workspace / Workspace for Education (no human review, but Workspace ToS rather than GCP ToS)
+
+## Where it doesn't go (yet)
+
+The Enterprise docs surface VPC-SC, IAM, and data residency clearly. **Less clear from the public docs:**
+
+- **eDiscovery / Google Vault integration** — not explicitly mentioned in the NotebookLM Enterprise docs reviewed. May exist at the Workspace admin layer; check with your Workspace admin or Google rep before depending on it for compliance.
+- **Specific audit log products** — described as "enterprise-grade security" but the exact audit log surface isn't named in the NotebookLM Enterprise marketing page.
+- **Exact regional availability** — described as "data regionalisation is honoured" without listing which Google Cloud regions are supported. Verify against the active GCP regions list before assuming a specific region is available.
+
+## Admin controls
+
+Workspace administrators control access to NotebookLM at the org level — admin must explicitly turn it on or off for the workspace. Once on, individual user access can be governed via IAM at the GCP project level.
+
+This means: if you're trialling NotebookLM Enterprise for one team, you can scope access without rolling it out org-wide, and you can revoke access cleanly when needed.
+
+## When to pick Enterprise vs the cheaper tiers
+
+| Scenario | Tier |
+|---|---|
+| Personal use, public-domain or non-sensitive sources | Standard (free) |
+| Solo professional, sensitive sources, want strong "no training" guarantees | Workspace edition with enterprise-grade privacy. Higher tiers (Business Plus, Business Standard, Enterprise Plus, Enterprise Standard) get Pro-level limits; lower paid editions get Standard limits with the same privacy guarantees. |
+| Organisation with public-domain sources only, just wants higher limits | Plus / Pro / Ultra subscriptions |
+| Organisation with confidential sources (legal docs, internal IP, customer data) | **Enterprise** — needed for VPC-SC + region pinning + IAM |
+| Org with FedRAMP / HIPAA / GDPR compliance requirements | Enterprise (verify the specific certification with your Google rep) |
+| Org wanting to ship NotebookLM to frontline workers at lower cost | Gemini Enterprise Frontline plan |
+
+## Honest take
+
+The NotebookLM Enterprise pitch is genuinely strong if you're already invested in Google Cloud — VPC-SC + region pinning + the explicit "data stays in your project, no review, no training" language is the hardest commitment Google publishes for any of its consumer-facing AI products.
+
+The catch: at $9 / seat / month, it's positioned as a Cloud-billed product, not a casual upgrade from a Workspace plan. If you're already on a Workspace tier that includes NotebookLM Pro or Ultra access, that may be enough for your sensitivity level (no human review, no training on your data, just hosted on consumer infra rather than your GCP project).
+
+For anyone evaluating this for an org: check the **eDiscovery / Vault** integration story directly with Google before assuming it works; that's the most common gap in the public docs and the most common compliance question.
+
+## What's next
+
+- [§NLM.1 Overview](/google/notebooklm/overview/) — what NotebookLM is overall
+- [§NLM.2 Use cases](/google/notebooklm/use-cases/) — twelve documented shapes
+- [§VAI.1 Vertex AI Agents](/google/vertex-ai-agents/overview/) — if you want to build your own agents on the same Cloud auth + region story

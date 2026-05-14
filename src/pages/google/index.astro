@@ -1,29 +1,58 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import VendorHub from '@components/VendorHub.astro';
+import { getCollection } from 'astro:content';
+
+// Count Google entries per product (Batch C, 15 May 2026).
+async function countByProduct(productKey: string): Promise<number> {
+  const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+  let n = 0;
+  for (const col of collections) {
+    const entries = await getCollection(col as any);
+    for (const e of entries as any[]) {
+      if (e.data.vendor === 'google' && e.data.product === productKey && e.data.status === 'published') {
+        n++;
+      }
+    }
+  }
+  return n;
+}
+
+const cliCount = await countByProduct('gemini-cli');
+const apiCount = await countByProduct('gemini-api');
+const nlmCount = await countByProduct('notebooklm');
+const vaiCount = await countByProduct('vertex-ai-agents');
+const studCount = await countByProduct('ai-studio');
+const gemCount = await countByProduct('gems');
+const total = cliCount + apiCount + nlmCount + vaiCount + studCount + gemCount;
 
 const vendor = {
   slug: 'google',
   name: 'Google',
-  blurb: 'Gemini, the model family — plus the developer surfaces that wrap it: Gemini CLI (terminal coding agent), Google AI Studio (web playground for prompt design + small apps), and the hosted products people actually use day-to-day — NotebookLM (research notebook over your own sources) and Gemini chat. NotebookLM is the standout — Sush has heard a lot of good things but has never used it himself. Coming soon.',
+  blurb: `Gemini, the model family — plus the developer surfaces that wrap it: <strong>Gemini CLI</strong> (Google's open-source terminal coding agent — the closest analogue to Claude Code and Codex CLI), the <strong>Gemini API</strong> (Pro / Flash / Flash-Lite, accessed direct via ai.google.dev or via Vertex AI for cloud auth), <strong>NotebookLM</strong> (hosted research notebook with the much-loved Audio Overviews feature), <strong>Vertex AI Agents</strong> (Google Cloud's three-layer stack — ADK to build, Agent Engine to run, Agentspace to consume), <strong>AI Studio</strong> (the web playground + small-app builder for Gemini), and <strong>Gems</strong> (Custom-GPT-style personalities inside the Gemini app). Honest take? Google's surface is sprawling and the names overlap (Gemini App ≠ Gemini CLI ≠ Gemini API ≠ Gems ≠ AI Studio ≠ Vertex AI). The free tier on Gemini API and AI Studio is unusually generous for prototyping. NotebookLM is the standout consumer product — Sush has heard great things but hasn't personally used it.`,
   officialUrl: 'https://ai.google.dev',
   officialLabel: 'ai.google.dev',
-  status: 'coming-in-batch' as const,
-  statusNote: 'Day-1 sourced seed shipping in Batch C (~16 pages: Gemini CLI · NotebookLM dossier · Google AI Studio · Gemini chat).',
+  status: total >= 21 ? 'live' as const : 'coming-in-batch' as const,
+  statusNote: total >= 21
+    ? `Batch C shipped — ${total} sourced entries live across 6 products. Sush hasn't personally run every command yet; entries flip from <em>sourced</em> to <em>tried</em> as he experiments. PRs with verification notes welcome.`
+    : `Day-1 sourced seed is mid-build (Batch C — ${total}/21 pages so far). Pages all start as <em>sourced</em> with citations; Sush upgrades to <em>tried</em> over time.`,
 };
 
 const products = [
-  { slug: 'gemini-cli', name: 'Gemini CLI', type: 'CLI' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'Google\'s terminal coding agent — Node CLI you install, reads your repo, calls Gemini with tool use. The "Gemini equivalent of Claude Code / Codex CLI." Recent shipping cadence is heavy.' },
-  { slug: 'notebooklm', name: 'NotebookLM', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'Hosted research notebook — upload sources (PDFs, links, audio), ask questions grounded in YOUR documents, generate audio overviews. The audio overview feature is what everyone talks about. Dossier on use cases + limits + privacy.' },
-  { slug: 'ai-studio', name: 'Google AI Studio', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'Web playground for prompt design + building small Gemini-powered apps. Free tier with rate limits. The on-ramp before you commit to a Vertex AI project.' },
-  { slug: 'gemini-chat', name: 'Gemini chat', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'The hosted chat product (gemini.google.com). Gems (custom personalities), Deep Research, Workspace integration. Lighter dossier — captures what it\'s genuinely good at vs the marketing.' },
+  { slug: 'gemini-cli', name: 'Gemini CLI', type: 'CLI' as const, status: (cliCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch C', href: '/google/gemini-cli/', description: `Google's terminal coding agent — open-source (Apache-2.0), Node-based (TypeScript). Installs via npm (\`npm install -g @google/gemini-cli\`) or Homebrew. MCP-native (client + server). Generous free tier through a personal Google account. ${cliCount} pages: overview · install · auth · use cases · pitfalls · MCP integration.` },
+  { slug: 'gemini-api', name: 'Gemini API', type: 'API / SDK' as const, status: (apiCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch C', href: '/google/gemini-api/', description: `Direct access to the Gemini model family. New unified <code>google-genai</code> Python SDK (replaces the older <code>google-generativeai</code>) and <code>@google/genai</code> for TypeScript. Free tier on ai.google.dev with API-key auth; same models also accessible through Vertex AI with cloud auth. ${apiCount} pages: overview · getting started · models · patterns · tool use.` },
+  { slug: 'notebooklm', name: 'NotebookLM', type: 'Hosted product' as const, status: (nlmCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch C', href: '/google/notebooklm/', description: `Hosted research notebook over your own sources (PDFs, Google Docs, URLs, YouTube, audio). Audio Overviews — podcast-style conversations generated from your notebook — is the standout feature. Free / Plus / Workspace / Enterprise tiers. ${nlmCount} pages: overview · use cases · enterprise.` },
+  { slug: 'vertex-ai-agents', name: 'Vertex AI Agents', type: 'API / SDK' as const, status: (vaiCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch C', href: '/google/vertex-ai-agents/', description: `Google Cloud's production agent stack — <strong>Agent Development Kit (ADK)</strong> to build, <strong>Agent Engine</strong> to deploy and run as a managed service, <strong>Agentspace</strong> as the user-facing surface. ADK is open-source. Cloud auth (no API keys). ${vaiCount} pages: overview · concepts · first agent · vs Gemini API direct.` },
+  { slug: 'ai-studio', name: 'AI Studio', type: 'Hosted product' as const, status: (studCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch C', href: '/google/ai-studio/', description: `The web playground for the Gemini API at aistudio.google.com — type prompts, swap models, paste images / PDFs / video, generate API keys for the SDKs, prototype small apps with code export. Different from Vertex AI Studio (the Cloud Console equivalent). ${studCount} pages: overview · vs API.` },
+  { slug: 'gems', name: 'Gems', type: 'Hosted product' as const, status: (gemCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch C', href: '/google/gems/', description: `Custom Gemini personalities inside the Gemini chat app — instructions, optional knowledge files, optional tools. The Gemini-app equivalent of OpenAI's Custom GPTs. Premade Gems are free; custom Gems require a paid Google AI Pro / Ultra subscription. ${gemCount} pages: overview.` },
 ];
 ---
 
 <BaseLayout
   title="Google — Claw"
-  description="Google vendor hub on Claw — plain-English field notes on Gemini CLI, NotebookLM, Google AI Studio, and Gemini chat. Day-1 sourced seed shipping in Batch C."
+  description="Google vendor hub on Claw — plain-English field notes on Gemini CLI, Gemini API, NotebookLM, Vertex AI Agents, AI Studio, and Gems. Day-1 sourced seed."
   ogImage="/og/home.png"
 >
   <VendorHub vendor={vendor} products={products} />
 </BaseLayout>
+

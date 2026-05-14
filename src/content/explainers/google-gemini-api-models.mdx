@@ -1,0 +1,146 @@
+---
+title: "Gemini API — model lineup"
+section: "Gemini API"
+sectionNumber: "GAPI.3"
+description: "The Gemini model family as of mid-2026 — Gemini 3 (current docs default, mostly preview), Gemini 2.5 (stable but scheduled for shutdown 16 October 2026), Gemini 2.0 (deprecated), naming patterns (stable / preview / latest aliases), pricing, and free-tier availability."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from ai.google.dev/gemini-api/docs/models, /pricing, /deprecations (15 May 2026). Model schedule moves quickly — re-verify pricing and shutdown dates before depending on these in production code."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://ai.google.dev/gemini-api/docs/models"
+  - "https://ai.google.dev/gemini-api/docs/gemini-3"
+  - "https://ai.google.dev/gemini-api/docs/models/gemini-2.5-pro"
+  - "https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash"
+  - "https://ai.google.dev/gemini-api/docs/deprecations"
+  - "https://ai.google.dev/pricing"
+vendor: "google"
+product: "gemini-api"
+---
+
+## The lay of the land in mid-2026
+
+Three live generations, in order from newest to oldest:
+
+| Generation | What's stable | What's preview | What's deprecated |
+|---|---|---|---|
+| **Gemini 3** | `gemini-3.1-flash-lite` (stable since 7 May 2026) | `gemini-3-flash-preview`, `gemini-3.1-pro-preview`, `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview` | — |
+| **Gemini 2.5** | `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.5-flash-lite` | `gemini-2.5-flash-live-preview`, `gemini-2.5-flash-tts-preview`, `gemini-2.5-computer-use-preview-10-2025`, `gemini-2.5-flash-image-preview` ("Nano Banana") | All scheduled for **16 October 2026 shutdown** |
+| **Gemini 2.0** | — | — | `gemini-2.0-flash`, `gemini-2.0-flash-001`, `gemini-2.0-flash-lite` (shutdown **1 June 2026**) |
+
+> **Read first:** *every single code example* in the official docs as of mid-2026 uses `gemini-3-flash-preview` as the example model. Gemini 3 is **the docs default for new code**. Gemini 2.5 remains GA-stable until 16 October 2026 — that's the safe baseline for production code shipping today, with Gemini 3 as the upgrade target.
+
+## Gemini 3 (current docs default)
+
+| Model | Context in / out | Status | Knowledge cutoff | Input pricing per 1M | Output pricing per 1M |
+|---|---|---|---|---|---|
+| `gemini-3.1-pro-preview` | 1M / 64K | Preview, no shutdown date | Jan 2025 | $2.00 (≤200K) / $4.00 (>200K) | $12 / $18 |
+| `gemini-3-flash-preview` | 1M / 64K | Preview, no shutdown date | Jan 2025 | $0.50 | $3.00 |
+| `gemini-3.1-flash-lite` | 1M / 64K | **Stable** since 7 May 2026 | Jan 2025 | $0.25 | $1.50 |
+| `gemini-3.1-flash-lite-preview` | 1M / 64K | Preview → shutdown 25 May 2026 | Jan 2025 | $0.25 | $1.50 |
+| `gemini-3-pro-image-preview` | 65K / 32K | Preview | Jan 2025 | Image pricing varies |
+| `gemini-3.1-flash-image-preview` | 128K / 32K | Preview | Jan 2025 | Image pricing varies |
+
+What's new in Gemini 3 vs 2.5:
+
+- New `thinking_level` parameter (replaces 2.5's `thinking_budget` token cap)
+- **Function call IDs are mandatory** — every `functionCall` returns a unique `id` you must echo back in `functionResponse` (the SDK handles this for you, raw REST users must take care)
+- Thought signatures returned in response parts; SDK preserves them automatically across multi-turn function calls
+
+## Gemini 2.5 (still stable, all scheduled for 16 October 2026 shutdown)
+
+| Model | Context in / out | Inputs accepted | Input pricing per 1M | Output pricing per 1M | Free tier? |
+|---|---|---|---|---|---|
+| `gemini-2.5-pro` | 1,048,576 / 65,536 | Audio, image, video, text, PDF | $1.25 (≤200K) / $2.50 (>200K) | $10.00 (≤200K) / $15.00 (>200K) | ❌ |
+| `gemini-2.5-flash` | 1,048,576 / 65,536 | Text, image, video, audio | $0.30 (text/image/video) / $1.00 (audio) | $2.50 | ✅ |
+| `gemini-2.5-flash-lite` | 1,048,576 / 65,536 | Same as Flash | $0.10 (text/image/video) / $0.30 (audio) | $0.40 | ✅ |
+
+All three support: **Batch API, Caching, Code Execution, File Search, Flex Inference, Function Calling, Grounding (Search + Maps), Priority Inference, Structured Output, Thinking, URL Context.**
+
+For a stable baseline today, write against `gemini-2.5-flash`. For more capability with structured reasoning, switch to `gemini-2.5-pro`. Plan to migrate to Gemini 3 before October 2026.
+
+## Gemini 2.0 (deprecated — already off or going off)
+
+| Model | Shutdown date |
+|---|---|
+| `gemini-2.0-flash` | **1 June 2026** (likely already offline by the time you read this) |
+| `gemini-2.0-flash-001` | 1 June 2026 |
+| `gemini-2.0-flash-lite` | 1 June 2026 |
+
+If you have code on these, migrate now to `gemini-2.5-flash` (drop-in for most cases) or to `gemini-3.1-flash-lite` (stable Gemini 3, similar pricing, longer runway).
+
+## Naming patterns (so model IDs make sense)
+
+Google uses four patterns in model IDs:
+
+| Pattern | Example | What it means |
+|---|---|---|
+| **Stable** | `gemini-2.5-flash` | Fixed; won't change underneath you. Production-safe. |
+| **Stable with date** | `gemini-2.5-flash-09-2025` | A specific snapshot pinned by month. Most stable. |
+| **Preview** | `gemini-2.5-flash-preview-09-2025` | Billing enabled, ≥2 weeks deprecation notice. |
+| **Latest alias** | `gemini-flash-latest` | Points at the current best Flash. Updated with 2 weeks email notice. |
+| **Experimental** | `gemini-2.5-computer-use-preview-10-2025` | Research / preview, stricter rate limits, **not production-ready**. |
+
+For production, prefer the "stable with date" form (e.g. `gemini-2.5-flash-09-2025`) so a behaviour change in a future "Flash" doesn't surprise you. For prototypes, the bare `gemini-2.5-flash` or `gemini-flash-latest` is fine.
+
+## Free tier (who gets what for nothing)
+
+Free on the [pricing page](https://ai.google.dev/pricing) for direct ai.google.dev API key access:
+
+- ✅ `gemini-2.5-flash` and `gemini-2.5-flash-lite`
+- ✅ `gemini-2.5-flash-live-preview` (Live API)
+- ✅ `gemini-2.5-flash-tts-preview`
+- ✅ `gemini-2.5-flash-image-preview` ("Nano Banana")
+- ✅ `gemini-3-flash-preview` and `gemini-3.1-flash-lite`
+- ✅ `gemini-3.1-flash-tts-preview`
+
+Not free (paid tier required):
+
+- ❌ `gemini-2.5-pro`
+- ❌ `gemini-3.1-pro-preview`
+- ❌ `gemini-3.1-flash-image-preview`
+- ❌ `veo-3.1` and `veo-3.1-lite` (video generation)
+
+> **Free-tier RPM/TPM specifics aren't published in the docs** — Google directs you to [aistudio.google.com/rate-limit](https://aistudio.google.com/rate-limit) where you can see your account-specific limits. They depend on the model and your usage tier.
+
+## Usage tiers (rate limits scale with spend)
+
+| Tier | Qualifies when | Spend cap |
+|---|---|---|
+| **Free** | Active project, no billing | N/A |
+| **Tier 1** | Billing account linked | $250 |
+| **Tier 2** | $100 paid + 3 days elapsed | $2,000 |
+| **Tier 3** | $1,000 paid + 30 days elapsed | $20,000–$100,000+ |
+
+Higher tiers get higher RPM, TPM, and RPD across all models.
+
+## Search grounding pricing
+
+Worth its own line because it's billed differently from tokens:
+
+- **5,000 grounded prompts per month free** (shared across Gemini 3 models)
+- After that: **$14 per 1,000 search queries**
+- Each prompt can trigger multiple search queries (the model decides how many to issue)
+
+`groundingMetadata` on every response shows the queries used and the URLs cited.
+
+## Mixed-modality capabilities at a glance
+
+| Capability | `gemini-2.5-pro` | `gemini-2.5-flash` | `gemini-3-flash-preview` | `gemini-3.1-pro-preview` |
+|---|---|---|---|---|
+| Text | ✅ | ✅ | ✅ | ✅ |
+| Image input | ✅ | ✅ | ✅ | ✅ |
+| Video input | ✅ | ✅ | ✅ | ✅ |
+| Audio input | ✅ | ✅ | ✅ | ✅ |
+| PDF input | ✅ | ✅ | ✅ | ✅ |
+| Image output | (separate model) | (separate model) | (separate model) | (separate model) |
+| Audio output (TTS) | (separate model) | (separate model) | (separate model) | (separate model) |
+
+Image / audio / video *generation* uses dedicated models — `gemini-2.5-flash-image-preview` for images, `*-tts-preview` for speech, Veo for video, Lyria for music.
+
+## What's next
+
+- [§GAPI.4 Patterns](/google/gemini-api/patterns/) — multi-turn chat, streaming, system instructions, files API, context caching, safety settings
+- [§GAPI.5 Tool use](/google/gemini-api/tool-use/) — function calling, Google Search grounding, code execution
+- [§GAPI.2 Getting started](/google/gemini-api/getting-started/) — install the SDK and make your first call
+- [§GCL.5 Gemini CLI pitfalls](/google/gemini-cli/pitfalls/) — note about README "Gemini 3" vs stable `gemini-2.5-pro`

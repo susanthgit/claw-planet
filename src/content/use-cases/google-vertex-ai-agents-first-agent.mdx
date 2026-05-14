@@ -1,0 +1,279 @@
+---
+title: "Vertex AI Agents — your first agent"
+section: "Vertex AI Agents"
+sectionNumber: "VAI.3"
+description: "End-to-end first ADK agent — install google-adk, define a tool (Python function with type hints + docstring), define an Agent, run locally with adk run / adk web, then deploy to Agent Runtime with one Python call. Plus the Agent Identity-secured deploy variant."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Code snippets sourced verbatim from google.github.io/adk-docs/get-started/python and the github.com/google/adk-python README, plus the deploy-an-agent docs (15 May 2026). Sush hasn't run any of this himself yet."
+lastReviewedAt: "2026-05-15"
+estimatedTimeMinutes: 60
+sources:
+  - "https://google.github.io/adk-docs/get-started/python/"
+  - "https://github.com/google/adk-python"
+  - "https://cloud.google.com/gemini-enterprise-agent-platform/scale/runtime/deploy-an-agent"
+  - "https://cloud.google.com/gemini-enterprise-agent-platform/scale/runtime/agent-identity"
+vendor: "google"
+product: "vertex-ai-agents"
+---
+
+## What you'll do
+
+A walkthrough that builds an end-to-end ADK agent (allow yourself an hour or so if GCP auth is already set up):
+
+1. Install `google-adk` and the Vertex extras
+2. Set up Google Cloud auth
+3. Define a single tool (Python function)
+4. Define an Agent that uses the tool
+5. Run it locally — CLI or web UI
+6. Deploy to Agent Runtime (production)
+7. Optional: re-deploy with Agent Identity for production-grade auth
+
+You'll need:
+
+- Python 3.10+
+- A Google Cloud project with billing enabled
+- `gcloud` CLI installed and signed in
+- Vertex AI API enabled in your project (`gcloud services enable aiplatform.googleapis.com`)
+
+## Step 1: Install
+
+```bash
+pip install google-adk
+pip install "google-cloud-aiplatform[agent_engines,adk]"
+```
+
+## Step 2: Auth
+
+Local Application Default Credentials:
+
+```bash
+gcloud auth application-default login
+gcloud config set project YOUR_PROJECT_ID
+```
+
+Set env vars (or put in `.env`):
+
+```bash
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+export GOOGLE_CLOUD_LOCATION="us-central1"
+export GOOGLE_GENAI_USE_VERTEXAI="true"
+```
+
+## Step 3: Project structure
+
+```
+my_agent/
+├── __init__.py            # empty
+└── agent.py               # the agent
+```
+
+## Step 4: Define a tool
+
+A tool is a plain Python function. ADK reads:
+
+- The function name → tool name
+- Type hints → parameter types
+- The docstring → tool description
+
+`my_agent/agent.py`:
+
+```python
+from google.adk.agents import Agent
+
+def get_current_time(city: str) -> dict:
+    """Returns the current time in a specified city.
+
+    Args:
+        city: The city to look up the current time for.
+
+    Returns:
+        A dict with status, city, and time.
+    """
+    # In production, call a real time API
+    return {"status": "success", "city": city, "time": "10:30 AM"}
+
+root_agent = Agent(
+    model="gemini-2.5-flash",
+    name="root_agent",
+    description="Tells the current time in a specified city.",
+    instruction=(
+        "You are a helpful assistant. "
+        "Use the get_current_time tool when the user asks about time."
+    ),
+    tools=[get_current_time],
+)
+```
+
+That's the entire agent. Three things:
+
+- **`name`** is required (must match the variable name `root_agent` for `adk run`)
+- **`instruction`** is your system prompt — keep it short and behaviour-shaped
+- **`tools`** is a Python list of callables OR prebuilt tool objects (e.g. `google_search`)
+
+## Step 5: Run locally
+
+### CLI mode
+
+From the **parent** of the `my_agent/` folder:
+
+```bash
+adk run my_agent
+```
+
+You'll get an interactive REPL. Type:
+
+> *what time is it in Tokyo?*
+
+The agent should call `get_current_time` and respond. (Returned value will be the placeholder "10:30 AM" — that's the tool we wrote.)
+
+### Web UI mode (browser)
+
+```bash
+adk web --port 8000
+```
+
+Open `localhost:8000` in a browser. You'll see a chat UI with the agent on one side and tool-call traces on the other. Useful for debugging the chain of tool calls.
+
+> **Web UI is dev-only.** Don't expose `adk web` to the public internet — it's not authenticated, not hardened, not designed for production.
+
+## Step 6: Add a built-in tool — Google Search
+
+Swap your hand-written tool for `google_search`:
+
+```python
+from google.adk.agents import Agent
+from google.adk.tools import google_search
+
+root_agent = Agent(
+    name="search_assistant",
+    model="gemini-2.5-flash",
+    instruction="Answer user questions using Google Search when needed.",
+    description="An assistant that can search the web.",
+    tools=[google_search],
+)
+```
+
+Re-run `adk run my_agent`. Try:
+
+> *what's the current pricing for `gemini-2.5-pro`?*
+
+The agent should call `google_search`, retrieve results, and synthesise a grounded answer.
+
+## Step 7: Deploy to Agent Runtime
+
+From a Python script (or notebook):
+
+```python
+import vertexai
+from vertexai.agent_engines import AdkApp
+from my_agent.agent import root_agent
+
+# Initialise Vertex AI
+vertexai.init(project="YOUR_PROJECT_ID", location="us-central1")
+
+# Wrap the ADK agent
+app = AdkApp(agent=root_agent)
+
+# Deploy — creates a managed Agent Runtime instance
+remote_app = vertexai.agent_engines.create(
+    agent=app,
+    requirements=[
+        "google-cloud-aiplatform[agent_engines,adk]",
+        # pin specific versions in production
+    ],
+    display_name="my-production-agent",
+)
+
+print(f"Deployed: {remote_app.resource_name}")
+```
+
+That's it. The `create` call:
+
+- Bundles your agent code + dependencies
+- Uploads to Google Cloud
+- Provisions a managed runtime instance
+- Returns a `resource_name` you can call via REST / gRPC
+
+The deployed agent gets sessions, memory bank, observability (Cloud Trace + Logging + Monitoring), and sub-second cold starts automatically.
+
+## Step 8 (optional): Deploy with Agent Identity
+
+Production-grade per-agent auth via SPIFFE-based mTLS — covered in detail in [§VAI.2 Concepts](/google/vertex-ai-agents/concepts/). Deploy variant:
+
+```python
+import vertexai
+from vertexai import types
+from vertexai.agent_engines import AdkApp
+
+PROJECT_ID = "YOUR_PROJECT_ID"
+LOCATION = "us-central1"
+
+client = vertexai.Client(
+    project=PROJECT_ID,
+    location=LOCATION,
+    http_options=dict(api_version="v1beta1"),   # required for Agent Identity
+)
+
+app = AdkApp(agent=root_agent)
+
+remote_app = client.agent_engines.create(
+    agent=app,
+    config={
+        "display_name": "my-agent-with-identity",
+        "identity_type": types.IdentityType.AGENT_IDENTITY,
+        "requirements": ["google-cloud-aiplatform[adk,agent_engines]"],
+        "staging_bucket": "gs://YOUR_STAGING_BUCKET",
+    },
+)
+```
+
+The agent now has a unique SPIFFE identity, default roles attached (`roles/aiplatform.agentContextEditor`, `roles/aiplatform.agentDefaultAccess`), and credentials that only work inside the trusted runtime environment.
+
+## Add MCP database tools
+
+Wire in Google's MCP Toolbox for Databases:
+
+```python
+from google.adk import Agent
+from google.adk.tools.toolbox_toolset import ToolboxToolset
+
+# Connect to your MCP Toolbox server (deploy this separately)
+toolset = ToolboxToolset(server_url="http://127.0.0.1:5000")
+
+root_agent = Agent(
+    model="gemini-2.5-flash",
+    name="db_agent",
+    instruction="Help users query the customer database.",
+    tools=[toolset],   # all MCP tools available
+)
+```
+
+The MCP Toolbox supports 30+ databases — BigQuery, Postgres, MongoDB, Firestore, Snowflake, Neo4j, Oracle, etc. Install: `pip install google-adk[toolbox]`.
+
+## What you've just built
+
+After this walkthrough you have:
+
+- A local ADK agent with a hand-written tool
+- A version with Google Search
+- A deployed Agent Runtime instance with a stable resource name
+- (Optional) Agent Identity-secured deploy
+- (Optional) MCP toolset access
+
+Costs should be small for a short test run (Gemini 2.5 Flash tokens + a few minutes of Agent Runtime compute, both well within the free-tier allowances). Verify in your GCP Billing console rather than trusting an estimate.
+
+## What to do next
+
+- Add a sub-agent (multi-agent composition) — see [§VAI.2 Concepts](/google/vertex-ai-agents/concepts/)
+- Wire in sessions and memory bank for cross-conversation state
+- Add observability hooks via Cloud Trace
+- Expose the deployed agent via [Gemini Enterprise app](/google/vertex-ai-agents/overview/) for end-users
+- Or call its REST/gRPC endpoint from your own app
+- Read [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) to confirm you actually need this stack
+
+## What's next
+
+- [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) — should you have built this with the lighter-weight API instead?
+- [§VAI.2 Concepts](/google/vertex-ai-agents/concepts/) — the full primitive list
+- [§VAI.1 Overview](/google/vertex-ai-agents/overview/) — orientation

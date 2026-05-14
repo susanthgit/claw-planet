@@ -1,0 +1,210 @@
+---
+title: "MCP integration in Gemini CLI"
+section: "Gemini CLI"
+sectionNumber: "GCL.6"
+description: "How Gemini CLI talks to MCP servers — three transport types (Stdio, SSE, Streamable HTTP), config in settings.json, allowlisting tools per server, automatic credential redaction, OAuth auto-discovery for remote servers, and the @server://resource syntax."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from www.geminicli.com/docs/tools/mcp-server and packages/cli/package.json (15 May 2026). Confirms @modelcontextprotocol/sdk ^1.23.0 dep. Sush hasn't tried wiring an MCP server to Gemini CLI yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://www.geminicli.com/docs/tools/mcp-server"
+  - "https://github.com/google-gemini/gemini-cli/blob/main/packages/cli/package.json"
+  - "https://modelcontextprotocol.io"
+vendor: "google"
+product: "gemini-cli"
+---
+
+## What you need to know in one paragraph
+
+Gemini CLI is an **MCP client** — it can connect to MCP servers (filesystem, GitHub, Postgres, Figma, Playwright, your own) and call their tools as if they were native. It uses the official `@modelcontextprotocol/sdk` (currently version 1.23+) and supports three transports: Stdio (subprocess), SSE (HTTP streaming), and Streamable HTTP. There is **no `gemini mcp-server` mode** — Gemini CLI itself can't be exposed as an MCP server for other agents to call. Compare with Codex CLI, which has experimental server mode, and Claude Code, which is also client-only.
+
+## The three transports
+
+| Transport | Used for | Notes |
+|---|---|---|
+| **Stdio** | Local MCP servers run as subprocesses | Fastest, most common. CLI spawns the process, talks over stdin/stdout |
+| **SSE** | Remote MCP servers | Server-Sent Events; one-way streaming from server, separate POST for client→server |
+| **Streamable HTTP** | Remote MCP servers (newer) | Bidirectional over standard HTTP; the modern remote shape |
+
+For local tools (filesystem, sqlite, your own dev MCP server), use Stdio. For remote / hosted MCP services (Vercel MCP, Atlassian MCP, your team's hosted toolbox), use SSE or HTTP.
+
+## Where to configure MCP servers
+
+Two scopes:
+
+- **User-wide:** `~/.gemini/settings.json`
+- **Project-scoped:** `.gemini/settings.json` (overrides user-wide for that project)
+
+Inside either file, MCP servers live under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "/usr/local/bin/github-mcp-server",
+      "args": [],
+      "env": { "GITHUB_TOKEN": "$GITHUB_TOKEN" },
+      "trust": false
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}
+```
+
+## A worked example — adding the GitHub MCP server
+
+Install the GitHub MCP server (released by GitHub themselves):
+
+```bash
+# Or: download the binary from
+# https://github.com/github/github-mcp-server/releases
+brew install github-mcp-server
+```
+
+Then edit `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "github-mcp-server",
+      "env": { "GITHUB_TOKEN": "$GITHUB_TOKEN" },
+      "trust": false
+    }
+  }
+}
+```
+
+Make sure `GITHUB_TOKEN` is set in your shell or `~/.gemini/.env`. Then start a session:
+
+```bash
+gemini
+> List the open issues on susanthgit/claw-planet
+```
+
+The agent calls `mcp__github__list_issues` (or whichever tool the server exposes), shows you the result, and threads it into context.
+
+## Tool allowlisting / blocklisting
+
+By default, every tool an MCP server exposes is available to the agent. Tighten this with `includeTools` (allowlist) or `excludeTools` (blocklist). `excludeTools` takes precedence:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "github-mcp-server",
+      "includeTools": ["list_issues", "get_issue", "create_comment"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/sush/projects"],
+      "excludeTools": ["delete_file", "rm"]
+    }
+  }
+}
+```
+
+**Why this matters:** an MCP server you didn't write can expose more tools than you want exposed. Allowlist what you actually use.
+
+## Automatic credential redaction
+
+When Gemini CLI spawns an MCP server subprocess, it **strips environment variables matching common secret patterns** before passing the env block to the child:
+
+```
+GEMINI_API_KEY, GOOGLE_API_KEY,
+*TOKEN*, *SECRET*, *PASSWORD*, *KEY*,
+*AUTH*, *CREDENTIAL*
+```
+
+To pass a secret to an MCP server, **explicitly re-add it in the `env` block:**
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "github-mcp-server",
+      "env": { "GITHUB_TOKEN": "$GITHUB_TOKEN" }
+    }
+  }
+}
+```
+
+Without that explicit re-add, `GITHUB_TOKEN` would be filtered out, and the server would fail to authenticate. The behaviour exists to prevent accidentally leaking your `OPENAI_API_KEY` or `AWS_SECRET_ACCESS_KEY` to a third-party MCP server you trusted enough to install but not enough to hand every secret to.
+
+## The `trust` flag
+
+Each server can set `"trust": true` to skip the per-tool confirmation dialog:
+
+```json
+{
+  "mcpServers": {
+    "my-vetted-server": {
+      "command": "...",
+      "trust": true
+    }
+  }
+}
+```
+
+Default is `false`. Only flip this for servers you've reviewed end-to-end (read the source) and use heavily. For anything new, leave it false and approve each tool call interactively for the first few sessions.
+
+## OAuth for remote MCP servers
+
+Gemini CLI handles OAuth flows for remote MCP servers automatically:
+
+1. CLI tries to call the remote server, gets a 401
+2. CLI does OAuth metadata discovery on the server's URL
+3. Browser opens for you to complete the OAuth flow
+4. Token is cached locally and reused
+
+This works out-of-the-box for SSE and HTTP-transport MCP servers. Stdio servers don't need this (they're local subprocesses).
+
+## Reading MCP resources in conversation
+
+MCP servers can expose **resources** (files, query results, anything addressable) in addition to tools. Gemini CLI surfaces these via an `@server://resource/path` syntax:
+
+```text
+> @github://repos/susanthgit/claw-planet/issues/142
+```
+
+The agent fetches the resource via the MCP server and includes it in context.
+
+## Comparison — Gemini CLI MCP vs others
+
+| | Gemini CLI | Codex CLI | Claude Code |
+|---|---|---|---|
+| **MCP client** | Yes | Yes | Yes |
+| **MCP server mode** | No | Not confirmed | No |
+| **Transports** | Stdio + SSE + HTTP | Stdio + HTTP | Stdio + HTTP |
+| **OAuth auto-discovery** | Yes | Limited | Yes |
+| **Per-server tool allowlist** | Yes (`includeTools`/`excludeTools`) | Yes | Limited |
+| **Credential redaction** | Yes (auto pattern-match) | Manual | Manual |
+| **Resource syntax** | `@server://path` | Different shape | Different shape |
+| **A2A protocol support** | `@agentclientprotocol/sdk` ^0.16.1 in deps | No | No |
+
+The MCP client implementation is unusually polished — OAuth automation, automatic credential redaction, and the per-server allowlist all come pre-built rather than bolted on after the fact.
+
+## Useful MCP servers to wire up
+
+A starting kit, all sourced from the official MCP registry:
+
+| Server | What it adds |
+|---|---|
+| **filesystem** (`@modelcontextprotocol/server-filesystem`) | Scoped file access (`/home/sush/projects`, etc.) |
+| **github** (`github/github-mcp-server`) | GitHub issues, PRs, repos, search |
+| **playwright** (`@playwright/mcp`) | Browser automation; hand the agent a URL and let it interact |
+| **postgres** / **sqlite** | Schema discovery, query execution, results into context |
+| **figma** (`@figma/mcp-server`) | Read Figma designs as part of an implementation task |
+| **MCP Toolbox for Databases** | Google's bundle of 30+ DB connectors |
+
+For a deeper catalogue of MCP servers, see the [MCP catalogue on Anthropic](/anthropic/mcp-catalogue/what-is-mcp/).
+
+## What's next
+
+- [§GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) — including the `trust: true` foot-gun if you flip it incautiously
+- [§GCL.4 Use cases](/google/gemini-cli/use-cases/) — MCP-driven workflows in real shape
+- [§GCL.3 Auth](/google/gemini-cli/auth/) — auth picks before you run

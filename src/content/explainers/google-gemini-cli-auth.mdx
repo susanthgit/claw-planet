@@ -1,0 +1,167 @@
+---
+title: "Authentication for Gemini CLI"
+section: "Gemini CLI"
+sectionNumber: "GCL.3"
+description: "Four ways to sign Gemini CLI in — Google OAuth, Gemini API key, Vertex AI (three sub-paths), Code Assist licence — plus headless / CI patterns and where Gemini stores your credentials."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from geminicli.com authentication docs (15 May 2026). Sush hasn't tried any of these auth flows yet — flip to tried once he's signed in once."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://www.geminicli.com/docs/get-started/authentication"
+  - "https://www.geminicli.com/docs/cli/trusted-folders"
+  - "https://aistudio.google.com/apikey"
+vendor: "google"
+product: "gemini-cli"
+---
+
+## Four auth methods (pick one)
+
+The first time you run `gemini`, the CLI asks you to choose an auth method. Once chosen, it caches credentials in `~/.gemini/` and reuses them on every future run.
+
+| Method | Best for | Needs Google Cloud project? |
+|---|---|---|
+| **1. Sign in with Google** (OAuth) | Individuals on a personal Google account | No (only if you're on a Workspace / school account) |
+| **2. Gemini API key** | Developers prototyping; CI workflows | No |
+| **3. Vertex AI** (3 sub-paths) | Enterprise workloads, regional residency, audit | Yes |
+| **4. Gemini Code Assist licence** | Orgs with the Code Assist subscription | Yes |
+
+You can also mix — set an env var per session to override the cached default.
+
+## 1. Sign in with Google (OAuth)
+
+The simplest path for individual users. No API key, no GCP project (unless your account is a Workspace / school account).
+
+```bash
+gemini   # then choose "Sign in with Google" at the prompt
+```
+
+A browser opens, you complete the Google OAuth flow, and the CLI stores tokens locally. From then on, just running `gemini` works.
+
+This unlocks the **1,000 requests / day** free tier across Gemini Pro and Flash models. (Code Assist for individuals is the underlying product.)
+
+**One catch — Workspace / school / company Google accounts:**
+
+```bash
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+gemini
+```
+
+Workspace and school accounts require an associated Google Cloud project ID before the OAuth flow will succeed. Personal Gmail accounts don't need this.
+
+## 2. Gemini API key
+
+If you'd rather not OAuth, you can paste a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+
+```bash
+export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+gemini
+```
+
+Keys are tied to a Google Cloud project under the hood (AI Studio creates a default one for new users) but you don't have to think about it.
+
+The free tier on this path is **smaller**: 250 requests / day, **Flash model only** (no Pro). Generous for prototyping; tight for serious agentic work.
+
+## 3. Vertex AI (three sub-paths)
+
+For production / cloud workloads where you want regional residency, IAM, and audit logs. All three sub-paths require:
+
+```bash
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+export GOOGLE_CLOUD_LOCATION="us-central1"   # or your region
+export GOOGLE_GENAI_USE_VERTEXAI="true"
+```
+
+Then choose one of:
+
+### 3a. Application Default Credentials via gcloud
+
+```bash
+gcloud auth application-default login
+gemini
+```
+
+Best for developer laptops where you already have `gcloud` set up.
+
+### 3b. Service account JSON
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+gemini
+```
+
+Best for servers and CI runners.
+
+### 3c. Google Cloud API key
+
+```bash
+export GOOGLE_API_KEY="YOUR_GCP_API_KEY"
+gemini
+```
+
+This is **different** from `GEMINI_API_KEY` (which is the AI Studio key). `GOOGLE_API_KEY` is a Google Cloud-side key tied to your GCP project's billing.
+
+## 4. Gemini Code Assist licence
+
+For organisations with a Gemini Code Assist Standard or Enterprise subscription. Sign in with a Google account that has the licence, and set the GCP project to the licensed one:
+
+```bash
+export GOOGLE_CLOUD_PROJECT="your-licensed-project"
+gemini   # then "Sign in with Google"
+```
+
+Quotas for Code Assist Standard and Enterprise (1,500–2,000 req/day per user) are larger than the personal free tier, and usage is governed by your org's GCP billing rather than personal limits.
+
+## Persistent env vars — `~/.gemini/.env`
+
+Tired of `export`ing the same variables on every shell start? Put them in:
+
+- `~/.gemini/.env` (user-wide, applies to every project)
+- `.gemini/.env` (project-scoped, overrides user-wide)
+
+The project-scoped file takes precedence over the user-wide one. (No documented walk-up beyond these two fixed scopes.)
+
+```ini
+# ~/.gemini/.env
+GOOGLE_CLOUD_PROJECT=my-project
+GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_GENAI_USE_VERTEXAI=true
+```
+
+## Headless / CI use
+
+OAuth needs a browser. CI runners don't have browsers. Two paths that work headless:
+
+- **Gemini API key** (`GEMINI_API_KEY`) — simplest. Inject as a CI secret.
+- **Vertex AI service account** — `GOOGLE_APPLICATION_CREDENTIALS` pointing at a JSON file mounted into the container.
+
+You'll also want one of these in CI to skip the trust prompt for project files:
+
+```bash
+gemini --skip-trust ...
+# or
+export GEMINI_CLI_TRUST_WORKSPACE=true
+```
+
+The official **GitHub Action** (`google-github-actions/run-gemini-cli`) wraps all of this — drop it into a workflow file and supply your secret.
+
+## Cloud-side environments — automatic auth
+
+In **Cloud Shell** and on **Compute Engine VMs**, Application Default Credentials are picked up from the metadata server automatically. You don't need to run `gcloud auth application-default login` — just `gemini` works.
+
+## Where Gemini stores credentials
+
+| Path | What's there |
+|---|---|
+| `~/.gemini/oauth_creds.json` | OAuth tokens (encrypted at rest is platform-dependent) |
+| `~/.gemini/.env` | Persistent env vars (user scope) |
+| `~/.gemini/settings.json` | Model preference, MCP server config, sandbox config |
+| `.gemini/` (project) | Same shape as `~/.gemini/` but project-scoped (overrides user scope) |
+
+Wipe `~/.gemini/` and you're back to a fresh state — useful for switching between accounts or tiers.
+
+## What's next
+
+- [§GCL.6 MCP integration](/google/gemini-cli/mcp/) — connecting Gemini CLI to MCP servers (filesystem, GitHub, databases)
+- [§GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) — sandbox-off-by-default, Windows `icacls` persistence, the README "Gemini 3" wrinkle
+- [§GCL.4 Use cases](/google/gemini-cli/use-cases/) — what Gemini CLI is documented to be good at

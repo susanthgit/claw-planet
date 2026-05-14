@@ -1,0 +1,110 @@
+---
+title: "Gemini CLI, plainly"
+section: "Gemini CLI"
+sectionNumber: "GCL.1"
+description: "Five-minute orientation to Gemini CLI — Google's open-source terminal coding agent. What it does, where it runs, what it costs, and where it fits vs Claude Code, Codex CLI, and GitHub Copilot CLI."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from github.com/google-gemini/gemini-cli, geminicli.com docs, and cloud.google.com/gemini/docs/quotas as of 15 May 2026. Sush hasn't standalone-installed it — he uses Claude Code via GitHub Copilot CLI today. Page flips to tried with a session log when he runs Gemini CLI."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://github.com/google-gemini/gemini-cli"
+  - "https://www.geminicli.com/docs/get-started/installation"
+  - "https://www.geminicli.com/docs/get-started/authentication"
+  - "https://www.geminicli.com/docs/resources/quota-and-pricing"
+  - "https://cloud.google.com/gemini/docs/quotas"
+vendor: "google"
+product: "gemini-cli"
+---
+
+## The thirty-second version
+
+Gemini CLI is **Google's terminal coding agent**. You install it via npm, run `gemini` inside any project directory, and the agent reads your code, edits files, runs commands, and calls Gemini's reasoning models with tool use. It's the closest analogue to Claude Code and Codex CLI from the Google side.
+
+Three things to know:
+
+1. **Open source, TypeScript / Node-based, Apache-2.0.** The CLI binary itself is free. Built on Node.js 20+; runs on macOS 15+, Windows 11 24H2+, and Ubuntu 20.04+. Pre-installed in Cloud Shell and Cloud Workstations.
+2. **One of the most generous documented free tiers of any CLI coding agent.** Sign in with a personal Google account and you get **1,000 model requests per day** at no cost — no card required, no credit timer. (Compare with Claude Code's no free tier and Codex CLI's one-off $5 in API credits.)
+3. **Speaks MCP — as a client.** It connects to MCP servers (filesystems, GitHub, databases, browser automation, your own) over Stdio, SSE, and Streamable HTTP. There's no `gemini mcp-server` mode — Gemini CLI itself isn't exposed as a server other agents can call.
+
+## A real example
+
+You're staring at a Next.js project that's failing to build. Open a terminal, `cd` into the project, and type:
+
+```bash
+gemini
+```
+
+Then ask in plain English: *"the build is failing — figure out why."*
+
+What happens:
+
+1. Gemini reads the error from `npm run build`.
+2. It opens `next.config.mjs`, sees an experimental flag that's been removed.
+3. It checks `package.json` for the Next.js version (15.3 — the flag landed in 14.2).
+4. It edits the config file, removes the flag, runs `npm run build` again.
+5. Build passes. Gemini tells you what it did.
+
+The interesting bit isn't "AI writes code" — every editor has that now. The interesting bit is **the loop tightens**: the agent reads, decides, runs, reads-the-result, decides-again, without you copying snippets back and forth.
+
+## Why this matters
+
+Three things fall out of the design:
+
+- **Your repo, your machine.** Files are edited locally. Commits happen through your normal git workflow. The agent doesn't push or open PRs unless you ask. What does cross the wire: model calls include whatever code, file contents, and conversation context the model needs to answer — same as any LLM-backed tool.
+- **Sandbox is optional and opt-in.** Unlike Codex CLI (which sandboxes by default), Gemini CLI runs unsandboxed unless you turn the sandbox on. Five backends are available — macOS Seatbelt, Docker, Podman, Linux gVisor, LXC — but the default posture is "trust your folder." More on this in [GCL.5 Pitfalls](/google/gemini-cli/pitfalls/).
+- **Mono-agent architecture.** One agent, one context window. There's no subagent primitive (Codex CLI and Claude Code have these). Long sessions can drift as conflicting history accumulates — issue [#3132](https://github.com/google-gemini/gemini-cli/issues/3132) is tracking this.
+
+## How it compares
+
+| | **Gemini CLI** | **Codex CLI** (OpenAI) | **Claude Code** (Anthropic) | **Copilot CLI** (GitHub) |
+|---|---|---|---|---|
+| Vendor | Google | OpenAI | Anthropic | Microsoft / GitHub |
+| Language | TypeScript / Node 20+ | Rust | Not open source | Not open source |
+| Licence | Apache-2.0 (open) | Apache-2.0 (open) | Proprietary | Proprietary |
+| Default model | `gemini-2.5-pro` (stable channel) | not publicly stated | Claude Sonnet 4.5 | GPT-4o (via Copilot) |
+| Context window | 1M tokens | ~200K | 200K | 128K |
+| Free tier | **1,000 req/day** (personal Google account) | One-off $5 API credit | None | Limited (Copilot Free tier) |
+| Sandbox | Optional (5 backends, OFF by default) | Built-in (per-OS, ON by default) | None | None |
+| MCP | Client (Stdio + SSE + HTTP, OAuth-aware) | Client | Client | Limited |
+| Subagents | No native primitive | Not confirmed for the CLI | Yes | No |
+| Project context file | `GEMINI.md` | `AGENTS.md` | `CLAUDE.md` | None |
+| Local models (Ollama, LM Studio) | No | No | No | No |
+
+> **Sush's honest take (sourced, not yet tried):** the free tier is the standout — 1,000 req/day on a Pro-tier model with no card on file is unusually generous and lowers the bar for tinkering meaningfully. Apache-2.0 plus open source means you can read the sandbox code, pin a version, fork it. The MCP client implementation is unusually polished — OAuth auto-discovery, three transports, tool allowlists per server, automatic credential redaction all come pre-built. The trade-offs are real though: sandbox-off-by-default differs from Codex CLI's safer default, the "tool loop" issue ([#1531](https://github.com/google-gemini/gemini-cli/issues/1531)) is a regular complaint, and the README's marketing for "Gemini 3 models" doesn't reflect the stable-channel default of `gemini-2.5-pro`.
+
+## The other Gemini surfaces (so you don't confuse them)
+
+Gemini CLI is one of several "Gemini" surfaces from Google:
+
+| Surface | Where it lives | Typical use |
+|---|---|---|
+| **Gemini CLI** | Your terminal | Interactive coding sessions, scripted automation |
+| **[Gemini API](/google/gemini-api/overview/)** | Your code | Direct programmatic access via SDK |
+| **[Gemini App](https://gemini.google.com)** | gemini.google.com | Chat, Deep Research, Workspace integration |
+| **[Gems](/google/gems/overview/)** | Inside the Gemini app | Custom personalities (no-code Custom-GPT analogue) |
+| **[AI Studio](/google/ai-studio/overview/)** | aistudio.google.com | Web playground; where you generate API keys |
+| **[Vertex AI Agents](/google/vertex-ai-agents/overview/)** | Google Cloud | Production agent stack with cloud auth |
+
+The CLI shares config and credentials across user-wide (`~/.gemini/`) and project (`.gemini/`) scopes. Sign in once, future sessions reuse your auth.
+
+## What it costs
+
+The CLI binary is free (Apache-2.0). Usage consumes:
+
+- **Personal Google account (free):** 1,000 model requests / day. Spans Pro and Flash; CLI picks per task.
+- **Gemini API key (free, from AI Studio):** 250 requests / day, Flash model only. No Google Cloud project required.
+- **Google AI Pro subscription:** 1,500 req/day, around $20/month.
+- **Google AI Ultra subscription:** 2,000 req/day, around $100/month.
+- **Vertex AI:** standard per-token pricing through your Google Cloud billing account.
+- **Gemini Code Assist (Standard / Enterprise):** 1,500–2,000 req/day per user, billed via GCP.
+
+> **Verify before relying on these numbers.** The README's "60 requests/minute" claim isn't confirmed by Google's canonical quota page (which shows "2 requests/second" for general Gemini for Cloud). Per-day caps are on the [quota and pricing](https://www.geminicli.com/docs/resources/quota-and-pricing) page, but Google adjusts these regularly. The `/stats model` slash command shows your current session usage and applicable limits.
+
+## What to do next
+
+- [§GCL.2 Install](/google/gemini-cli/install/) — npm, Homebrew, MacPorts, Anaconda for restricted environments; release channels (stable / preview / nightly)
+- [§GCL.3 Auth](/google/gemini-cli/auth/) — Google OAuth, API key, Vertex AI (3 sub-paths), Code Assist licence
+- [§GCL.6 MCP integration](/google/gemini-cli/mcp/) — adding MCP servers, allowlisting tools, OAuth for remote servers
+- [§GCL.4 Use cases](/google/gemini-cli/use-cases/) — what the docs say Gemini CLI is good at
+- [§GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) — known issues from the GitHub tracker, sandbox quirks, the "Gemini 3" naming wrinkle

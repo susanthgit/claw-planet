@@ -1,0 +1,143 @@
+---
+title: "What Gemini CLI is documented to be good at"
+section: "Gemini CLI"
+sectionNumber: "GCL.4"
+description: "Five concrete use cases for Gemini CLI from the official docs and READMEs — codebase analysis with the 1M context window, MCP-driven tool use, scripted automation in CI, GitHub Action for PR review, and prototyping against the free tier. Plus what it's not yet good at."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Use cases drawn from the github.com/google-gemini/gemini-cli README, geminicli.com docs, and known GitHub Action examples (15 May 2026). Sush hasn't run any of these flows himself yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://github.com/google-gemini/gemini-cli"
+  - "https://www.geminicli.com/docs/cli/headless"
+  - "https://www.geminicli.com/docs/tools/mcp-server"
+  - "https://github.com/google-github-actions/run-gemini-cli"
+vendor: "google"
+product: "gemini-cli"
+---
+
+## Five things Gemini CLI is documented to be good at
+
+These come from the official README, the geminicli.com docs, and worked examples in the repo. None are taste-based — each maps to a feature the CLI specifically ships.
+
+### 1. Codebase analysis using the 1M-token context window
+
+Where the smaller-context tools (Claude Code at 200K, Copilot CLI at 128K) need careful file selection, Gemini's 1M-token window means you can ask broad cross-cutting questions and let the agent pull in whatever it needs:
+
+- *"What does this monorepo do, end to end?"*
+- *"Find every place we touch the Stripe API and tell me if we handle the customer-deleted webhook correctly."*
+- *"This Rails app is upgrading to Rails 7.2 — what's likely to break?"*
+
+The model can read large slices of the repo in one pass, which means fewer "I'll need to see the related files" round-trips.
+
+### 2. Wiring Gemini CLI to your tools via MCP
+
+Gemini's MCP client implementation is one of its strongest features. Add a few lines to `~/.gemini/settings.json` and the agent can:
+
+- Browse your **GitHub** repos and issues (via the GitHub MCP server)
+- Query a **database** (Postgres, MongoDB, BigQuery, Firestore — via the [MCP Toolbox](https://google.github.io/adk-docs/integrations/mcp-toolbox-for-databases/))
+- Drive a **browser** (Playwright MCP)
+- Read **Figma** designs (Figma MCP)
+- Touch your **filesystem** with explicit allowlists (filesystem MCP)
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "path/to/github-mcp-server",
+      "env": { "GITHUB_TOKEN": "$GITHUB_TOKEN" },
+      "trust": false
+    }
+  }
+}
+```
+
+A real shape: *"Open issue #142 in this repo, read the linked design in Figma, then implement the changes."* — three MCP servers cooperating.
+
+See [GCL.6 MCP integration](/google/gemini-cli/mcp/) for the full mechanics.
+
+### 3. Headless scripting and CI runs
+
+The `-p` flag (or any non-TTY invocation) flips Gemini CLI into non-interactive mode. Output formats:
+
+- Plain text (default)
+- `--output-format json` — single JSON object
+- `--output-format stream-json` — JSONL events, one per line, suitable for piping
+
+```bash
+# CI-friendly run with structured output
+gemini -p "Summarise the changes in the last commit" \
+       --output-format json > summary.json
+```
+
+Common CI shapes from the docs:
+
+- Generate release notes from `git log`
+- Sanity-check `CHANGELOG.md` against actual commits
+- Triage open issues against a labelling rubric
+
+### 4. The official GitHub Action — PR review and on-demand `@gemini-cli`
+
+The `google-github-actions/run-gemini-cli` Action lets you wire Gemini CLI into a workflow:
+
+- **Pull-request review on every PR** — comments with line-level suggestions
+- **Issue triage** — auto-label and assign on open
+- **On-demand mention** — comment `@gemini-cli "fix the failing test"` on an issue or PR
+
+```yaml
+- uses: google-github-actions/run-gemini-cli@v1
+  with:
+    prompt: "Review this PR for security and correctness issues."
+    gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+```
+
+### 5. Prototyping against the free tier
+
+This is the use case Gemini CLI's economics tilt towards. With 1,000 requests / day on a personal Google account at no cost, you can:
+
+- Try a refactoring approach without burning tokens
+- Spike a side project end-to-end without paying anything
+- Explore a new framework's docs interactively
+- Use it as a daily learning companion
+
+Compare with Claude Code (no free tier) and Codex CLI (one-off $5 in API credits): for tinkerers and learners, Gemini CLI is the lowest-friction starting point.
+
+## What it's not (yet) good at
+
+Honest counterweight — areas where the docs and issue tracker are clear about gaps:
+
+- **Multi-agent / subagents.** No native primitive. Issue [#3132](https://github.com/google-gemini/gemini-cli/issues/3132) tracks this. Mono-agent design means long sessions accumulate noise; Codex CLI and Claude Code both have subagent support.
+- **Local model support.** No Ollama, LM Studio, vLLM. Issue [#5938](https://github.com/google-gemini/gemini-cli/issues/5938) is the placeholder. Hard blocker for HIPAA / SOX / GDPR / air-gapped environments.
+- **Sycophancy.** Issue [#4556](https://github.com/google-gemini/gemini-cli/issues/4556) — model is excessively agreeable, fills context with "you are 100% correct," ignores "be brutally honest" instructions. Real complaint from real users; no setting to tune it down yet.
+- **Tool loops.** Issue [#1531](https://github.com/google-gemini/gemini-cli/issues/1531) — when a tool fails (write, shell, search), the model often retries indefinitely instead of surfacing the error cleanly.
+
+If you need any of those, look at [Codex CLI](/openai/codex-cli/overview/) (sub-agents, sandboxed-by-default) or [Claude Code](/anthropic/claude-code/overview/) (subagent spawning).
+
+## Realistic first session — the build is failing
+
+A close-to-canonical first session, suitable for a Tuesday afternoon:
+
+```bash
+cd ~/projects/my-broken-repo
+gemini
+```
+
+Then type:
+
+> *the build is failing — figure out why and fix it*
+
+The agent reads the error, opens config files, infers the cause (deprecated flag, version mismatch, missing dependency), edits the file, re-runs the build, and reports back. Default behaviour asks before running shell commands; reading and editing files inside the workspace happens without prompting.
+
+If you want extra safety, turn the sandbox on:
+
+```bash
+gemini --sandbox
+```
+
+(See [GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) on why the sandbox is OFF by default and what changes when you turn it on.)
+
+## What's next
+
+- [§GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) — the rough edges and known issues
+- [§GCL.6 MCP integration](/google/gemini-cli/mcp/) — adding MCP servers
+- [§GCL.3 Auth](/google/gemini-cli/auth/) — picking the right auth path for your use case

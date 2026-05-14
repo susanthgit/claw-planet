@@ -1,0 +1,280 @@
+---
+/**
+ * /google/[product]/ — product hub.
+ *
+ * Lists every entry tagged vendor:"google" + product:<product> across the
+ * shared content collections. The 6 products are hard-coded so getStaticPaths
+ * always renders the 6 hubs even before all entries land.
+ *
+ * Entry filenames follow `google-<product>-<slug>.mdx`; the short slug is
+ * extracted by stripping that prefix.
+ *
+ * Mirrors /openai/[product]/index.astro from Batch B (15 May 2026).
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// Astro 5 evaluates getStaticPaths in a separate scope; inline the keys.
+export async function getStaticPaths() {
+  const PRODUCT_KEYS = ['gemini-cli', 'gemini-api', 'notebooklm', 'vertex-ai-agents', 'ai-studio', 'gems'];
+  return PRODUCT_KEYS.map(product => ({ params: { product } }));
+}
+
+const PRODUCT_META: Record<string, { title: string; code: string; lede: string; description: string }> = {
+  'gemini-cli': {
+    title: 'Gemini CLI',
+    code: 'GCL',
+    lede: `Gemini CLI is Google's terminal coding agent — open-source (Apache-2.0), TypeScript / Node-based. You install it via npm or Homebrew, run <code>gemini</code> inside any project directory, and the agent reads your code, edits files, runs commands, and calls Gemini 2.5 Pro / Flash with tool use. <strong>It's the closest analogue to Claude Code and Codex CLI from the Google side.</strong> It speaks MCP natively (client + server). Generous free tier through a personal Google account. Every page below is <strong>sourced</strong> from <a href="https://github.com/google-gemini/gemini-cli">github.com/google-gemini/gemini-cli</a> and <a href="https://ai.google.dev/gemini-api/docs">ai.google.dev/gemini-api/docs</a>. Sush hasn't standalone-installed it yet.`,
+    description: 'Gemini CLI — install, auth, MCP integration, use cases, pitfalls. Sourced from github.com/google-gemini/gemini-cli.',
+  },
+  'gemini-api': {
+    title: 'Gemini API',
+    code: 'GAPI',
+    lede: `The Gemini API is Google's developer surface for the Gemini model family — Pro / Flash / Flash-Lite, plus image, audio, and video models. You access it directly through <a href="https://ai.google.dev">ai.google.dev</a> (API key auth, fast on-ramp, generous free tier) or through <a href="https://cloud.google.com/vertex-ai">Vertex AI</a> (cloud project auth, enterprise controls, regional residency). Two SDKs to know: the new unified <code>google-genai</code> Python SDK and <code>@google/genai</code> for TypeScript / JavaScript. <strong>The older <code>google-generativeai</code> package is being superseded</strong> — start with the new one. All entries below are <strong>sourced</strong> from <a href="https://ai.google.dev/gemini-api/docs">the official docs</a>.`,
+    description: 'Gemini API — overview, getting started, models, tool use, common patterns. Sourced from ai.google.dev/gemini-api/docs.',
+  },
+  'notebooklm': {
+    title: 'NotebookLM',
+    code: 'NLM',
+    lede: `NotebookLM is Google's hosted research notebook — you upload sources (PDFs, Google Docs, URLs, YouTube videos, audio files), and a Gemini-backed assistant answers questions <em>grounded in your sources only</em>. <strong>The standout feature is Audio Overviews</strong> — a podcast-style conversation generated from your notebook that two AI hosts walk through. Free tier is generous; <strong>NotebookLM Plus</strong> raises the limits and adds features; <strong>NotebookLM Enterprise</strong> ships through Google Workspace with admin controls and data residency. Sush has heard a lot of good things but has never personally used it. Sourced from <a href="https://notebooklm.google.com">notebooklm.google.com</a> and <a href="https://blog.google/technology/ai/">blog.google/technology/ai</a>.`,
+    description: 'NotebookLM — overview, real-world use cases, enterprise tier. Sourced from notebooklm.google.com.',
+  },
+  'vertex-ai-agents': {
+    title: 'Vertex AI Agents',
+    code: 'VAI',
+    lede: `Vertex AI Agents — formally <strong>Vertex AI Agent Builder</strong> — is Google Cloud's stack for building, deploying, and serving production AI agents. Three layers: <strong>Agent Development Kit (ADK)</strong> to build agents in Python or Java, <strong>Agent Engine</strong> to deploy and run them as a managed service, and <strong>Agentspace</strong> as the user-facing surface that fronts your agents. ADK is open-source on GitHub. Auth is Google Cloud (Application Default Credentials, service accounts) — there are no API keys here. <strong>This is where you go when Gemini API direct isn't enough</strong> — you need cloud ops, regional residency, audit logs, or to compose multi-agent workflows. Sourced from <a href="https://cloud.google.com/vertex-ai/docs/agent-builder">cloud.google.com/vertex-ai/docs/agent-builder</a>.`,
+    description: 'Vertex AI Agents — overview, ADK + Agent Engine + Agentspace concepts, first agent, vs Gemini API direct. Sourced from cloud.google.com/vertex-ai.',
+  },
+  'ai-studio': {
+    title: 'AI Studio',
+    code: 'STUD',
+    lede: `Google AI Studio (<a href="https://aistudio.google.com">aistudio.google.com</a>) is the web playground for the Gemini API — type a prompt, swap models, tune temperature, paste images / PDFs / video, get a response. <strong>It's also where you generate the API keys</strong> that the SDKs use. Beyond the playground, AI Studio now hosts a "Build" surface for prototyping small Gemini-powered apps (with code export to Python or Node) and a "Stream Realtime" tab for the Live API (voice + video conversation with Gemini). Free tier with rate limits. <strong>Different from Vertex AI Studio</strong> (which is the Google Cloud equivalent inside the Cloud Console). Sourced from <a href="https://aistudio.google.com">aistudio.google.com</a> and <a href="https://ai.google.dev/aistudio">ai.google.dev/aistudio</a>.`,
+    description: 'Google AI Studio — overview, vs Vertex AI Studio. Sourced from aistudio.google.com.',
+  },
+  'gems': {
+    title: 'Gems',
+    code: 'GEM',
+    lede: `Gems are <strong>custom Gemini personalities</strong> you build inside the Gemini chat app — instructions, optional knowledge files, and a name. Think of them as the Gemini-app equivalent of <a href="/openai/custom-gpts/overview/">Custom GPTs</a>: no-code chat assistants tailored for a specific role (Coding Partner, Writing Editor, Career Guide, etc.) Google ships several premade Gems for free; custom Gems live behind a paid Google AI Pro / Ultra subscription. <strong>Different from the Apps SDK / Vertex AI Agents</strong> — Gems are no-code, chat-only, and live inside the Gemini app. Sourced from <a href="https://gemini.google.com/app/gems">gemini.google.com/app/gems</a>.`,
+    description: 'Gems — no-code custom Gemini personalities you build inside the Gemini chat app. Sourced from gemini.google.com.',
+  },
+};
+
+const { product } = Astro.params;
+const meta = PRODUCT_META[product as string];
+
+const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+type Entry = { num: string; title: string; href: string; description: string; state: string; date: string };
+const entries: Entry[] = [];
+for (const col of collections) {
+  const all = await getCollection(col as any);
+  for (const e of all as any[]) {
+    if (e.data.vendor !== 'google') continue;
+    if (e.data.product !== product) continue;
+    if (e.data.status !== 'published') continue;
+    const fullSlug = e.id.replace(/\.mdx?$/, '');
+    const shortSlug = fullSlug.replace(new RegExp(`^google-${product}-`), '');
+    entries.push({
+      num: e.data.sectionNumber,
+      title: e.data.title,
+      href: `/google/${product}/${shortSlug}/`,
+      description: e.data.description,
+      state: e.data.verificationState,
+      date: e.data.lastReviewedAt,
+    });
+  }
+}
+entries.sort((a, b) => a.num.localeCompare(b.num));
+
+const sourcedCount = entries.filter(e => e.state === 'sourced').length;
+const triedCount = entries.filter(e => e.state === 'tried' || e.state === 'verified').length;
+const plannedCount = entries.filter(e => e.state === 'planned' || e.state === 'disputed').length;
+---
+
+<BaseLayout
+  title={`${meta.title} · Google — Claw`}
+  description={meta.description}
+  ogImage="/og/home.png"
+>
+  <section class="product-hub">
+    <div class="crumb">
+      <a href="/google/">Google</a>
+      <span>/</span>
+      <span class="num">{meta.code}</span>
+    </div>
+
+    <h1>{meta.title}</h1>
+    <p class="lede" set:html={meta.lede}></p>
+
+    <div class="counts">
+      <span class="count-pill count-sourced"><strong>{sourcedCount}</strong> sourced</span>
+      {triedCount > 0 && <span class="count-pill count-tried"><strong>{triedCount}</strong> tried</span>}
+      {plannedCount > 0 && <span class="count-pill count-planned"><strong>{plannedCount}</strong> planned</span>}
+    </div>
+
+    {entries.length === 0 ? (
+      <p class="empty">No entries yet. Batch C is mid-build — check back shortly.</p>
+    ) : (
+      <ul class="entries">
+        {entries.map(e => (
+          <li class="entry-row">
+            <a href={e.href}>
+              <div class="entry-line">
+                <span class="entry-num">{e.num}</span>
+                <span class="entry-title">{e.title}</span>
+                <span class={`entry-state state-${e.state}`}>{e.state}</span>
+              </div>
+              <p class="entry-desc">{e.description}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .product-hub { max-width: 760px; }
+
+  .crumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    letter-spacing: var(--ls-wide);
+  }
+  .crumb a { color: var(--ink-mute); text-decoration: none; }
+  .crumb a:hover { color: var(--claw); }
+  .crumb .num { color: var(--claw); font-weight: 600; }
+
+  .product-hub h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    max-width: 680px;
+    margin-bottom: 20px;
+  }
+  .lede :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .lede :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
+  .lede :global(strong) { color: var(--ink); font-weight: 700; }
+  .lede :global(code) {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  .counts {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .count-pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-wide);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    background: var(--canvas);
+    text-transform: uppercase;
+  }
+  .count-pill strong { font-weight: 700; }
+  .count-sourced { color: var(--amber); }
+  .count-tried { color: var(--olive); }
+  .count-planned { color: var(--claw); }
+
+  .empty {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    color: var(--ink-mid);
+    font-size: 14px;
+  }
+
+  .entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .entry-row {
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .entry-row a {
+    display: block;
+    padding: 16px 0;
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--dur-base) var(--ease);
+  }
+  .entry-row a:hover {
+    background: var(--paper-warm);
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .entry-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .entry-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    letter-spacing: var(--ls-wide);
+  }
+  .entry-title {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    flex: 1;
+  }
+  .entry-state {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: 600;
+    background: var(--canvas);
+  }
+  .state-sourced { color: var(--amber); }
+  .state-tried, .state-verified { color: var(--olive); }
+  .state-planned, .state-disputed { color: var(--claw); }
+  .entry-desc {
+    font-size: 13.5px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+    margin: 6px 0 0;
+  }
+
+  @media (max-width: 640px) {
+    .product-hub h1 { font-size: 26px; }
+    .lede { font-size: 15px; }
+  }
+</style>

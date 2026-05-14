@@ -1,0 +1,153 @@
+---
+title: "Vertex AI Agents vs Gemini API direct"
+section: "Vertex AI Agents"
+sectionNumber: "VAI.4"
+description: "When to use Vertex AI Agents (the production agent platform on Google Cloud) vs Gemini API direct (ai.google.dev with an API key). Same SDK, different client init, very different operational footprint. Decision matrix, code difference, migration path."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from ai.google.dev/gemini-api/docs/migrate-to-cloud, cloud.google.com/vertex-ai/generative-ai/docs/learn/overview, and platform pricing pages (15 May 2026). Sush hasn't deployed to either platform yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://ai.google.dev/gemini-api/docs/migrate-to-cloud"
+  - "https://cloud.google.com/vertex-ai/generative-ai/docs/learn/overview"
+  - "https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing"
+  - "https://github.com/googleapis/python-genai"
+vendor: "google"
+product: "vertex-ai-agents"
+---
+
+## The headline
+
+> **Most developers should use the Gemini Developer API unless there is a need for specific enterprise controls.** — Google's own migration guide
+
+That's the rule of thumb. Below is the full decision matrix.
+
+## Code difference (minimal — same SDK, different init)
+
+```python
+from google import genai
+
+# --- Gemini API direct (ai.google.dev) ---
+client = genai.Client()
+# picks up GEMINI_API_KEY from env
+
+# --- Vertex AI / Gemini Enterprise Agent Platform ---
+client = genai.Client(
+    vertexai=True,
+    project="your-project-id",
+    location="us-central1",
+)
+# uses Application Default Credentials / service account / Workload Identity
+```
+
+**Both use the same `google-genai` package** (`@google/genai` for JS, `google.golang.org/genai` for Go). Same `client.models.generate_content(...)` shape. Same response objects. Same function calling, same tool use, same structured output.
+
+The SDK *call shape* migration is one constructor line — but the operational migration (auth model, billing, IAM, regional choice, quotas, data handling) is more involved. Plan for both.
+
+## Decision matrix
+
+| Dimension | Gemini API direct (ai.google.dev) | Vertex AI / Gemini Enterprise Agent Platform |
+|---|---|---|
+| **Auth** | API key (`GEMINI_API_KEY`) | Service accounts, ADC, Workload Identity, Agent Identity — **no API keys** |
+| **Target user** | Individual developers, prototypes, consumer apps | Enterprise engineering teams, production workloads |
+| **When to use** | Fastest path to a working prototype or simple production app; no enterprise controls needed | Need compliance, data residency, audit, or enterprise models |
+| **Regions** | Global (no region selection) | 30+ specific regions; data stays in chosen region |
+| **Data residency** | None — data processed on Google's global infra | VPC-SC, CMEK, Access Transparency, FedRAMP High available |
+| **Models available** | Gemini family only (Pro, Flash, Flash-Lite, 2.0/2.5/3 generations) | 200+ via Model Garden — Gemini + Anthropic Claude + Llama + Mistral + Gemma + custom |
+| **Pricing** | Pay per token only (simple) | Pay per token + optional Agent Runtime compute + sessions + memory bank |
+| **Agent Runtime** | ❌ Not available | ✅ Sessions, Memory Bank, Code Execution sandbox, observability |
+| **Compliance** | No formal certifications | HIPAA, SOC 2, FedRAMP High (Plus tier) |
+| **VPC-SC** | ❌ | ✅ |
+| **CMEK (Customer-Managed Encryption Keys)** | ❌ | ✅ |
+| **Audit logging** | ❌ | ✅ Cloud Audit Logs |
+| **A2A Protocol native integration** | ❌ | ✅ ADK native |
+| **MCP server registry** | ❌ | ✅ Agent Registry catalogues them |
+| **Tuned models from AI Studio** | ✅ | ❌ (must be retrained in Vertex) |
+| **Ops maturity** | Lower — you manage scaling yourself | Higher — managed serverless runtime |
+| **Setup complexity** | Low (API key + pip install) | Medium (GCP project, IAM, ADC setup) |
+| **Free tier** | Generous, rate-limited | $300 GCP credit (new accounts); Agent Runtime: 50 vCPU-hr + 100 GiB-hr free / month |
+| **Free-tier data use** | May be used to improve products (free tier) / not used (paid tier) | **Never** used for training |
+
+## Choose Vertex AI when
+
+- Data must stay in a specific GCP region (residency requirement)
+- You need VPC-SC, CMEK, audit trails, or HIPAA / FedRAMP High
+- You need models beyond Gemini (Claude, Llama, custom endpoints)
+- You're deploying agents with sessions / memory at scale
+- Your org has a GCP-native security posture (service accounts, Workload Identity)
+- You need a managed serverless runtime so you're not maintaining a Kubernetes cluster
+- You want native A2A protocol support
+- You're building for an org-wide Agent Registry / catalogue
+
+## Choose Gemini API direct when
+
+- Prototyping or building consumer apps
+- No enterprise compliance requirements
+- You want the simplest possible setup (API key + pip install)
+- Cost predictability is paramount (token-only billing, no runtime overhead)
+- You're a solo developer / small team without GCP-side ops
+- You want the most generous free tier (Flash and Flash-Lite are free with rate limits)
+
+## What's the same
+
+These work identically across both:
+
+- **The `google-genai` SDK** (Python / TS / Go / Java / C#)
+- **Function calling** (single, multi-turn, parallel, sequential, automatic in Python)
+- **Google Search grounding** (with `groundingMetadata`)
+- **Code execution** (sandboxed Python tool inside the model)
+- **Structured output** (JSON schemas with constrained decoding)
+- **Files API**, **Context Caching**
+- **Long context** (1M tokens on the top-tier models)
+- **Safety settings** (4 categories, 5 thresholds)
+- **Streaming**, **Live API** for real-time voice / video
+
+## What only Vertex AI gives you
+
+- **Agent Runtime** — managed serverless deploy of ADK agents
+- **Sessions** — persistent conversation state, billed at $0.25 per 1,000 events
+- **Memory Bank** — cross-session long-term user memory
+- **Agent Identity** — SPIFFE-based per-agent auth (mTLS-bound)
+- **Agent Gateway** — policy enforcement / security proxy
+- **Agent Registry** — org-wide catalogue of agents, tools, MCP servers
+- **Agent Studio** — low-code visual canvas for designing agents
+- **Agent Garden** — prebuilt agent templates
+- **Gemini Enterprise app** — out-of-box employee-facing AI assistant surface
+- **Model Garden** — 200+ models from multiple vendors
+
+## What only Gemini API direct gives you
+
+- **Generous free tier on multiple models** (Flash, Flash-Lite, Live, TTS)
+- **AI Studio fine-tuning** — though this is deprecated as of May 2025; effectively no fine-tuning anywhere on the consumer API now
+- **No GCP project required** for the simplest auth path
+- **Global endpoint** — no region picking required
+- **AI Studio prompt sharing** via Drive
+
+## Migration path — when you're ready to move
+
+The natural progression:
+
+1. **Prototype on Gemini API direct** — fastest. API key in 30 seconds, free tier.
+2. **Hit your scale / compliance ceiling** — too many tokens, regional residency required, customer asks for SOC 2.
+3. **Migrate the constructor** — single line change for the SDK call. Your `generate_content`, `chats`, `files`, `tools` code is identical. The operational migration (auth, billing, IAM, region) is more involved.
+4. **Adopt Vertex-only features incrementally** — sessions, memory bank, Agent Runtime deploy, Agent Identity. Each is opt-in.
+
+The reverse migration (Vertex → Gemini API direct) also works for the SDK calls, but you lose Agent Runtime / sessions / memory bank — those are Vertex-only.
+
+## Honest take
+
+For most developers building LLM apps in 2026, the right answer is:
+
+- **Start with Gemini API direct.** Free tier, fast setup, cleaner code path.
+- **Move to Vertex when an outside force requires it.** Compliance ask, customer SOC 2 questionnaire, data residency law, multi-vendor model needed, scale where Agent Runtime would meaningfully simplify ops.
+
+The trap is reaching for Vertex AI on day 1 because it sounds more "enterprise." If you don't need any of the controls, you've added complexity (GCP project, service accounts, ADC) without gaining anything you couldn't have got by starting simple.
+
+The complementary trap is staying on Gemini API direct after the customer asks for SOC 2 or VPC-SC. The SDK-shape migration is one constructor line, but the operational migration (auth, region, billing, IAM) takes work — write to the SDK now so the SDK side is free when you need to switch.
+
+## What's next
+
+- [§VAI.1 Overview](/google/vertex-ai-agents/overview/) — the three-layer Vertex AI Agents stack
+- [§VAI.2 Concepts](/google/vertex-ai-agents/concepts/) — what's in each layer
+- [§VAI.3 First agent](/google/vertex-ai-agents/first-agent/) — end-to-end ADK + Agent Runtime walkthrough
+- [§GAPI.1 Gemini API](/google/gemini-api/overview/) — the lighter-weight alternative

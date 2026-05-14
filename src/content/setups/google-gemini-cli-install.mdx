@@ -1,0 +1,142 @@
+---
+title: "Install Gemini CLI"
+section: "Gemini CLI"
+sectionNumber: "GCL.2"
+description: "Three install paths for Gemini CLI — npm (the canonical one), Homebrew, MacPorts — plus an Anaconda fallback for restricted enterprise environments. Plus what's pre-installed in Cloud Shell, system requirements, and the three release channels."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from the github.com/google-gemini/gemini-cli README and geminicli.com installation docs (15 May 2026). Sush hasn't run any of these commands himself yet — verify the version output once you do."
+lastReviewedAt: "2026-05-15"
+environment: "other"
+runtimeVersion: "v0.42.0 (stable channel, May 2026)"
+sources:
+  - "https://github.com/google-gemini/gemini-cli"
+  - "https://www.geminicli.com/docs/get-started/installation"
+  - "https://github.com/google-gemini/gemini-cli/blob/main/docs/changelogs/latest.md"
+vendor: "google"
+product: "gemini-cli"
+---
+
+## System requirements
+
+Before you install, check:
+
+- **Node.js 20.0.0 or later.** Enforced in the package's `engines` field. Older Node versions will refuse to install.
+- **Operating system:** macOS 15+, Windows 11 24H2+, or Ubuntu 20.04+. Native Windows is supported (not just WSL).
+- **Shell:** Bash, Zsh, or PowerShell.
+- **Disk:** small (under 200 MB after install).
+
+If you're on a corporate Mac and `node --version` shows 18 or 19, install a current Node — `brew install node` or use [Volta](https://volta.sh) / [nvm](https://github.com/nvm-sh/nvm).
+
+## Install paths
+
+### 1. npm (the canonical path)
+
+```bash
+npm install -g @google/gemini-cli
+gemini --version
+```
+
+This is the path the official README leads with. It works everywhere Node 20+ does — macOS, Linux, native Windows, WSL2.
+
+### 2. Run without installing — `npx`
+
+```bash
+npx @google/gemini-cli
+```
+
+Useful if you just want to try it without polluting your global npm packages.
+
+### 3. Homebrew (macOS / Linuxbrew)
+
+```bash
+brew install gemini-cli
+```
+
+The Homebrew formula tracks the stable channel. Run `brew upgrade gemini-cli` to update.
+
+### 4. MacPorts (macOS only)
+
+```bash
+sudo port install gemini-cli
+```
+
+### Restricted enterprise environments — Anaconda fallback
+
+If your laptop is locked down and `npm install -g` fails (no admin / no global write), install Node into a Conda env first, then npm-install Gemini CLI inside it:
+
+```bash
+conda create -y -n gemini_env -c conda-forge nodejs
+conda activate gemini_env
+npm install -g @google/gemini-cli
+```
+
+The CLI then lives inside the env — `conda activate gemini_env` before each session.
+
+> **Heads-up:** there's no standalone binary download path published for end users. The `build:binary` script exists in the repo (Node.js Single Executable Application support) but is an internal build tool, not a public artefact. If you want a no-Node-required experience, the Docker image (`ghcr.io/google/gemini-cli:latest`) is the closest thing — but it's intended for sandboxing, not as a primary install path. See [GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) for context.
+
+## Pre-installed environments
+
+You don't need to install Gemini CLI in these — it's already there:
+
+- **Google Cloud Shell** (the in-browser shell at `console.cloud.google.com`)
+- **Cloud Workstations** (Google's managed dev environments)
+
+In both, sign in with the active Google account and you're authenticated automatically through Application Default Credentials.
+
+## Three release channels
+
+Gemini CLI ships on three concurrent channels. The npm package tag controls which one you get.
+
+| Channel | Tag | Schedule | Install command |
+|---|---|---|---|
+| **Stable** | `@latest` (default) | Each Tuesday, 20:00 UTC | `npm install -g @google/gemini-cli` |
+| **Preview** | `@preview` | Each Tuesday, 23:59 UTC | `npm install -g @google/gemini-cli@preview` |
+| **Nightly** | `@nightly` | Daily, 00:00 UTC | `npm install -g @google/gemini-cli@nightly` |
+
+The README's marketing line about "Powerful Gemini 3 models" refers to **preview-channel** access — `gemini-3-pro-preview`, `gemini-3.1-pro-preview`, `gemini-3-flash-preview`. The **stable channel defaults to `gemini-2.5-pro`**. If you install the default and expect Gemini 3 by default, you'll be surprised. To switch to Gemini 3 models, either install the preview channel or switch model mid-session: `gemini -m gemini-3-pro-preview`.
+
+The current stable release at the time of writing was around **v0.42** (mid-May 2026); nightly was `0.44.0-nightly.20260512`. Verify the exact stable number with `npm show @google/gemini-cli version` before depending on it.
+
+## Verifying the install
+
+```bash
+gemini --version
+gemini --help
+```
+
+Then start an interactive session:
+
+```bash
+gemini
+```
+
+You'll be prompted to choose an authentication method. The simplest (and what most personal users want) is "Sign in with Google" — see [GCL.3 Auth](/google/gemini-cli/auth/) for the full breakdown.
+
+## Updating
+
+| Install path | Update command |
+|---|---|
+| npm | `npm install -g @google/gemini-cli@latest` |
+| Homebrew | `brew upgrade gemini-cli` |
+| MacPorts | `sudo port upgrade gemini-cli` |
+| Conda env | `conda activate gemini_env && npm install -g @google/gemini-cli@latest` |
+
+## Uninstalling
+
+```bash
+npm uninstall -g @google/gemini-cli
+brew uninstall gemini-cli       # if installed via brew
+```
+
+Config and credentials live in `~/.gemini/`. Remove that directory if you want a clean reset:
+
+```bash
+rm -rf ~/.gemini
+```
+
+## What's next
+
+- [§GCL.3 Auth](/google/gemini-cli/auth/) — picking a sign-in method (Google OAuth · Gemini API key · Vertex AI · Code Assist)
+- [§GCL.6 MCP integration](/google/gemini-cli/mcp/) — wiring Gemini CLI to filesystems, GitHub, databases via MCP servers
+- [§GCL.5 Pitfalls](/google/gemini-cli/pitfalls/) — sandbox-off-by-default, Windows `icacls` persistence, tool loop issue

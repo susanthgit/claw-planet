@@ -1,0 +1,120 @@
+---
+title: "AI Studio vs the Gemini API"
+section: "AI Studio"
+sectionNumber: "STUD.2"
+description: "Three things people often confuse — Google AI Studio (the playground UI), the Gemini API (what AI Studio talks to), and Vertex AI Studio (a different product entirely, inside the Cloud Console). When to use which, and how they relate."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from ai.google.dev/aistudio, ai.google.dev/gemini-api/docs, and cloud.google.com/vertex-ai/generative-ai/docs/migrate/migrate-google-ai (15 May 2026). Sush hasn't used Vertex AI Studio in production."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://aistudio.google.com"
+  - "https://ai.google.dev/aistudio"
+  - "https://ai.google.dev/gemini-api/docs"
+  - "https://cloud.google.com/vertex-ai/generative-ai/docs/migrate/migrate-google-ai"
+vendor: "google"
+product: "ai-studio"
+---
+
+## Three things, easily confused
+
+| | **Google AI Studio** | **Gemini API** | **Vertex AI Studio** |
+|---|---|---|---|
+| What it is | A web playground UI | A programmatic API | A *different* web playground UI |
+| Where it lives | aistudio.google.com | `generativelanguage.googleapis.com` (REST) | console.cloud.google.com (Cloud Console) |
+| Auth | Google account → API key | API key (or ADC for Vertex variant) | Google Cloud auth (service accounts, ADC) |
+| Sign-up cost | None | None for the API key | GCP account + billing terms |
+| Free tier | Yes (uses Gemini API free tier) | Yes (rate-limited) | $300 GCP credit for new users only |
+| Models accessible | Google models only | Google models only (via ai.google.dev) OR 200+ via Vertex | Google + 200+ third-party (Model Garden) |
+| Fine-tuning | ❌ Deprecated May 2025 | ❌ Deprecated May 2025 | ✅ Supported (Gemini Enterprise Agent Platform) |
+| MLOps surface | ❌ None | ❌ None | ✅ Full (Model Monitoring, Registry, Eval) |
+| Compliance | ❌ No HIPAA / SOC 2 | ❌ Same | ✅ HIPAA, SOC 2, CMEK, data residency |
+| Regional endpoints | ❌ Global only | ❌ Global only | ✅ Regional endpoints |
+| Prompt storage | Google Drive (`AI_Studio` folder) | n/a (you store your own) | Vertex AI Prompt Management |
+
+## The simplest way to think about them
+
+- **Google AI Studio is a UI** for testing prompts and exporting code. It calls the Gemini API under the hood.
+- **The Gemini API is the actual API** you call from your code. You can call it directly without ever opening AI Studio (though the API key likely came from there).
+- **Vertex AI Studio is a different UI for a different product** (Gemini on Vertex / Gemini Enterprise Agent Platform). Same models underneath, different auth + ops + compliance posture.
+
+In code, the difference between "Gemini API direct" and "Vertex" is one constructor line:
+
+```python
+from google import genai
+
+# Gemini API direct (what AI Studio uses)
+client = genai.Client()                                         # GEMINI_API_KEY env var
+
+# Vertex AI (what Vertex AI Studio uses)
+client = genai.Client(vertexai=True, project="proj", location="us-central1")
+```
+
+Same SDK, same methods, different cloud, different auth.
+
+## When to use AI Studio (the playground)
+
+- You're prototyping a prompt and want fast feedback
+- You're testing what a mixed input (image + PDF + audio) looks like
+- You want to feel out the Live API before writing WebSocket code
+- You want a working code snippet exported in Python / Node / Go / Java / REST
+- You want to share a prompt link with someone
+
+## When to use the Gemini API directly (no AI Studio)
+
+- You're past prototyping and have your code written
+- You're running automated tasks where a UI doesn't help
+- You're integrating with a CI runner, a Lambda, a server-side process
+- You've already exported the snippet from AI Studio and don't need the playground anymore
+
+## When to use Vertex AI Studio (the Cloud Console UI)
+
+- You're already operating on Google Cloud and want everything inside one console
+- You need access to the Model Garden (Claude, Llama, Mistral, etc.)
+- You need MLOps tooling (Prompt Management, Model Registry, Eval)
+- You need Vertex's compliance / regional / VPC-SC features visible in the playground itself
+- You're tuning a model (still possible in Vertex, deprecated on AI Studio)
+
+## A note on "Studio" naming
+
+Google has at least three products with "Studio" in the name as of mid-2026:
+
+- **Google AI Studio** — the consumer Gemini API playground (`aistudio.google.com`)
+- **Vertex AI Studio** — the Cloud Console Gemini playground (inside `console.cloud.google.com`)
+- **Agent Studio** — the no-code agent designer inside Vertex AI Agents / Gemini Enterprise Agent Platform
+
+These are three distinct surfaces. AI Studio and Vertex AI Studio are *playgrounds for prompting Gemini*, but with different auth and feature sets. Agent Studio is for *designing agents*, not prompting models. Don't conflate them in conversation — the audiences are different.
+
+## Migration paths
+
+### From AI Studio to Vertex AI Studio
+
+The migration page is `cloud.google.com/vertex-ai/generative-ai/docs/migrate/migrate-google-ai`. Steps:
+
+1. Download your saved prompts from the `AI_Studio` Drive folder
+2. Import into Vertex AI Studio's Prompt Management
+3. Replace `genai.Client()` with `genai.Client(vertexai=True, project=..., location=...)` in any exported code
+4. Set up Application Default Credentials (`gcloud auth application-default login`)
+5. Test against the same prompts on the Vertex side
+
+The migration cost is genuinely low because the SDK is the same.
+
+### From AI Studio to Vertex AI Agents
+
+If you've outgrown "single prompt" and need a multi-tool agent with sessions and memory, you don't migrate AI Studio — you start [building with ADK](/google/vertex-ai-agents/first-agent/). AI Studio doesn't have an agent surface beyond the experimental Build tab.
+
+## Honest take
+
+The three "Studios" naming is a documentation hazard for new readers — three different products, two of them playgrounds for the same model family, one for a completely different concern (agent design). The differences are real and important, but you wouldn't guess them from the names alone.
+
+For most developers in 2026:
+
+- **Start in Google AI Studio.** Free, no setup, fastest path to a working prompt.
+- **Move to writing code with the Gemini API SDK** as soon as your prompt is stable. AI Studio is a tool, not a runtime.
+- **Reach for Vertex AI Studio only when you need what Vertex offers** — Model Garden's third-party models, MLOps, compliance, regional residency. If you don't need those, the extra setup is friction.
+
+## What's next
+
+- [§STUD.1 AI Studio overview](/google/ai-studio/overview/) — what AI Studio actually does
+- [§GAPI.1 Gemini API overview](/google/gemini-api/overview/) — the API that AI Studio calls
+- [§VAI.4 Vertex AI vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) — the broader decision matrix

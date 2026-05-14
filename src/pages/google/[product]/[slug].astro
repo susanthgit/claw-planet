@@ -1,0 +1,325 @@
+---
+/**
+ * /google/[product]/[slug]/ — entry renderer for Google content.
+ *
+ * Pulls entries tagged vendor:"google" + product:<product> from the shared
+ * content collections (explainers, setups, use-cases, gotchas). The short URL
+ * slug is derived by stripping the `google-<product>-` prefix from the file id.
+ *
+ * Mirrors /openai/[product]/[slug].astro from Batch B so the visual shell
+ * stays identical across vendors.
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import EntryFooter from '@components/EntryFooter.astro';
+import VerificationBanner from '@components/VerificationBanner.astro';
+import { getCollection, render } from 'astro:content';
+import { getReadingTime, getSchemaOrgArticle } from '@utils/entry-helpers';
+
+const PRODUCT_LABEL: Record<string, string> = {
+  'gemini-cli': 'Gemini CLI',
+  'gemini-api': 'Gemini API',
+  'notebooklm': 'NotebookLM',
+  'vertex-ai-agents': 'Vertex AI Agents',
+  'ai-studio': 'AI Studio',
+  'gems': 'Gems',
+};
+
+const COLLECTIONS = ['explainers', 'setups', 'use-cases', 'gotchas'] as const;
+
+export async function getStaticPaths() {
+  const paths: any[] = [];
+  for (const col of ['explainers', 'setups', 'use-cases', 'gotchas']) {
+    const all = await getCollection(col as any);
+    for (const e of all as any[]) {
+      if (e.data.vendor !== 'google') continue;
+      if (!e.data.product) continue;
+      if (e.data.status !== 'published') continue;
+      const fullSlug = e.id.replace(/\.mdx?$/, '');
+      const prefix = `google-${e.data.product}-`;
+      if (!fullSlug.startsWith(prefix)) continue;
+      const shortSlug = fullSlug.slice(prefix.length);
+      paths.push({
+        params: { product: e.data.product, slug: shortSlug },
+        props: { entry: e, collection: col },
+      });
+    }
+  }
+  return paths;
+}
+
+const { entry, collection } = Astro.props;
+const { product, slug } = Astro.params;
+const { Content, headings } = await render(entry);
+
+const tocItems = headings
+  .filter((h) => h.depth >= 2 && h.depth <= 3)
+  .map((h) => ({ id: h.slug, text: String(h.text).replace(/#s*$/, '').trim(), level: h.depth }));
+
+const productLabel = PRODUCT_LABEL[product as string] ?? product;
+const productHref = `/google/${product}/`;
+
+const productEntries: any[] = [];
+for (const col of COLLECTIONS) {
+  const all = await getCollection(col as any);
+  for (const e of all as any[]) {
+    if (e.data.vendor !== 'google' || e.data.product !== product || e.data.status !== 'published') continue;
+    productEntries.push(e);
+  }
+}
+productEntries.sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
+const idx = productEntries.findIndex((e) => e.id === entry.id);
+function shape(e: any) {
+  if (!e) return null;
+  const fullSlug = e.id.replace(/\.mdx?$/, '');
+  const shortSlug = fullSlug.replace(new RegExp(`^google-${product}-`), '');
+  return {
+    title: e.data.title,
+    sectionNumber: e.data.sectionNumber,
+    href: `${productHref}${shortSlug}/`,
+  };
+}
+const prev = idx > 0 ? shape(productEntries[idx - 1]) : null;
+const next = idx < productEntries.length - 1 ? shape(productEntries[idx + 1]) : null;
+
+const readingTime = getReadingTime(entry.body);
+const entryUrl = new URL(`${productHref}${slug}/`, Astro.site).toString();
+const schemaJsonLd = getSchemaOrgArticle({
+  entry,
+  url: entryUrl,
+  sectionName: `${productLabel} · Google`,
+});
+
+const entryFile = `src/content/${collection}/${entry.id}`;
+const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`;
+---
+
+<BaseLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  entryFile={entryFile}
+  lastUpdated={entry.data.lastReviewedAt}
+  schemaJsonLd={schemaJsonLd}
+  ogImage={`/og/home.png`}
+  margin={{ tocItems }}
+>
+  <article class="entry-page">
+    <header class="entry-header">
+      <div class="crumb">
+        <a href="/google/">Google</a>
+        <span>/</span>
+        <a href={productHref}>{productLabel}</a>
+        <span>/</span>
+        <span class="num">{entry.data.sectionNumber}</span>
+        {readingTime && <span class="reading-time">· {readingTime}</span>}
+      </div>
+      <h1>{entry.data.title}</h1>
+      <p class="lede">{entry.data.description}</p>
+      <VerificationBanner
+        state={entry.data.verificationState}
+        lastReviewedAt={entry.data.lastReviewedAt}
+        lastTestedAt={entry.data.lastTestedAt}
+        customNote={entry.data.verificationNote}
+      />
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {entry.data.sources && entry.data.sources.length > 0 && (
+      <section class="sources">
+        <h3>Sources</h3>
+        <ul>
+          {entry.data.sources.map((src: string) => (
+            <li><a href={src} target="_blank" rel="noopener">{src}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <EntryFooter prev={prev} next={next} related={[]} />
+
+    <footer class="entry-foot">
+      <a href={editHref} target="_blank" rel="noopener">edit this page on GitHub →</a>
+      <a href="https://github.com/susanthgit/claw-planet/issues/new" target="_blank" rel="noopener">dispute or correct →</a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .entry-page { max-width: 760px; }
+
+  .entry-header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 28px;
+    margin-bottom: 32px;
+  }
+  .crumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    letter-spacing: var(--ls-wide);
+    flex-wrap: wrap;
+  }
+  .crumb a { color: var(--ink-mute); text-decoration: none; }
+  .crumb a:hover { color: var(--claw); }
+  .crumb .num { color: var(--claw); font-weight: 600; }
+  .crumb .reading-time { color: var(--ink-faint); }
+
+  .entry-page h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--ink-mid);
+    line-height: 1.55;
+    max-width: 640px;
+    margin-bottom: 18px;
+  }
+
+  .prose :global(h2) {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 36px 0 12px;
+    color: var(--ink);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .prose :global(h3) {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 28px 0 8px;
+    color: var(--ink);
+  }
+  .prose :global(p) {
+    margin: 12px 0;
+    line-height: var(--lh-normal);
+    color: var(--ink);
+  }
+  .prose :global(ul), .prose :global(ol) {
+    margin: 12px 0 12px 24px;
+    line-height: var(--lh-normal);
+  }
+  .prose :global(li) { margin: 4px 0; color: var(--ink); }
+  .prose :global(strong) { color: var(--ink); font-weight: 700; }
+  .prose :global(em) { color: var(--ink-mid); }
+  .prose :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .prose :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
+
+  .prose :global(blockquote) {
+    margin: 18px 0;
+    padding: 12px 18px;
+    border-left: 3px solid var(--claw);
+    background: var(--claw-tint);
+    font-style: italic;
+    color: var(--ink-mid);
+  }
+  .prose :global(blockquote p) { margin: 4px 0; }
+
+  .prose :global(code) {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .prose :global(pre) {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--canvas);
+    border: 1px solid var(--rule-faint);
+    padding: 14px 18px;
+    overflow-x: auto;
+    line-height: 1.5;
+    margin: 16px 0;
+  }
+  .prose :global(pre code) { background: transparent; padding: 0; }
+
+  .prose :global(table) {
+    margin: 18px 0;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    width: 100%;
+  }
+  .prose :global(thead) { border-bottom: 2px solid var(--rule); }
+  .prose :global(th) {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .prose :global(td) {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rule-faint);
+    color: var(--ink-mid);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+
+  .sources {
+    margin-top: 36px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .sources h3 {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .sources ul {
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .sources li {
+    padding: 4px 0;
+    font-size: 13px;
+  }
+  .sources a {
+    color: var(--ink-mid);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    word-break: break-all;
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+  }
+  .sources a:hover { color: var(--claw); border-color: var(--claw); }
+
+  .entry-foot {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule-faint);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .entry-foot a {
+    color: var(--ink-mute);
+    text-decoration: none;
+  }
+  .entry-foot a:hover { color: var(--claw); }
+</style>

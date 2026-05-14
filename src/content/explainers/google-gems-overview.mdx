@@ -1,0 +1,150 @@
+---
+title: "Gems, plainly"
+section: "Gems"
+sectionNumber: "GEM.1"
+description: "Gems are custom Gemini personalities you build inside the Gemini chat app — the no-code Custom-GPT analogue. What they are, the five premade Gems Google ships, the Magic Wand instruction-rewriter, knowledge files, what's gated to paid tiers, and how Gems differ from OpenAI Custom GPTs."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from support.google.com/gemini/answer/15236405, gemini.google.com/app/gems, blog.google/products/gemini/google-gems-tips (15 May 2026). Sush hasn't built a custom Gem himself yet — page flips to tried after his next personal Gem."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://gemini.google.com/app/gems"
+  - "https://support.google.com/gemini/answer/15236405"
+  - "https://support.google.com/gemini/answer/15235603"
+  - "https://support.google.com/gemini/answer/15146780"
+  - "https://support.google.com/gemini/answer/16275805"
+  - "https://blog.google/products/gemini/google-gems-tips/"
+vendor: "google"
+product: "gems"
+---
+
+## The thirty-second version
+
+Gems are **custom AI helpers inside the Gemini chat app** — a saved persona / instruction set Gemini applies to every conversation with that Gem. Think of them as the **Gemini-app equivalent of [Custom GPTs](/openai/custom-gpts/overview/)**: no-code, chat-only, distributed via private link (no public marketplace).
+
+Three things to know:
+
+1. **They're now generally available** to most signed-in Gemini users (free, Plus, Pro, Ultra). The original September 2024 launch was Gemini Advanced / Business / Enterprise only — that gate has dropped.
+2. **Five premade Gems ship by default** — Brainstormer, Career guide, Coding partner, Learning coach, Writing editor. You can use these or copy them as a starting point for your own.
+3. **Custom Gems get a "Magic Wand" instruction rewriter** — write a sentence or two about what you want, click the wand, Gemini expands it into a full structured instruction set (Persona / Task / Context / Format).
+
+## How to create one
+
+1. Open [gemini.google.com](https://gemini.google.com)
+2. **Explore Gems** in the sidebar
+3. Click **+ New Gem**
+4. Fill in:
+   - **Name** — what you'll call it
+   - **Instructions** — Persona (who the Gem is), Task (what it does), Context (background it should know), Format (how to respond). Or write rough instructions and click the **"Use Gemini to re-write"** Magic Wand to expand them.
+   - **Knowledge files** (optional) — upload PDFs, Docs, etc. for the Gem to reference. Toggle "Disable knowledge citations" if you don't want footnotes.
+5. **Preview** in the right panel
+6. **Save**
+
+Once saved, the Gem appears in your Gem manager and is available in the Gemini mobile app **and** the Gemini sidebar in Google Workspace (Gmail, Docs, Sheets).
+
+## The five premade Gems
+
+| Gem | Purpose (per official docs / blog) |
+|---|---|
+| **Brainstormer** | "Inspire and spark creativity... brainstorm ideas for all sorts of things: gifts, party themes, story ideas, weekend activities" |
+| **Coding partner** | "Help me with tasks like writing code, fixing code, and understanding code" |
+| **Writing editor** | "Assist me in editing my writing... line-by-line edits and feedback on grammar, spelling, tense consistency, dialect, style, and structure" |
+| **Career guide** | Coaching for job interviews, career decisions |
+| **Learning coach** | General learning support — though the docs note it "doesn't currently support language learning" |
+
+Some premade Gems can be copied as a starting point for a custom Gem (look for the **Make a copy** option). Others can't be copied — Google doesn't always say which.
+
+## Tier matrix — what's available where (mid-2026)
+
+The Gemini plan names changed: "Gemini Advanced" was rebranded to **Google AI Pro**. Current tiers:
+
+| Feature | Basic (Free) | Google AI Plus | Google AI Pro | Google AI Ultra |
+|---|---|---|---|---|
+| Premade Gems | ✅ | ✅ | ✅ | ✅ |
+| Custom Gems (create) | ✅* | ✅ | ✅ | ✅ |
+| Gems with knowledge files | ✅ (file limits apply) | ✅ | ✅ higher limits | ✅ highest limits |
+| Model in Gems | Fast (Gemini 3 Flash) | Fast + Thinking (90/day) | Fast + Thinking (300/day) + Pro (100/day) | All models, Ultra limits |
+| Context window in chats | 32K | 128K | 1M | 1M |
+| Deep Research in Gems | 5 reports / month | 12 / day | 20 / day | 120 / day |
+| Canvas | ✅ | ✅ | ✅ | ✅ |
+| Image gen (Nano Banana 2) | 20 / day | 50 / day | 100 / day | 1,000 / day |
+| Video gen in chats | ❌ | 2 / day (Veo 3.1 Lite) | 3 / day (Veo 3.1 Lite) | 5 / day (Veo 3.1 Pro) |
+
+*Custom Gems are described as "generally available to most users" in current docs. The Sept 2024 launch was paid-tier only — that gate has dropped, but verify against your account before assuming.
+
+## What Gems can use
+
+Gems inherit Gemini's connected tools at your plan tier:
+
+- **Google Search**
+- **Google Maps**
+- **Deep Research** (multi-step web research; tier limits apply)
+- **Canvas** (collaborative editor)
+- **Image generation** (Nano Banana 2)
+- **Workspace integration** — Gmail, Docs, Drive, Calendar (when signed in to your Google account)
+
+What Gems **cannot** do:
+
+- **Custom Actions / API calls** — there's no equivalent of Custom GPT Actions where you wire your Gem to a REST API. For programmatic tool use, look at [function calling in the Gemini API](/google/gemini-api/tool-use/) or [ADK in Vertex AI Agents](/google/vertex-ai-agents/concepts/) instead.
+- **Be used with Gemini Live** — the live voice mode doesn't apply your Gem's instructions. (This is documented limitation.)
+
+## How Gems compare to OpenAI Custom GPTs
+
+| Dimension | **Google Gems** | **OpenAI Custom GPTs** |
+|---|---|---|
+| Host product | Gemini app (gemini.google.com) | ChatGPT (chatgpt.com) |
+| Free tier | ✅ Available to signed-in users | ✅ Available (limited) |
+| Premium for creation | Mostly no anymore | Plus / Team / Enterprise needed for creation |
+| Instructions | Structured (Persona / Task / Context / Format) + Magic Wand expansion | Free-text instructions |
+| Knowledge files | ✅ (limit not explicitly published) | ✅ Up to 20 files, 512 MB each |
+| Tools available | Google Search, Maps, Deep Research, Canvas, Workspace integration, image gen | Web search, image gen (DALL·E), code interpreter, Custom Actions (REST APIs) |
+| Custom Actions / APIs | ❌ Not available | ✅ Yes (OpenAPI-based) |
+| Public marketplace | ❌ No public store | ✅ GPT Store |
+| Sharing | ✅ Private link (recipient must interact to add) | ✅ Public or link |
+| Workspace integration | ✅ Appears in Gmail, Docs sidebar | ❌ |
+| Use with voice mode | ❌ Cannot use with Gemini Live | ✅ Custom GPTs work with voice mode |
+| Privacy on conversations | May be used to improve Google AI (opt-out via Gemini Apps Activity) | Paid: not used for training; Free: may be used |
+| Org-level shared Gems / GPTs | ✅ Workspace plans | ✅ Team / Enterprise GPTs |
+
+The closest equivalent comparison: **Gems are simpler and more integrated into Workspace; Custom GPTs expose more builder controls (especially Actions and marketplace distribution).** If you live in Google Workspace, Gems land in your existing tools. If you want to wire a chat agent to your CRM via a REST API, Custom GPTs (with Actions) is the path.
+
+## Sharing a Gem
+
+Click **Share** → get a link. The recipient receives the link; the Gem is **not** auto-added to their Gem manager until they interact with it. Manage your shared Gems at [gemini.google.com/sharing](https://gemini.google.com/sharing).
+
+There is **no public marketplace** for Gems — Google has not (as of mid-2026) shipped a "Gem Store" equivalent. Sharing is one-to-one or one-to-team via link.
+
+## Privacy — what's collected
+
+From Google's [Gemini Apps Privacy Hub](https://support.google.com/gemini/answer/13594961) (last updated March 2026):
+
+- **Collected:** Names and custom instructions of your Gems, plus all conversation content
+- **Used for:** Standard Google purposes including "maintain and improve our services" and "develop new services" — extending to "generative AI models and other machine-learning technologies"
+- **Human review:** Some data is reviewed by humans
+- **Retention:** Reviewed data is retained for **up to 3 years** even after you delete your Gemini Apps Activity
+
+This is materially different from [NotebookLM Enterprise](/google/notebooklm/enterprise/) (which has stronger no-training, no-review guarantees inside a GCP project). Gems live in the consumer Gemini app and are governed by Gemini Apps privacy.
+
+You can opt out of training via Gemini Apps Activity settings — but human review of feedback may still apply.
+
+## Honest take
+
+For Workspace-heavy users, Gems are useful — the Gem appears in the Gemini sidebar inside Gmail, Docs, and Sheets, so a "summarise client emails into action items" Gem becomes one click away inside Gmail. That cross-app integration is the standout vs Custom GPTs.
+
+The trade-offs are real:
+
+- **No Custom Actions** is a meaningful limitation if your dream is a Gem that hits your CRM, your project tracker, or your internal API
+- **No public marketplace** means there's no community-built catalogue of Gems to discover (compared to OpenAI's GPT Store)
+- **Privacy on the consumer tier is weaker** than the Workspace / Cloud Enterprise tiers of NotebookLM
+- **Gems can't be used with Gemini Live** — surprising and undocumented unless you go looking
+
+The closest equivalent comparison: **Gems are simpler and more integrated into Workspace; Custom GPTs expose more builder controls (especially Actions and marketplace distribution).** If you live in Google Workspace, Gems land in your existing tools. If you want to wire a chat agent to your CRM via a REST API, Custom GPTs (with Actions) is the path.
+
+For Sush specifically: a "Plain English explainer" Gem with the Brainstormer-shape instructions, knowledge file of his own writing samples, and the persona "answer in Sush's voice — no marketing words, plain English, honest take" would be a useful first experiment. Trial it; flip this page to `tried` after.
+
+## What's next
+
+- [§GEM.1](/google/gems/overview/) — you're here
+- [§NLM.1 NotebookLM](/google/notebooklm/overview/) — for source-grounded research instead of persona-shaped chat
+- [§GAPI.1 Gemini API](/google/gemini-api/overview/) — for the programmatic equivalent (function calling, system instructions in code)
+- [Custom GPTs comparison](/openai/custom-gpts/overview/) — the OpenAI side of the comparison

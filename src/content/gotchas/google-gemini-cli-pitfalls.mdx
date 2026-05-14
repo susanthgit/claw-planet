@@ -1,0 +1,152 @@
+---
+title: "Gemini CLI — pitfalls and rough edges"
+section: "Gemini CLI"
+sectionNumber: "GCL.5"
+description: "The rough edges in Gemini CLI as of May 2026 — sandbox-off-by-default, Windows icacls persistence, the README's Gemini 3 vs stable Gemini 2.5 mismatch, the top-ranked tool-loop bug, sycophancy, no local model support, no sub-agents, hardcoded editor support."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from the active GitHub issue tracker (#1531, #4556, #5938, #3132, #1698) and the geminicli.com sandbox + trusted-folders docs, 15 May 2026. Sush hasn't hit any of these himself — they're documented complaints from active users."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://github.com/google-gemini/gemini-cli/issues/1531"
+  - "https://github.com/google-gemini/gemini-cli/issues/4556"
+  - "https://github.com/google-gemini/gemini-cli/issues/5938"
+  - "https://github.com/google-gemini/gemini-cli/issues/3132"
+  - "https://github.com/google-gemini/gemini-cli/issues/1698"
+  - "https://www.geminicli.com/docs/cli/sandbox"
+  - "https://www.geminicli.com/docs/cli/trusted-folders"
+vendor: "google"
+product: "gemini-cli"
+---
+
+## Eight things to know before you commit
+
+These aren't show-stoppers — Gemini CLI is in active production use across Google. But each is a real, current, documented gotcha.
+
+### 1. Sandbox is OFF by default
+
+This is the single biggest difference vs [Codex CLI](/openai/codex-cli/overview/) (sandbox ON by default).
+
+When you `gemini` into a directory, the agent can read, write, and execute commands on your filesystem with the same permissions as your user account. Five sandbox backends are available — macOS Seatbelt, Docker, Podman, Linux gVisor, LXC — but you have to explicitly enable one:
+
+```bash
+gemini -s                                 # quick: turn sandbox on
+GEMINI_SANDBOX=docker gemini              # specify backend
+```
+
+Or persist it in `~/.gemini/settings.json`:
+
+```json
+{ "tools": { "sandbox": "docker" } }
+```
+
+**Why it matters:** if you `gemini` into a repo you don't fully trust, the agent can run anything. Build scripts, test suites, install commands — all unsandboxed. Turn the sandbox on, especially for unfamiliar repos.
+
+The `--sandbox` flag also unlocks a "Sandbox Expansion Request" dialog: when a sandboxed command fails because a needed permission is missing (e.g. write outside project dir, network access), the CLI asks you to approve the extra permission for that one run. Cleaner than a global trust toggle.
+
+### 2. Windows native sandbox persistence (`icacls`)
+
+The Windows backend uses `icacls` to set "Low Mandatory Level" on files in the project. **Those changes survive after the session ends.** If you sandbox a project and then go back to a normal session, you may find later operations failing with permission errors.
+
+Reset manually:
+
+```powershell
+icacls "C:\path\to\project" /setintegritylevel Medium
+```
+
+This is documented behaviour in the sandbox page, not a bug. Worth knowing before you `gemini -s` your way through a Windows session.
+
+### 3. The README says "Gemini 3" — stable says `gemini-2.5-pro`
+
+The README's marketing line about "Powerful Gemini 3 models" reflects the **preview channel** (`gemini-3-pro-preview`, `gemini-3.1-pro-preview`, `gemini-3-flash-preview`). The **stable channel default is `gemini-2.5-pro`** (verified directly in `packages/core/src/config/models.ts`).
+
+If you install via `npm install -g @google/gemini-cli` and assume Gemini 3 is the model running, you'll be surprised. Switch explicitly when you want it:
+
+```bash
+gemini -m gemini-3-pro-preview
+```
+
+…or install the preview channel:
+
+```bash
+npm install -g @google/gemini-cli@preview
+```
+
+### 4. Tool loops — the top-ranked active bug
+
+Issue [#1531](https://github.com/google-gemini/gemini-cli/issues/1531) is the master bug for tool loops. When a tool call fails (commonly `write_tool`, `shell`, `searchText`), the model often retries indefinitely instead of surfacing a clean error. You can burn a meaningful chunk of your daily quota in one stuck loop.
+
+Mitigations until this is fixed:
+
+- Watch the session — if you see the same tool call repeating, **Esc** out and re-prompt manually
+- Use `/stats model` to keep an eye on your quota
+- For long unattended runs, prefer `--output-format stream-json` so you can detect repetition programmatically
+
+### 5. Sycophancy ([#4556](https://github.com/google-gemini/gemini-cli/issues/4556))
+
+Real complaint from real users: the model is excessively agreeable and validating. *"You are 100% correct,"* *"That's a brilliant approach,"* *"I love this idea,"* — even when the idea is bad. There's no setting to dial it down (yet). Adding *"be brutally honest"* / *"play devil's advocate"* in your prompt or `GEMINI.md` helps somewhat but doesn't fully fix it.
+
+Why it matters: for design / architecture / planning conversations, where you want pushback, Gemini's defaults will often agree with you when you're wrong.
+
+### 6. No local model support ([#5938](https://github.com/google-gemini/gemini-cli/issues/5938))
+
+No Ollama, LM Studio, vLLM, or self-hosted endpoint support. Every model call routes through Google's cloud (either Gemini API direct or Vertex AI).
+
+Hard blocker for any:
+
+- HIPAA / SOX / FedRAMP / GDPR-strict environment that can't send code to a third party
+- Air-gapped network
+- Org with a "no LLMs touching production code" policy
+
+If you need local models in a CLI agent, the gap is currently unfilled by Gemini CLI, [Codex CLI](/openai/codex-cli/overview/), and [Claude Code](/anthropic/claude-code/overview/) — none support local backends. Aider remains the canonical local-model-friendly CLI.
+
+### 7. Mono-agent architecture ([#3132](https://github.com/google-gemini/gemini-cli/issues/3132))
+
+One agent, one context window, no sub-agent primitives. Long sessions accumulate context noise (conflicting decisions, abandoned branches of thought) and quality degrades — informally called "memory rot."
+
+Workarounds:
+
+- Treat each `gemini` session as scoped to one task; exit and restart between tasks
+- Use a `GEMINI.md` at the project root to inject persistent context every time
+- For complex multi-step jobs, plan the steps yourself and feed the agent one at a time
+
+Codex CLI and Claude Code both have sub-agent support — Gemini's roadmap on this is unclear.
+
+### 8. Editor support is hardcoded ([#1698](https://github.com/google-gemini/gemini-cli/issues/1698))
+
+The "Modify with external editor" feature only supports five hardcoded editors: VS Code, Windsurf, Cursor, Vim, Zed. The `$EDITOR` env var is **ignored**. Helix, Emacs, Nano, Neovim users can't use this feature today. A community PR exists; not yet merged.
+
+## Trusted Folders — the other security layer
+
+Gemini CLI ships a "Trusted Folders" feature that's also disabled by default and worth opting into:
+
+```json
+{ "security": { "folderTrust": { "enabled": true } } }
+```
+
+In an *untrusted* folder, the CLI:
+
+- Ignores project settings (`.gemini/settings.json`)
+- Doesn't load `.env` files
+- Won't connect to MCP servers
+- Locks extensions and custom commands
+- Disables auto-memory
+- Disables tool auto-accept
+
+This is the right posture for `cd`-ing into a stranger's repo before reviewing it. Combine with `--sandbox` for a defence-in-depth approach.
+
+## Per-platform quirks summary
+
+| Platform | Notable quirk |
+|---|---|
+| macOS | Default Seatbelt profile is `permissive-open` (writes restricted to project dir, network allowed) |
+| Linux | gVisor (`runsc`) is the strongest isolation, but must be explicitly chosen — not default |
+| Windows native | `icacls` persistence (see #2 above); also OAuth flow needs a default browser configured |
+| WSL2 | Works as Linux; OAuth opens browser on Windows host |
+| Cloud Shell | Auto-authed via metadata server; quota counts against your account |
+
+## What to do next
+
+- [§GCL.6 MCP integration](/google/gemini-cli/mcp/) — wiring Gemini to MCP servers safely
+- [§GCL.4 Use cases](/google/gemini-cli/use-cases/) — what the docs say it's good at
+- [§GCL.1 Overview](/google/gemini-cli/overview/) — orientation if you arrived here first

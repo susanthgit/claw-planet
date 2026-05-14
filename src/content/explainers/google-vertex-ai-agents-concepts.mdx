@@ -1,0 +1,242 @@
+---
+title: "Vertex AI Agents — concepts"
+section: "Vertex AI Agents"
+sectionNumber: "VAI.2"
+description: "The building blocks — Agent Development Kit (ADK) agent types (LlmAgent / WorkflowAgent / CustomAgent), built-in tools, MCP support, multi-agent composition, Agent Runtime sessions and memory bank, the Agent Identity SPIFFE-based auth model, and the A2A interop protocol."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from google.github.io/adk-docs, github.com/google/adk-python, and cloud.google.com/gemini-enterprise-agent-platform/scale pages (15 May 2026). Code shapes verified against the ADK Python README. Sush hasn't run any of this himself."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://google.github.io/adk-docs/"
+  - "https://github.com/google/adk-python"
+  - "https://github.com/google/adk-samples"
+  - "https://cloud.google.com/gemini-enterprise-agent-platform/scale/sessions"
+  - "https://cloud.google.com/gemini-enterprise-agent-platform/scale/runtime/agent-identity"
+  - "https://github.com/google-a2a/A2A"
+vendor: "google"
+product: "vertex-ai-agents"
+---
+
+## ADK — the build layer
+
+**Agent Development Kit (ADK)** is the open-source (Apache-2.0) framework you write agents in. Languages: **Python** (primary, most documented), **TypeScript / JavaScript**, **Go**, **Java**.
+
+Install (Python):
+
+```bash
+pip install google-adk
+# Optional extras:
+pip install "google-adk[extensions]"          # Full optional integrations (LiteLLM, Anthropic, LangGraph, Toolbox, etc.)
+pip install google-adk[toolbox]               # MCP database connectors
+pip install a2a-sdk                           # A2A protocol SDK
+```
+
+For deployment to Agent Runtime later, also:
+
+```bash
+pip install "google-cloud-aiplatform[agent_engines,adk]"
+```
+
+## The three agent types
+
+ADK gives you three primitives to compose:
+
+### 1. `LlmAgent` (alias: `Agent`)
+
+LLM-driven reasoning. The agent is an LLM with instructions, optional tools, and natural-language understanding. It decides what to do.
+
+```python
+from google.adk.agents import Agent   # alias for LlmAgent
+# or: from google.adk.agents.llm_agent import Agent
+
+def get_current_time(city: str) -> dict:
+    """Returns the current time in a specified city."""
+    return {"status": "success", "city": city, "time": "10:30 AM"}
+
+root_agent = Agent(
+    model="gemini-2.5-flash",
+    name="root_agent",
+    description="Tells the current time in a specified city.",
+    instruction="You are a helpful assistant. Use get_current_time for time queries.",
+    tools=[get_current_time],
+)
+```
+
+Use for: anything where the agent needs to interpret natural language + decide which tool to call + interpret tool results.
+
+### 2. `WorkflowAgent` — deterministic orchestration
+
+Three sub-types:
+
+- **`SequentialAgent`** — runs sub-agents in order
+- **`ParallelAgent`** — runs sub-agents concurrently
+- **`LoopAgent`** — runs sub-agents in a loop until a condition is met
+
+These are *not* LLM-driven — they're standard programming control flow. Use when you want guaranteed behaviour: "always do A, then B in parallel with C, then D if status=success."
+
+### 3. `CustomAgent`
+
+Subclass `BaseAgent` directly for unique logic. Most users never need this.
+
+## Multi-agent composition
+
+A coordinator agent can delegate to sub-agents via the `sub_agents=[...]` parameter:
+
+```python
+from google.adk.agents import LlmAgent
+
+greeter = LlmAgent(
+    name="greeter",
+    model="gemini-2.5-flash",
+    instruction="Greet the user warmly.",
+)
+
+task_executor = LlmAgent(
+    name="task_executor",
+    model="gemini-2.5-flash",
+    instruction="Execute the user's task.",
+)
+
+coordinator = LlmAgent(
+    name="coordinator",
+    model="gemini-2.5-flash",
+    description="Coordinate greetings and tasks.",
+    sub_agents=[greeter, task_executor],
+)
+```
+
+The coordinator's LLM decides when to hand off to which sub-agent. ADK provides the plumbing.
+
+This is where ADK earns its keep over a single-agent framework — typed sub-agent interfaces, the framework providing handoff plumbing and tracing (the LLM still drives the routing decision), built-in tracing across the chain.
+
+## Tools — what an agent can use
+
+### Built-in (ship with ADK)
+
+- `google_search` — web search via Google Search
+- Code Execution — sandboxed Python (built-in Gemini code execution OR `AgentEngineSandboxCodeExecutor` for full sandbox)
+- Computer Use — GUI automation using Gemini computer-use models
+- Knowledge Engine / RAG Engine — private data retrieval
+- BigQuery Tools — SQL queries, schema discovery
+- Bigtable Tools — data retrieval and SQL
+- Pub/Sub Tools — message publishing / pulling
+- Agent Search — search across configured private data stores
+- Application Integration — enterprise app connectors via Integration Connectors
+- Apigee API Hub — turn any documented API into a tool
+
+### MCP support (native)
+
+ADK is an MCP client out of the box. Two integration shapes:
+
+- **`MCP Toolbox for Databases`** — Google's specific MCP server bundle for 30+ database connectors (BigQuery, Postgres, MongoDB, Firestore, Snowflake, Neo4j, Oracle, etc.):
+
+```python
+from google.adk import Agent
+from google.adk.tools.toolbox_toolset import ToolboxToolset
+
+toolset = ToolboxToolset(server_url="http://127.0.0.1:5000")
+
+agent = Agent(
+    model="gemini-2.5-flash",
+    name="db_agent",
+    tools=[toolset],   # all Toolbox database tools available
+)
+```
+
+- **Generic MCP server** — for any other MCP server (filesystem, GitHub, your own), use `McpToolset` from `google.adk.tools.mcp_tool`. (`ToolboxToolset` is specifically for the Toolbox-for-Databases server protocol; generic MCP needs `McpToolset`.)
+
+### 80+ third-party integrations
+
+ADK has connectors for AgentOps, Datadog, MLflow, Arize, Galileo, LangWatch, Pinecone, Qdrant, Chroma, Atlassian, GitHub, GitLab, Notion, Asana, Linear, n8n, Zapier-style tools, and more. Full catalogue in `google.github.io/adk-docs/integrations/`.
+
+## Sessions — conversation state
+
+When an ADK agent is deployed to Agent Runtime, **sessions** are managed automatically:
+
+- A **session** is the chronological sequence of messages + actions (events) for one interaction
+- An **event** stores conversation content + agent actions (function calls, function responses)
+- **State** is temporary data scoped to the current session
+- Billing: **$0.25 per 1,000 events stored.** System control events (checkpoints) NOT billed; user requests, model responses, function calls/responses ARE billed.
+
+For chat-heavy agents at scale, sessions can dominate the bill — see the pricing scenarios on [§VAI.1 Overview](/google/vertex-ai-agents/overview/).
+
+## Memory Bank — cross-session memory
+
+Memory Bank is the *persistent* layer:
+
+- Long-term user preferences and facts
+- Persists across multiple sessions for the same user
+- LLM-generated summarisation of session history into long-term memories
+- Memories can be fetched and injected into subsequent conversations
+
+Pricing: **$0.25 per 1,000 memories / month** for storage; **$0.50 per 1,000 memories returned** for retrieval (first 1,000 / month free). LLM costs for memory generation are billed separately at standard token rates.
+
+## Code Execution sandbox
+
+`AgentEngineSandboxCodeExecutor` runs sandboxed Python in a managed GKE environment. Different from the built-in [Gemini API code execution](/google/gemini-api/tool-use/) — this one is for whole-agent workflows with longer-running, more capable Python code.
+
+## Auth — the Vertex AI authentication model
+
+NO API keys here. Vertex AI uses Google Cloud auth:
+
+| Auth method | Best for |
+|---|---|
+| **Application Default Credentials (ADC)** | Local dev (`gcloud auth application-default login`) |
+| **Service accounts** | Server-to-server / CI |
+| **Workload Identity** | GKE / Cloud Run workloads |
+| **Agent Identity** (new) | Per-agent SPIFFE-based identity for deployed agents |
+
+### Agent Identity — the new bit
+
+Agent Identity is a per-agent SPIFFE-based identity tied to the agent's lifecycle. NOT a service account — more secure, scoped to a specific agent's resource ID, certificate-based, mTLS-bound. Credentials can only be used in the trusted runtime environment.
+
+Default IAM roles for an agent identity:
+
+- `roles/aiplatform.agentContextEditor`
+- `roles/aiplatform.agentDefaultAccess`
+
+Requires the `v1beta1` API; some docs are still in Portuguese as of mid-2026, suggesting it's not fully stabilised. Useful when you need cleaner auth boundaries than service-account-per-agent.
+
+## A2A — Agent-to-Agent protocol
+
+Open standard, Apache 2.0, under Linux Foundation. Contributed by Google.
+
+**What it is:** open protocol for agent-to-agent communication across frameworks, companies, servers. Agents discover each other via **Agent Cards** (capability + connection descriptors). Communication is JSON-RPC 2.0 over HTTP(S). Supports synchronous request/response, streaming (SSE), async push notifications. Rich data: text, files, structured JSON. Agents collaborate without exposing internal memory, proprietary logic, or tools.
+
+SDKs:
+
+- Python: `pip install a2a-sdk`
+- Go: `go get github.com/a2aproject/a2a-go`
+- JS: `npm install @a2a-js/sdk`
+- Java (Maven), .NET (`dotnet add package A2A`)
+
+ADK has native A2A integration — your ADK agent can be exposed as an A2A server with deployment requirements:
+
+```bash
+pip install "google-cloud-aiplatform[agent_engines]" "google-adk[a2a]"
+```
+
+**Spec:** [a2a-protocol.org/latest/specification](https://a2a-protocol.org/latest/specification/). Repo: [github.com/a2aproject/A2A](https://github.com/a2aproject/A2A) (originally `github.com/google-a2a/A2A` — donated to the Linux Foundation).
+
+## Models — what's available
+
+Via Model Garden (Vertex AI's catalogue):
+
+- **Google models:** Gemini 2.5 Flash / Pro / Flash-Lite, Gemini 3 lineup, Imagen (image gen), Lyria (audio), Chirp (speech), Veo (video), Gemma (open-weight)
+- **Third-party:** Anthropic Claude (entire family), Meta Llama, Mistral
+- **Via ADK model connectors:** ApigeeLlm, LiteLlm (100+ providers including OpenAI, Cohere, Mistral), Ollama (local), vLLM (self-hosted), LiteRT-LM (on-device)
+
+200+ models in Model Garden total.
+
+## Cross-pollination notes
+
+- **Gemini Enterprise** (the consume-layer product, formerly Agentspace) ships with prebuilt agents in its Agent Gallery, including [NotebookLM Enterprise](/google/notebooklm/enterprise/)
+- **MCP servers** registered in Agent Registry are discoverable across the org — useful for governance
+- **Tracing** uses Cloud Trace; logs use Cloud Logging — standard GCP observability stack
+
+## What's next
+
+- [§VAI.3 First agent](/google/vertex-ai-agents/first-agent/) — install, write a tool, define an agent, deploy
+- [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) — when to choose this stack over the lighter-weight API
+- [§VAI.1 Overview](/google/vertex-ai-agents/overview/) — orientation if you arrived here first

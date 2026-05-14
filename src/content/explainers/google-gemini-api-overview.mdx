@@ -1,0 +1,118 @@
+---
+title: "Gemini API, plainly"
+section: "Gemini API"
+sectionNumber: "GAPI.1"
+description: "Five-minute orientation to the Gemini API — Google's developer surface for the Gemini model family. Two access paths (ai.google.dev with API key vs Vertex AI with cloud auth), one unified SDK (google-genai), where Gemini 3 fits vs Gemini 2.5, and the new Interactions API direction."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from ai.google.dev/gemini-api/docs (15 May 2026). The model lineup, deprecation dates, and pricing in this page reflect docs as of mid-May 2026 and will go stale fast — Google's pricing and model schedule change quarterly."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://ai.google.dev/gemini-api/docs"
+  - "https://ai.google.dev/gemini-api/docs/quickstart"
+  - "https://ai.google.dev/gemini-api/docs/libraries"
+  - "https://ai.google.dev/pricing"
+  - "https://github.com/googleapis/python-genai"
+vendor: "google"
+product: "gemini-api"
+---
+
+## The thirty-second version
+
+The Gemini API is **Google's developer surface for the Gemini model family** — Pro, Flash, Flash-Lite, plus the image, audio, video, and live siblings. You access it two ways:
+
+| Surface | Auth | Free tier | Best for |
+|---|---|---|---|
+| **[ai.google.dev](https://ai.google.dev/gemini-api/docs)** ("Gemini Developer API") | API key from [AI Studio](/google/ai-studio/overview/) | Yes — generous, model-dependent | Prototyping, side projects, learning |
+| **[Vertex AI](/google/vertex-ai-agents/overview/)** | Application Default Credentials, service accounts, no API keys | $300 GCP credit for new accounts | Enterprise production, regional residency, third-party models |
+
+**Same SDK either way** — `google-genai` (Python) and `@google/genai` (TypeScript / Node.js). Different `Client(...)` initialisation, identical method calls.
+
+## Three things to know
+
+1. **Use the new SDK.** `pip install google-genai` (Python), `npm install @google/genai` (Node). The older `google-generativeai` Python package and `@google/generative-ai` JS package were deprecated 30 November 2025 — they don't get Live API, Veo, or any new feature. If you find a tutorial using the old package, that tutorial is stale.
+
+2. **Gemini 3 is the current generation in the docs** as of mid-2026 — every code example on `ai.google.dev` uses `gemini-3-flash-preview` as the example. Gemini 2.5 Pro / Flash / Flash-Lite are *still valid stable models*, but Google has scheduled their **shutdown for 16 October 2026**. For new code today: write against 2.5 Flash for "stable, free-tier, fast" or 2.5 Pro for "stable, paid-only, more capable"; treat Gemini 3 as the upgrade target.
+
+3. **There's a new Interactions API coming.** The quickstart says: *"new models beyond the core mainline family, along with new agentic capabilities and tools, will launch exclusively on the Interactions API."* The classic `generateContent` shape stays supported, but if you're building new agent tools today, look at Interactions API patterns first.
+
+## A real example
+
+The minimum working sample, in Python:
+
+```python
+from google import genai
+
+client = genai.Client()   # picks up GEMINI_API_KEY from env
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Explain how AI works in a few words",
+)
+print(response.text)
+```
+
+Same in TypeScript:
+
+```typescript
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({});   // picks up GEMINI_API_KEY from env
+
+const response = await ai.models.generateContent({
+  model: "gemini-2.5-flash",
+  contents: "Explain how AI works in a few words",
+});
+console.log(response.text);
+```
+
+That's the entire shape. Add a [system instruction](/google/gemini-api/patterns/), pass [tools](/google/gemini-api/tool-use/) for function calling or Search, swap the [model](/google/gemini-api/models/) — everything builds from this one method.
+
+## Why this matters
+
+Three things that fall out of the design:
+
+- **One SDK, two clouds.** Move from prototype on ai.google.dev to production on Vertex AI by changing one constructor call. The contract (method names, parameter shapes, response objects) is identical. That's a meaningful migration story; the old SDK split (`google-generativeai` for AI Studio, `google-cloud-aiplatform` for Vertex) was a pain.
+
+- **The 1M context window is real.** All current top-tier models (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.1-pro-preview`) ship with 1,048,576-token input context. That's roughly 50,000 lines of code, eight medium novels, or 200 podcast transcripts in one prompt. Many-shot prompting (hundreds of examples), full-codebase Q&A, and multi-document reasoning all become viable without a separate retrieval layer.
+
+- **Search grounding has explicit pricing.** Unlike most LLM APIs where "search" is opaque, Gemini's Google Search grounding bills at **$14 per 1,000 search queries** (after **5,000 free prompts per month**, shared across Gemini 3 models). Every grounded answer can return `groundingMetadata` showing which queries were issued and which sources were cited. That's unusual transparency in this space.
+
+## How it compares (quick)
+
+| | **Gemini API** | **OpenAI API** | **Anthropic API** |
+|---|---|---|---|
+| Default modern model | `gemini-2.5-flash` (stable) / `gemini-3-flash-preview` (current docs) | GPT-5 family | Claude Sonnet 4.5 |
+| Context window (top tier) | 1M tokens | ~400K | 200K |
+| Free tier | Yes — generous, multiple models | $5 one-off API credit | None |
+| Open-weight option | Gemma family (open) | None | None |
+| Inputs | Text + image + video + audio + PDF | Text + image + audio | Text + image (PDF beta) |
+| Search grounding | Built-in (Google Search) | Limited | None native |
+| Code execution | Built-in (Python sandbox) | Code interpreter (assistants) | Tool calls |
+| MCP support | Experimental | Apps SDK (different shape) | Native (client + server reference) |
+| Function calling | Yes (parallel + sequential + auto) | Yes | Yes (parallel) |
+
+## What about Vertex AI?
+
+`ai.google.dev` and Vertex AI are **two front doors to the same model family**. The differences sit on the *operational* side, not the model side:
+
+| | ai.google.dev (Gemini Developer API) | Vertex AI |
+|---|---|---|
+| Auth | API key | Cloud auth (ADC, service accounts) — **no API keys** |
+| Free tier | Yes (rate-limited, model-dependent) | $300 new-account credit |
+| Pricing | Same per-token rate | Same per-token rate |
+| Regions | Global | 30+ regions; pick one |
+| Compliance | None formal | HIPAA, SOC 2, FedRAMP High (Plus tier) |
+| VPC-SC, CMEK, audit logs | No | Yes |
+| Models | Gemini family only | 200+ via Model Garden — Gemini, Claude (Anthropic), Llama, Mistral, etc. |
+| Free-tier data use | May be used to improve products | Not used for training |
+| Same SDK? | Yes — `genai.Client()` | Yes — `genai.Client(vertexai=True, project=..., location=...)` |
+
+Rule of thumb (and Google says this directly in its migration page): *"Most developers should use the Gemini Developer API unless there is a need for specific enterprise controls."* Switch to Vertex when you need regional residency, compliance certifications, or third-party models. See [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) for the full decision matrix.
+
+## What to do next
+
+- [§GAPI.2 Getting started](/google/gemini-api/getting-started/) — install the SDK, get an API key, make your first call (Python + TypeScript)
+- [§GAPI.3 Models](/google/gemini-api/models/) — the current Gemini 3 / 2.5 lineup, deprecation schedule, pricing
+- [§GAPI.4 Patterns](/google/gemini-api/patterns/) — multi-turn chat, streaming, system instructions, structured output, context caching
+- [§GAPI.5 Tool use](/google/gemini-api/tool-use/) — function calling, Google Search grounding, code execution, URL context

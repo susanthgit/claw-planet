@@ -131,6 +131,25 @@ if (activeVendor === 'openclaw') {
     { num: 'ATLAS', title: 'ChatGPT Atlas', count: atlasKids.length,  slug: '/openai/chatgpt-atlas/', children: atlasKids },
     { num: 'GPT',   title: 'Custom GPTs',   count: gptsKids.length,   slug: '/openai/custom-gpts/',   children: gptsKids },
   ];
+} else if (activeVendor === 'google') {
+  // Google — Batch C (15 May 2026). 6 products: Gemini CLI, Gemini API,
+  // NotebookLM, Vertex AI Agents, AI Studio, Gems.
+  const cliKids = await loadVendorProductChildren('google', 'gemini-cli', '/google/gemini-cli/');
+  const apiKids = await loadVendorProductChildren('google', 'gemini-api', '/google/gemini-api/');
+  const nlmKids = await loadVendorProductChildren('google', 'notebooklm', '/google/notebooklm/');
+  const vaiKids = await loadVendorProductChildren('google', 'vertex-ai-agents', '/google/vertex-ai-agents/');
+  const studKids = await loadVendorProductChildren('google', 'ai-studio', '/google/ai-studio/');
+  const gemKids = await loadVendorProductChildren('google', 'gems', '/google/gems/');
+
+  sections = [
+    { num: 'GG',   title: 'Hub',              count: undefined,       slug: '/google/' },
+    { num: 'GCL',  title: 'Gemini CLI',       count: cliKids.length,  slug: '/google/gemini-cli/',       children: cliKids },
+    { num: 'GAPI', title: 'Gemini API',       count: apiKids.length,  slug: '/google/gemini-api/',       children: apiKids },
+    { num: 'NLM',  title: 'NotebookLM',       count: nlmKids.length,  slug: '/google/notebooklm/',       children: nlmKids },
+    { num: 'VAI',  title: 'Vertex AI Agents', count: vaiKids.length,  slug: '/google/vertex-ai-agents/', children: vaiKids },
+    { num: 'STUD', title: 'AI Studio',        count: studKids.length, slug: '/google/ai-studio/',        children: studKids },
+    { num: 'GEM',  title: 'Gems',             count: gemKids.length,  slug: '/google/gems/',             children: gemKids },
+  ];
 } else {
   sections = [
     { num: '·', title: 'Hub', count: undefined, slug: `/${activeVendor}/` },

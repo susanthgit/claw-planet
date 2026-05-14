@@ -1,0 +1,182 @@
+---
+title: "Getting started with the Gemini API"
+section: "Gemini API"
+sectionNumber: "GAPI.2"
+description: "End-to-end setup for the Gemini API — get an API key from AI Studio, install the new google-genai SDK (the older google-generativeai is deprecated), make your first call in Python and TypeScript, and graduate to streaming + system instructions."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from ai.google.dev/gemini-api/docs/quickstart, ai.google.dev/gemini-api/docs/libraries, github.com/googleapis/python-genai (15 May 2026). Sush hasn't run these snippets himself — paste-test before depending on them."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://ai.google.dev/gemini-api/docs/quickstart"
+  - "https://ai.google.dev/gemini-api/docs/libraries"
+  - "https://ai.google.dev/gemini-api/docs/api-key"
+  - "https://github.com/googleapis/python-genai"
+vendor: "google"
+product: "gemini-api"
+---
+
+## The five-step path
+
+1. **Get an API key** — from [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. **Install the SDK** — `pip install google-genai` or `npm install @google/genai`
+3. **Set the env var** — `export GEMINI_API_KEY="..."`
+4. **Make a call** — `client.models.generate_content(model=..., contents=...)`
+5. **Add streaming, system instructions, structured output as you need them**
+
+## Step 1: Get an API key
+
+1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Sign in with any Google account
+3. Click **Create API key**
+4. Either pick an existing Google Cloud project or let AI Studio create a default one
+
+You can hold up to 100 keys across 10 projects. AI Studio displays 50 projects at a time.
+
+> **Security deadline:** from **19 June 2026**, the Gemini API will block unrestricted API keys. You'll need to restrict each key to "Gemini API only" via AI Studio or the Cloud Console. Restrict your keys now to avoid the cliff later.
+
+## Step 2: Install the SDK
+
+### Python — use `google-genai` (the new one)
+
+```bash
+pip install google-genai
+```
+
+> **Don't use** `pip install google-generativeai`. That's the old package — last released 16 December 2025, EOL'd 30 November 2025, no Live API, no Veo, no Gemini 3. PyPI literally labels it `[Deprecated] Google AI Python SDK for the Gemini API`.
+
+### TypeScript / JavaScript — use `@google/genai`
+
+```bash
+npm install @google/genai
+```
+
+> **Don't use** `@google/generative-ai`. Same story — deprecated 30 November 2025.
+
+### Other languages
+
+- Go: `go get google.golang.org/genai`
+- Java (Maven): `<artifactId>google-genai</artifactId>`
+- C# / .NET: `dotnet add package Google.GenAI`
+
+All five SDKs reached **General Availability in May 2025** and are actively maintained.
+
+## Step 3: Set the env var
+
+```bash
+# bash / zsh
+export GEMINI_API_KEY="your-key-here"
+
+# Windows PowerShell
+$env:GEMINI_API_KEY = "your-key-here"
+```
+
+For projects, drop a `.env` file at the project root (and add it to `.gitignore`):
+
+```ini
+GEMINI_API_KEY=your-key-here
+```
+
+## Step 4: Your first call
+
+### Python — bare minimum
+
+```python
+from google import genai
+
+client = genai.Client()   # picks up GEMINI_API_KEY automatically
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Explain how AI works in a few words",
+)
+print(response.text)
+```
+
+### TypeScript — bare minimum
+
+```typescript
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({});   // picks up GEMINI_API_KEY automatically
+
+const response = await ai.models.generateContent({
+  model: "gemini-2.5-flash",
+  contents: "Explain how AI works in a few words",
+});
+console.log(response.text);
+```
+
+That's it. Run the script — you should get a few sentences back.
+
+## Step 5: Add the things you'll actually need
+
+### A system instruction
+
+System instructions go in a **separate parameter**, not as the first message:
+
+```python
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Why is the sky blue?",
+    config=types.GenerateContentConfig(
+        system_instruction="Respond in exactly one sentence.",
+        temperature=0.3,
+        max_output_tokens=100,
+    ),
+)
+print(response.text)
+```
+
+### Streaming
+
+```python
+for chunk in client.models.generate_content_stream(
+    model="gemini-2.5-flash",
+    contents="Tell me a story in 300 words."
+):
+    print(chunk.text, end="", flush=True)
+```
+
+Streaming uses Server-Sent Events under the hood; the SDK gives you an iterator. For real-time voice / video, see the **Live API** (separate WebSocket-based shape, covered in [§GAPI.4 Patterns](/google/gemini-api/patterns/)).
+
+### Multi-turn chat
+
+```python
+chat = client.chats.create(model="gemini-2.5-flash")
+print(chat.send_message("My name is Sush.").text)
+print(chat.send_message("What's my name?").text)
+```
+
+The `chats` helper threads `contents` for you. For more control, build the `contents` list yourself and pass to `generate_content` each turn.
+
+## Switching to Vertex AI later
+
+When you're ready to move to Vertex AI (cloud auth, regional residency, third-party models), the only thing that changes is the client constructor:
+
+```python
+from google import genai
+
+# was:
+client = genai.Client()
+
+# becomes:
+client = genai.Client(
+    vertexai=True,
+    project="your-project-id",
+    location="us-central1",
+)
+```
+
+The rest of your code (the `client.models.generate_content(...)` calls) stays identical. See [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) for when to migrate.
+
+## What's next
+
+- [§GAPI.3 Models](/google/gemini-api/models/) — the full Gemini 3 / 2.5 lineup, pricing, deprecation dates
+- [§GAPI.4 Patterns](/google/gemini-api/patterns/) — multi-turn chat shape, streaming, files API, context caching, safety settings
+- [§GAPI.5 Tool use](/google/gemini-api/tool-use/) — function calling, Google Search grounding, code execution
+- [§GCL.1 Gemini CLI](/google/gemini-cli/overview/) — if you want a terminal agent instead of writing code yourself

@@ -1,0 +1,138 @@
+---
+title: "Google AI Studio, plainly"
+section: "AI Studio"
+sectionNumber: "STUD.1"
+description: "Google AI Studio (aistudio.google.com) — the web playground for the Gemini API. Where you generate API keys, test prompts across mixed inputs (text, image, PDF, audio, video), prototype Live API voice/video, export code in five languages, and save prompts to your Drive. What it is, what it isn't, and the deprecated fine-tuning gap."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from aistudio.google.com, ai.google.dev/gemini-api/docs/ai-studio-quickstart, ai.google.dev/gemini-api/docs/api-key (15 May 2026). Sush has fleetingly used AI Studio but hasn't done a full session — page flips to tried after his next prompt-design pass."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://aistudio.google.com"
+  - "https://ai.google.dev/aistudio"
+  - "https://ai.google.dev/gemini-api/docs/ai-studio-quickstart"
+  - "https://ai.google.dev/gemini-api/docs/api-key"
+  - "https://ai.google.dev/gemini-api/docs/live-api"
+  - "https://cloud.google.com/vertex-ai/generative-ai/docs/migrate/migrate-google-ai"
+vendor: "google"
+product: "ai-studio"
+---
+
+## The thirty-second version
+
+Google AI Studio is **the web playground for the Gemini API**. Type a prompt, swap models, paste images / PDFs / audio / video, get a response, then click "Get Code" to export a working snippet in Python, Node, Go, Java, or REST.
+
+Three things to know:
+
+1. **It's where you create your API key.** The simplest path to using the [Gemini API](/google/gemini-api/overview/) goes through [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey). New users get a default Google Cloud project and a key in two clicks.
+2. **It's also a Live API testbed.** The Stream Realtime tab gives you a working voice + video conversation with Gemini before you wire it into your own code. Helpful for spec'ing UX before commitment.
+3. **No fine-tuning anymore.** As of May 2025, the public Gemini API and AI Studio no longer support fine-tuning — Gemini 1.5 Flash-001 (the last tunable model) was retired. Any tutorial telling you to fine-tune in AI Studio is stale. Fine-tuning now lives in [Vertex AI / Gemini Enterprise Agent Platform](/google/vertex-ai-agents/overview/).
+
+## What you can do in AI Studio
+
+| Surface | What it is |
+|---|---|
+| **Chat (Sandbox mode)** | Standard prompt-and-response. Upload images, PDFs, audio, video. Mixed-modality inputs in one box. |
+| **Stream Realtime** | Live API testbed — bidirectional voice + video conversation with Gemini. Test interruptions ("barge-in"), tool calls, search grounding. |
+| **Build** (apps surface) | Prototype small Gemini-backed apps. The exact shape evolves; some sub-pages 404 as of mid-2026, suggesting it's actively being rebuilt. |
+| **Image generation** | Test image models (`gemini-2.5-flash-image-preview` aka "Nano Banana") |
+| **Video generation** | Test Veo models (Veo 3.1 lineup) |
+| **Music generation** | Test Lyria models |
+| **API keys** | Create / restrict / delete keys at `aistudio.google.com/app/apikey` |
+| **Rate limits dashboard** | See your account-specific RPM / TPM / RPD per model |
+
+## Get Code — the headline feature
+
+Build your prompt, get it working, then click **"Get Code"**. AI Studio drops a working snippet for:
+
+- Python (uses the `google-genai` SDK)
+- JavaScript / Node.js (`@google/genai`)
+- Go (`google.golang.org/genai`)
+- Java (Maven artefact `google-genai`)
+- REST (raw curl)
+
+The exported code uses the **new** unified SDK — it won't generate the deprecated `google-generativeai` shape. That alone is a useful safety net if you've been pasting from older tutorials.
+
+## API keys — the bits that matter
+
+- Create at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- **Tied to a Google Cloud project.** AI Studio creates a default project for new users so you don't have to think about it.
+- Display limits in AI Studio: up to **100 API keys** and **50 projects** are shown
+- **Max 10 projects** can be created at a time from the AI Studio Projects page (not a hard total cap — additional projects can be managed via the Cloud Console)
+- **From 19 June 2026: unrestricted API keys will be blocked.** You must restrict each key to "Gemini API only" via AI Studio or the Cloud Console. Restrict your keys now.
+
+## Free tier — what's included, what's not
+
+The free tier on Gemini API direct (which is what AI Studio uses):
+
+✅ **Free of charge:**
+- `gemini-2.5-flash` (text + image + video + audio I/O)
+- `gemini-2.5-flash-lite`
+- `gemini-2.5-flash-live-preview` (Live API)
+- `gemini-2.5-flash-tts-preview`
+- `gemini-2.5-flash-image-preview` ("Nano Banana")
+- `gemini-3-flash-preview`
+- `gemini-3.1-flash-lite` (stable)
+- `gemini-3.1-flash-tts-preview`
+
+❌ **Paid tier required:**
+- `gemini-2.5-pro` and `gemini-3.1-pro-preview`
+- `gemini-3.1-flash-image-preview`
+- `veo-3.1` and `veo-3.1-lite` (video generation)
+
+> **Specific RPM / TPM / RPD numbers** aren't published in the docs — Google directs you to [aistudio.google.com/rate-limit](https://aistudio.google.com/rate-limit) where your live, account-specific limits are shown. They depend on the model and your usage tier.
+
+> **Free tier privacy:** when on the free tier, **data may be used to improve Google products.** On the paid tier, data is **not** used for training. Worth understanding before you paste sensitive content into the playground.
+
+## Saved prompts and sharing
+
+Prompts are saved into a **Google Drive folder called `AI_Studio`** in your account. From there:
+
+- Share a prompt with someone (link)
+- Download to migrate to [Vertex AI Studio](#vertex-ai-studio)
+- Continue work on a different machine
+
+## Stream Realtime — the Live API testbed
+
+The Live API (covered in [§GAPI.4 Patterns](/google/gemini-api/patterns/)) is a WebSocket-based real-time voice + video shape. You can test it without writing any code:
+
+1. Open AI Studio → Stream Realtime tab
+2. Pick a Live API model (`gemini-2.5-flash-live-preview` is a good starting point)
+3. Click the mic, talk to Gemini
+4. Try interrupting mid-response (barge-in works)
+5. Try function calling — Live API supports it
+6. Try Google Search grounding — also supported
+
+Once you've spec'd the UX, click "Get Code" to export a working starting point.
+
+## What AI Studio is *not*
+
+- **Not a production runtime** — it's a playground. Build your code with the exported SDK snippet; don't rely on AI Studio sessions persisting indefinitely.
+- **Not Vertex AI Studio** (different product — see [§STUD.2 vs API](/google/ai-studio/vs-api/))
+- **Not where you fine-tune Gemini anymore** (deprecated May 2025)
+- **Not where enterprise auth lives** — for service accounts, ADC, Workload Identity, Agent Identity, you want [Vertex AI Agents](/google/vertex-ai-agents/overview/)
+- **Not free of data-use considerations** — free tier data may be used to improve Google products
+
+## Honest take
+
+AI Studio's strongest documented features are the small ones:
+
+- **"Get Code"** exports a working snippet using the current SDK (Google describes it as the "fastest path from prompt to production")
+- **The Realtime streaming tab** is the documented way to feel out the Live API before committing to it
+- **Default project + key creation in two clicks** lowers the bar for new developers meaningfully
+
+The frustrations are also small but real:
+
+- The **App Builder / Build surface** is mid-rebuild — sub-pages return 404, the docs lag the UI
+- **Free-tier rate limits aren't published** — you have to log in to your dashboard to know your limits, which is a documentation gap
+- **No fine-tuning** is a real loss vs the older AI Studio era and isn't well surfaced — many old tutorials still describe it
+- The page-naming flux ("Nano Banana" for the image model, "Lyria 3" for music in the sidebar nav) is internal-branding bleed-through that confuses readers
+
+For a quick Gemini start, AI Studio is the right first stop. Get a key, build a prompt, copy the code, run it locally, iterate.
+
+## What's next
+
+- [§STUD.2 vs API](/google/ai-studio/vs-api/) — AI Studio (UI) vs Gemini API (the thing AI Studio talks to) vs Vertex AI Studio (different product)
+- [§GAPI.2 Getting started](/google/gemini-api/getting-started/) — turn the AI Studio prompt into running code
+- [§GAPI.4 Patterns](/google/gemini-api/patterns/) — Live API, structured output, context caching
+- [§GEM.1 Gems](/google/gems/overview/) — for "save a prompt as a reusable assistant inside the Gemini app" rather than "design and export code"

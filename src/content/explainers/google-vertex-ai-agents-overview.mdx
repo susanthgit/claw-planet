@@ -1,0 +1,160 @@
+---
+title: "Vertex AI Agents, plainly"
+section: "Vertex AI Agents"
+sectionNumber: "VAI.1"
+description: "Five-minute orientation to Google Cloud's three-layer agent stack — Agent Development Kit (ADK) to build, Agent Runtime to deploy, Gemini Enterprise to consume. Plus the 2025-2026 rebrand (Agent Builder → Gemini Enterprise Agent Platform; Agent Engine → Agent Runtime; Agentspace → Gemini Enterprise) and when to choose this over Gemini API direct."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from cloud.google.com/vertex-ai/generative-ai/docs/agent-builder/overview, github.com/google/adk-python, cloud.google.com/products/gemini-enterprise-agent-platform/pricing, and the migration page (15 May 2026). Sush hasn't deployed an agent to Vertex himself yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://cloud.google.com/vertex-ai/generative-ai/docs/agent-builder/overview"
+  - "https://cloud.google.com/products/agent-builder"
+  - "https://github.com/google/adk-python"
+  - "https://google.github.io/adk-docs/"
+  - "https://cloud.google.com/agentspace/docs/overview"
+  - "https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing"
+  - "https://ai.google.dev/gemini-api/docs/migrate-to-cloud"
+vendor: "google"
+product: "vertex-ai-agents"
+---
+
+## Read this first — the names changed in 2025-2026
+
+Google rebranded the entire stack. The old names persist in URLs and SDK imports; the new names are what you'll see in marketing pages and current docs:
+
+| Old name (still in URLs / SDKs) | Current official name | What it does |
+|---|---|---|
+| Vertex AI Agent Builder | **Gemini Enterprise Agent Platform** | The umbrella — the whole platform |
+| Agent Engine | **Agent Runtime** | Managed serverless deployment runtime |
+| Agentspace | **Gemini Enterprise** (also "Gemini Enterprise app") | Employee-facing intranet AI assistant |
+| — | **Agent Development Kit (ADK)** | Open-source framework you write agents in |
+| — | **Agent Studio** | Low-code visual canvas for designing agents |
+| — | **Agent Garden** | Catalogue of prebuilt agent templates |
+| — | **Agent Registry** | Org-wide registry of agents, tools, MCP servers |
+| — | **Agent Gateway** | Policy enforcement / security proxy |
+
+URL paths still say `/vertex-ai/`, `/agent-builder/`, and `/agentspace/`. Code samples still import `from vertexai import agent_engines`. The *product* is called Gemini Enterprise Agent Platform; the *plumbing* still calls itself by the old names. Expect confusion in the wild.
+
+For Claw, we'll use **Vertex AI Agents** as the section umbrella because that's the historical name people search for, while preferring the new layer names (ADK, Agent Runtime, Gemini Enterprise) inside the docs.
+
+## The three layers
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│            GEMINI ENTERPRISE AGENT PLATFORM                           │
+│         (formerly "Vertex AI Agent Builder")                          │
+├──────────────────────┬─────────────────────┬─────────────────────────┤
+│  LAYER 1: BUILD      │  LAYER 2: SCALE     │  LAYER 3: CONSUME       │
+│                      │                     │                          │
+│  Agent Development   │  Agent Runtime      │  Gemini Enterprise app  │
+│  Kit (ADK)           │  (formerly          │  (formerly Agentspace)  │
+│                      │   "Agent Engine")   │                          │
+│  • LlmAgent          │  • Serverless       │  • Employee AI assistant│
+│  • WorkflowAgent     │    deploy           │  • Enterprise search    │
+│  • CustomAgent       │  • Sessions         │  • Agent Gallery        │
+│  • 80+ tool          │  • Memory Bank      │  • No-code Designer     │
+│    integrations      │  • Code Execution   │  • Connectors           │
+│  • MCP support       │  • Observability    │                          │
+│  • Multi-model       │                     │  ─OR─                   │
+│                      │  GOVERN:            │                          │
+│  Agent Studio        │  • Agent Identity   │  YOUR OWN APP           │
+│  (low-code UI)       │  • Agent Gateway    │  (call Agent Runtime    │
+│                      │  • Agent Registry   │   REST/gRPC directly)   │
+│  Model Garden        │                     │                          │
+│  (200+ models)       │                     │                          │
+└──────────────────────┴─────────────────────┴─────────────────────────┘
+       ↑                       ↑                        ↑
+  Open-source            Managed SaaS              End-user product
+  (Apache 2.0)           (serverless,              OR developer API
+  pip install            pay per vCPU-hr)          surface
+  google-adk
+```
+
+### Layer 1: Build (ADK)
+
+Open-source Python / TypeScript / Go / Java framework. You define agents, tools, and orchestration logic in code. Local dev + testing via `adk run` or `adk web`. Agent Studio gives you a no-code canvas alternative if you don't want to write code. Model Garden gives you 200+ models — Gemini, Anthropic Claude, Meta Llama, Mistral, custom endpoints.
+
+### Layer 2: Scale (Agent Runtime)
+
+Fully managed Google Cloud runtime. Deploy an ADK agent with one Python call. Handles infrastructure, scaling, cold starts (sub-second), observability (Cloud Trace + Logging + Monitoring), sessions, memory bank, sandboxed code execution. Also includes the **Govern** plane: Agent Identity (SPIFFE-based per-agent identity), Agent Gateway (policy enforcement), Agent Registry (org-wide catalogue).
+
+### Layer 3: Consume (Gemini Enterprise app or your own app)
+
+Two paths:
+
+- **Gemini Enterprise app** — out-of-box employee-facing surface. Connects to Google Drive, OneDrive, SharePoint, Jira, Confluence, ServiceNow, HubSpot. Has an Agent Gallery (prebuilt agents including NotebookLM Enterprise) and a no-code Agent Designer for non-developers.
+- **Your own app** — call the deployed Agent Runtime endpoint via REST or gRPC. Embed in a chat UI, a Slack bot, a mobile app, anywhere.
+
+## Why this matters
+
+Three things to call out:
+
+- **It's not just "Gemini API plus extras."** Vertex AI Agents is a *production agent platform* — sessions persist, memories cross sessions, code execution is sandboxed in GKE, observability is built-in. Gemini API direct (`ai.google.dev`) gives you the model; Vertex AI Agents gives you a production agent runtime. Different problem to solve.
+- **Multi-vendor model support is real, not marketing.** ADK ships connectors for OpenAI (via LiteLLM), Anthropic Claude (via Model Garden), Llama (via Vertex), Mistral (via Model Garden), Ollama (local), vLLM (self-hosted). You can build a Gemini-fronted agent that delegates a task to Claude Sonnet 4.5 mid-flow. That's portfolio thinking that's harder to get on OpenAI's stack.
+- **A2A is a real open protocol now.** Agent-to-Agent (under Linux Foundation, Apache-2.0) lets agents from different frameworks / clouds / vendors discover each other via "Agent Cards" and exchange JSON-RPC messages. ADK has native A2A integration; the SDK lives at `pip install a2a-sdk`. The repo is [github.com/a2aproject/A2A](https://github.com/a2aproject/A2A). This is genuinely cross-vendor agent interop.
+
+## When to use Vertex AI Agents vs Gemini API direct
+
+Quick rule of thumb (Google says this in its own migration page): *"Most developers should use the Gemini Developer API unless there is a need for specific enterprise controls."*
+
+You probably want **Vertex AI Agents** when:
+
+- Data must stay in a specific GCP region
+- You need VPC-SC, CMEK, or audit logs
+- You need models beyond Gemini (Claude on Vertex, Llama, Mistral)
+- You're deploying agents with sessions / memory at scale
+- Your org has a GCP-native security posture (service accounts, Workload Identity)
+- You need FedRAMP High or HIPAA compliance
+- You need an agent runtime that scales without you owning a Kubernetes cluster
+
+You probably want **[Gemini API direct](/google/gemini-api/overview/)** when:
+
+- Prototyping or building consumer apps
+- No enterprise compliance requirements
+- You want the simplest possible setup (API key + pip install)
+- Cost predictability is paramount (token-only billing, no runtime overhead)
+
+The full decision matrix is in [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/).
+
+## Pricing snapshot
+
+Agent Runtime (the layer that costs separately from Gemini API tokens):
+
+| Resource | Free tier | Paid rate |
+|---|---|---|
+| vCPU compute | First 50 hours / month free | **$0.0864 / vCPU-hour** |
+| RAM | First 100 GiB-hours / month free | **$0.009 / GiB-hour** |
+| Sessions | — | **$0.25 per 1,000 events stored** |
+| Memory Bank — storage | — | **$0.25 per 1,000 memories / month** |
+| Memory Bank — retrieval | First 1,000 / month free | **$0.50 per 1,000 retrievals** |
+
+> Billing for Code Execution, Sessions, and Memory Bank started **11 February 2026.** Before that date, only runtime compute was billed.
+
+Two scenarios from the official pricing page (verbatim):
+
+- **Lightweight Agent** (0.16 QPS, 3s avg, 1 vCPU / 1 GiB): ~$595/month
+- **Standard Agent** (10 QPS, 5s avg, 2 vCPU / 5 GiB): $43,000+/month — at scale, **sessions dominate compute** ($19,440 of that figure is sessions alone)
+
+Model token costs are billed **separately** through Vertex AI's normal per-token pricing.
+
+## Honest take
+
+Three things worth flagging:
+
+1. **The naming is genuinely confusing.** "Agent Builder is dead, but the URL still says agent-builder. Agent Engine is dead, but the SDK still imports `agent_engines`. Agentspace is dead, but the docs URL still says `/agentspace/`." This will be in flux for at least another year.
+
+3. **For chat-heavy production agents, sessions can cost more than compute.** That's counterintuitive. If you're running an agent that touches lots of small turns per session, model the session cost first.
+
+> **From Google's pricing scenarios:** a *Lightweight Agent* (0.16 QPS, 3s avg, 1 vCPU / 1 GiB) costs ~$595/month. A *Standard Agent* (10 QPS, 5s avg, 2 vCPU / 5 GiB) costs $43,000+/month — at scale, sessions dominate ($19,440 of that figure is sessions alone).
+
+3. **Agent Identity (the new SPIFFE-based per-agent identity) requires the v1beta1 API.** Some docs are in Portuguese as of mid-2026, suggesting they're not fully stabilised. Useful feature; expect rough edges.
+
+The actual platform under the names is genuinely capable. The concrete reasons to care: open-source ADK, real cross-vendor model support via Model Garden, native MCP support, native A2A interop, managed serverless runtime with sub-second cold starts. If you're building production agents on Google Cloud, this is the stack.
+
+## What's next
+
+- [§VAI.2 Concepts](/google/vertex-ai-agents/concepts/) — ADK agents (LlmAgent / WorkflowAgent / CustomAgent), tools, sessions, memory bank, A2A
+- [§VAI.3 First agent](/google/vertex-ai-agents/first-agent/) — install ADK, write a tool, define an agent, run locally, deploy to Agent Runtime
+- [§VAI.4 vs Gemini API direct](/google/vertex-ai-agents/vs-gemini-api-direct/) — full decision matrix
+- [§GAPI.1 Gemini API](/google/gemini-api/overview/) — the lighter-weight alternative

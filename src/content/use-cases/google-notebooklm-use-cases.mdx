@@ -1,0 +1,117 @@
+---
+title: "NotebookLM — what people actually use it for"
+section: "NotebookLM"
+sectionNumber: "NLM.2"
+description: "Twelve real-world NotebookLM use cases drawn from Google's blog, case studies, and the official help centre — academic research with citations, biography research, sales call analysis, hyperlocal journalism, study aids, presentation creation, audio-first learning, and fiction worldbuilding."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Use cases drawn directly from blog.google/technology/ai/notebooklm-* posts and support.google.com/notebooklm pages (15 May 2026). Each is named in an official Google source. Sush hasn't personally used NotebookLM."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://blog.google/technology/ai/notebooklm-goes-global-support-for-websites-slides-fact-check/"
+  - "https://blog.google/technology/ai/notebooklm-audio-overviews/"
+  - "https://support.google.com/notebooklm/answer/16215270"
+  - "https://support.google.com/notebooklm/answer/16958963"
+  - "https://support.google.com/notebooklm/answer/16212820"
+vendor: "google"
+product: "notebooklm"
+---
+
+## NLM.2 use cases
+
+The catalogue below collects use cases from Google's own blog posts and case studies. None are taste-based — each maps to a real shape Google has documented.
+
+### 1. Academic and professional research with cited evidence
+
+Upload papers, reports, transcripts. Chat with citations to locate exactly which passage supports a claim. Inline citations link back to the source paragraphs for fact-checking. Google cites researchers using NotebookLM to navigate large document collections this way.
+
+### 2. Biography and book authorship
+
+Google's June 2024 blog post cites bestselling biographer Walter Isaacson using NotebookLM to analyse Marie Curie's journals while researching his next book. The shape generalises: upload a source corpus, ask focused questions, generate study-guide-style summaries to revisit key threads.
+
+### 3. Documentary and podcast research
+
+Sift complex archives to generate scripts or story ideas from large document sets. Audio Overviews can do a "first listen" pass; chat surfaces specific quotes.
+
+### 4. Sales training and call transcript analysis
+
+Google's June 2024 post cites a consultant analysing sales call transcripts to identify patterns and themes, then using those for targeted sales coaching. Pattern detection across dozens of calls is exactly the shape NotebookLM rewards.
+
+### 5. Hyperlocal journalism — one-person newsroom
+
+The same June 2024 post cites a Florida resident aggregating city ordinances, land-use data, zoning codes, and council meeting minutes into a single NotebookLM, then publishing a hyperlocal newsletter from it.
+
+The shape generalises: any single person trying to track a complex source corpus (city government, a competitor's published filings, a research domain's literature) can use NotebookLM as their second brain.
+
+### 6. Nonprofit grant writing
+
+Organisations use NotebookLM to identify community needs and organise information for grant proposals. Upload the funder's RFP, your prior grant writeups, and your organisation's annual reports. Ask the agent to surface the gaps and align language.
+
+### 7. Study aid and exam prep
+
+The product's biggest user base. Upload textbook chapters, lecture notes, supplementary readings. Generate:
+
+- **Flashcards** (easy / medium / hard, track Got it! / Missed it!)
+- **Quizzes** (with hints)
+- **Study guides** (a Report type)
+- **Audio Overview** (listen on the train)
+- **Mind Map** (visual entry to a complex topic)
+
+For students with mixed-format study material (PDF lecture notes + YouTube tutorials + textbook chapters), this is the most coherent answer Google currently ships.
+
+### 8. Audio learning on the go
+
+Upload your sources, generate an Audio Overview, **download** the audio file, listen on a walk or commute. The "Brief" format gives you the key takeaways in under 2 minutes if you're short on time.
+
+This is the use case Google emphasises most in launch material, and it's the most consistently-cited reason new users like the product.
+
+### 9. Presentation creation
+
+Upload your research; generate a **Slide Deck** (Detailed Deck for full text or Presenter Slides for visual + talking points). Export as PowerPoint or PDF, then polish in your usual tool.
+
+Slide revisions are constrained: you can edit existing slides but can't add or remove slides during revision (you'd need to regenerate the whole deck for that).
+
+### 10. Complex topic onboarding via Mind Maps
+
+Mind Maps give you a visual entry point to a new subject before you read in detail. Click any node to ask a question about that branch. Useful for:
+
+- Onboarding to a new technical domain (a codebase, a regulatory framework, a competitive landscape)
+- Studying a complex book before attempting the chapters
+- Mapping the structure of a court case, a startup's filings, a long policy document
+
+(Note: Mind Maps are **not in the mobile app** — desktop only.)
+
+### 11. Organisation knowledge bases (Enterprise)
+
+The Enterprise tier supports shared notebooks for an organisation: shared knowledge bases, expert guides, internal help centres. Combined with VPC-SC and data residency controls (see [§NLM.3 Enterprise](/google/notebooklm/enterprise/)), this is a real corporate use case rather than a marketing line.
+
+### 12. Fiction, worldbuilding, RPGs
+
+Novelists, fan-fiction authors, and tabletop game designers use NotebookLM to manage complex storylines, character bibles, and consult detailed descriptions of fictional worlds. Upload the worldbuilding doc; ask the agent to maintain continuity ("did I say in chapter 3 what year this happens?").
+
+## What it's not the right tool for
+
+The shapes above all share the same bones: a **bounded set of source documents** and a **focused research / synthesis task**. NotebookLM is *not* the right pick for:
+
+- **Open-ended internet research** — use [Gemini app](https://gemini.google.com)'s Deep Research or [Perplexity](https://perplexity.ai) instead
+- **Live data / real-time updates** — sources are uploaded; new info doesn't auto-flow in
+- **Cross-notebook reasoning** — NotebookLM cannot reference more than one notebook at a time
+- **Source-free brainstorming** — without uploads it has nothing to ground in (use Gemini app or [Gems](/google/gems/overview/))
+- **Coding agent work** — wrong tool entirely; use [Gemini CLI](/google/gemini-cli/overview/) or Claude Code
+
+## Limitations to know going in
+
+- **Source grounding is strict:** if the answer isn't in your sources, NotebookLM declines to answer
+- **Hallucination not eliminated:** outputs include the disclaimer "may contain inaccuracies"; Mind Maps say "please double check its responses"
+- **YouTube limits:** text transcript only (no video/audio analysis), no captions = can't import, no videos under 72 hours old
+- **Web URL limits:** text-only, no images / embedded videos / nested pages, no paywalled sites
+- **Google Drive sync isn't automatic:** you must manually re-sync; footnotes and comments aren't imported
+- **No notebook duplication feature** (Google docs: "this feature isn't supported yet")
+- **No deleted-note recovery** ("currently no way to recover deleted notes")
+- **Mobile app gaps:** no Mind Maps, some advanced source management features missing
+
+## What's next
+
+- [§NLM.3 Enterprise](/google/notebooklm/enterprise/) — VPC-SC, IAM, data residency, the $9/licence Cloud tier
+- [§NLM.1 Overview](/google/notebooklm/overview/) — if you skipped here directly
+- [§GAPI.5 Tool use](/google/gemini-api/tool-use/) — for building your own RAG-style agent that does cross-notebook reasoning

@@ -1,0 +1,266 @@
+---
+title: "Gemini API — tool use"
+section: "Gemini API"
+sectionNumber: "GAPI.5"
+description: "Tool use in the Gemini API — function calling (single, multi-turn, parallel, sequential, automatic in Python), Google Search grounding ($14 per 1K queries after 5K free), code execution (Python sandbox), URL context, file search, and computer use (preview)."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sourced from ai.google.dev/gemini-api/docs/{function-calling,grounding,code-execution} (15 May 2026). Code shapes verified against github.com/googleapis/python-genai README. Sush hasn't run any of this code himself."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://ai.google.dev/gemini-api/docs/function-calling"
+  - "https://ai.google.dev/gemini-api/docs/grounding"
+  - "https://ai.google.dev/gemini-api/docs/code-execution"
+  - "https://ai.google.dev/gemini-api/docs/url-context"
+  - "https://github.com/googleapis/python-genai"
+vendor: "google"
+product: "gemini-api"
+---
+
+## Two layers of tool use
+
+Gemini distinguishes:
+
+- **Function calling** — *you* declare a tool, the model decides when to call it, *you* execute the call, *you* feed the result back. The API never reaches out on your behalf.
+- **Built-in tools** — Google-hosted tools the API runs for you. Currently: Google Search, Code Execution, URL context, Google Maps grounding, File Search, Computer Use (preview).
+
+You can mix both — declare your functions and enable Google Search at the same time.
+
+## Function calling — the five-step manual loop
+
+The canonical shape:
+
+1. Define the function declaration (OpenAPI-compatible JSON schema)
+2. Send prompt + declarations to `generate_content`
+3. Model returns a `functionCall` with `name`, `args`, `id`
+4. **You execute** the actual function and return a `functionResponse` with the matching `id`
+5. Model generates the final natural-language reply
+
+> **🔴 Gemini 3 important:** every `functionCall` returns a unique `id`, and that `id` MUST be echoed back in the matching `functionResponse`. The Python and TypeScript SDKs handle this automatically; raw REST users must preserve the `id` themselves or the model can't map results back to calls.
+
+```python
+from google import genai
+from google.genai import types
+
+set_light_values_declaration = {
+    "name": "set_light_values",
+    "description": "Sets the brightness and color temperature of a light.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "brightness": {"type": "integer", "description": "0-100"},
+            "color_temp": {"type": "string", "enum": ["daylight", "cool", "warm"]},
+        },
+        "required": ["brightness", "color_temp"],
+    },
+}
+
+client = genai.Client()
+tools = types.Tool(function_declarations=[set_light_values_declaration])
+config = types.GenerateContentConfig(tools=[tools])
+
+# Turn 1: model returns a function call
+contents = [types.Content(role="user",
+    parts=[types.Part(text="Turn the lights down to a romantic level")])]
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash", contents=contents, config=config
+)
+
+tool_call = response.candidates[0].content.parts[0].function_call
+# tool_call.name, tool_call.args, tool_call.id
+
+# YOU execute the actual function
+result = {"brightness": tool_call.args["brightness"],
+          "colorTemperature": tool_call.args["color_temp"]}
+
+# Turn 2: feed result back; id MUST match
+function_response_part = types.Part.from_function_response(
+    name=tool_call.name,
+    response={"result": result},
+    id=tool_call.id,
+)
+contents.append(response.candidates[0].content)
+contents.append(types.Content(role="user", parts=[function_response_part]))
+
+final = client.models.generate_content(
+    model="gemini-2.5-flash", config=config, contents=contents
+)
+print(final.text)
+```
+
+> **Gemini 3 specific:** every `functionCall` returns a unique `id`. The SDK handles this; raw REST users must not lose it (covered in the callout above).
+
+## Function calling — automatic mode (Python only)
+
+Pass a Python function directly. The SDK handles the entire loop (up to 10 turns by default):
+
+```python
+def get_current_weather(location: str) -> str:
+    """Returns the current weather.
+    Args:
+        location: The city and state, e.g. San Francisco, CA
+    """
+    return "sunny"   # in production, call a real weather API
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What is the weather like in Boston?",
+    config=types.GenerateContentConfig(tools=[get_current_weather]),
+)
+print(response.text)   # full natural-language reply
+```
+
+The SDK reads:
+
+- The function name → tool `name`
+- Type hints (e.g. `location: str`) → parameter types
+- The docstring → `description`
+
+For typed functions with good docstrings, this is the lowest-friction pattern by far. JS doesn't have an equivalent (yet); use the manual loop.
+
+## Parallel function calling
+
+Gemini can return multiple function calls in a single response — useful for "do these three things" prompts:
+
+```python
+# Prompt: "Power up the disco ball, start music, dim the lights."
+# Response: candidates[0].content.parts contains three function_call parts.
+
+for part in response.candidates[0].content.parts:
+    fn_call = part.function_call
+    if fn_call:
+        # Execute fn_call.name with fn_call.args
+        ...
+```
+
+You execute them in any order, then feed all responses back (matched by `id`) in the next `contents` turn. The model integrates all results.
+
+## Sequential / compositional function calling
+
+The model can chain calls — call A, see the result, decide to call B, see the result, decide to call C. The manual loop above naturally handles this; just keep iterating until `response.candidates[0].content.parts[0]` doesn't contain a `function_call`.
+
+## Tool config modes
+
+```python
+config=types.GenerateContentConfig(
+    tools=[tools],
+    tool_config=types.ToolConfig(
+        function_calling_config=types.FunctionCallingConfig(
+            mode=types.FunctionCallingConfigMode.ANY,   # AUTO | ANY | NONE
+        )
+    ),
+)
+```
+
+- **`AUTO`** (default) — model decides whether to call a function
+- **`ANY`** — model MUST call a function (useful for forcing structured tool routing)
+- **`NONE`** — model can't call any function (useful for "answer in plain text only" turns)
+
+## Google Search grounding
+
+Plug in real-time web context. Gemini does the search, cites sources, returns a normal text answer:
+
+```python
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What happened in AI this week?",
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())]
+    ),
+)
+print(response.text)
+
+# Grounding metadata
+metadata = response.candidates[0].grounding_metadata
+# metadata.web_search_queries → which queries were issued
+# metadata.grounding_chunks  → list of {web: {uri, title}}
+# metadata.grounding_supports → spans of the answer mapped to chunks
+# metadata.search_entry_point → HTML widget you must render per Google ToS
+```
+
+> **Pricing:** **5,000 grounded prompts per month free** (shared across Gemini 3 models), then **$14 per 1,000 search queries**. A single prompt can issue multiple search queries — check `web_search_queries` to know how many were billed for that response.
+
+> **Render requirement:** the `search_entry_point` HTML widget must be displayed when you show grounded answers (Google's terms of service for grounded search). The SDK gives you the HTML; embed it.
+
+## Code execution
+
+Sandboxed **Python** runtime. The model writes code, executes it, sees the output, can iterate.
+
+```python
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What's 47 to the power of 13? Calculate it.",
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(code_execution=types.ToolCodeExecution())]
+    ),
+)
+
+for part in response.candidates[0].content.parts:
+    if part.executable_code:
+        print("CODE:", part.executable_code.code)
+    if part.code_execution_result:
+        print("RESULT:", part.code_execution_result.output)
+    if part.text:
+        print("TEXT:", part.text)
+```
+
+Sandbox details:
+
+- Python only (model can generate other languages but can't execute them)
+- Iterative — model can run code, learn from output, run more code
+- Stdlib + selected packages available; full list in the docs
+- Useful for: arithmetic, data manipulation, plotting requested values, parsing structured input
+
+Different from Vertex AI Agent Runtime's [Code Execution sandbox](/google/vertex-ai-agents/concepts/), which is for whole-agent workflows.
+
+## URL context
+
+Pass URLs in your prompt and let Gemini fetch + read them:
+
+```python
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Compare these two articles: https://example.com/a and https://example.com/b",
+    config=types.GenerateContentConfig(
+        tools=[types.Tool(url_context=types.UrlContext())]
+    ),
+)
+```
+
+Useful when you don't want to download the page yourself. Subject to robots.txt and Gemini's fetch policies.
+
+## File search
+
+Listed in the capabilities table for Gemini 2.5 and 3 models — surfaces semantic search across files you've uploaded via the Files API. Lighter weight than building your own RAG pipeline. Detail evolves; check the docs before depending on it for production.
+
+## Computer Use (preview)
+
+Model `gemini-2.5-computer-use-preview-10-2025`. The model can mimic human-like interactions with graphical interfaces (click, type, scroll). Preview status, stricter rate limits, **not production-ready**.
+
+For production-grade agent UI automation today, look at:
+
+- Browser-only: [Playwright MCP](/google/gemini-cli/mcp/) wired to a CLI agent
+- Full-screen: [Anthropic Computer Use](/anthropic/computer-use/overview/)
+
+## Pattern: function calling + Google Search together
+
+Mix and match — declare functions for your business logic, enable Google Search for "what's the latest on X":
+
+```python
+config=types.GenerateContentConfig(
+    tools=[
+        my_function_tool,                                            # your business tools
+        types.Tool(google_search=types.GoogleSearch()),              # Google Search
+    ]
+)
+```
+
+The model picks per turn — it might Google something, then call your function with the result, then return text.
+
+## What's next
+
+- [§GAPI.4 Patterns](/google/gemini-api/patterns/) — chat shape, streaming, Files API, structured output, safety settings
+- [§GAPI.3 Models](/google/gemini-api/models/) — which model supports which tool
+- [§VAI.1 Vertex AI Agents](/google/vertex-ai-agents/overview/) — when you need cloud-grade agent runtime, sessions, memory bank
+- [§GCL.6 Gemini CLI MCP](/google/gemini-cli/mcp/) — MCP-shaped tool use for the terminal agent

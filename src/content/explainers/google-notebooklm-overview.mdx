@@ -1,0 +1,123 @@
+---
+title: "NotebookLM, plainly"
+section: "NotebookLM"
+sectionNumber: "NLM.1"
+description: "What NotebookLM is — a source-grounded research notebook from Google. You upload PDFs, Google Docs, web URLs, audio files, even YouTube videos; chat is grounded in only those sources. Plus the Studio panel (Audio Overviews, Video Overviews, Mind Maps, Reports), tier breakdown, and the privacy story."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from support.google.com/notebooklm pages and blog.google announcements (15 May 2026). Sush has heard a lot of good things but hasn't personally used NotebookLM yet — page flips to tried once he uploads his first set of sources."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://notebooklm.google.com/"
+  - "https://support.google.com/notebooklm/answer/16164461"
+  - "https://support.google.com/notebooklm/answer/16213268"
+  - "https://support.google.com/notebooklm/answer/16215270"
+  - "https://blog.google/technology/ai/notebooklm-audio-overviews/"
+vendor: "google"
+product: "notebooklm"
+---
+
+## The thirty-second version
+
+NotebookLM is **a hosted research notebook from Google** powered by Gemini. You upload sources (PDFs, Google Docs, web URLs, YouTube videos, audio files, etc.) and the assistant answers questions **grounded in those sources only**. If the answer isn't in the sources, NotebookLM declines to answer.
+
+Three things to know:
+
+1. **Source-grounded by design.** Every answer cites passages from your uploads. The model won't (in theory) wander off your sources to hallucinate from general training. That's the point of the product.
+2. **The "Audio Overview" feature is the hook.** Two AI hosts walk through your sources in a podcast-style conversation. Google's docs and launch material consistently centre on this as the headline product feature. There's now a Video Overview equivalent too.
+3. **Real free tier on a real Gemini model.** Sign up with any Gmail account; no card. Generous limits for personal research, gated up via Plus / Pro / Ultra subscriptions or Workspace / Cloud Enterprise.
+
+## What you upload (and the per-source limits)
+
+The accepted source types as of mid-2026:
+
+| Category | Formats |
+|---|---|
+| Documents | Google Docs, Google Slides (≤100 slides), Google Sheets (≤100K tokens), PDF, Word (.docx), Text (.txt), Markdown (.md), CSV, PowerPoint (.pptx), ePub |
+| Web | Public URLs (text-only, no paywalls), YouTube videos (with captions, public, ≥72 hours old) |
+| Media | Images (avif, bmp, gif, heic, heif, ico, jp2, jpe, jpeg, jpg, png, tif, tiff, webp — certain image types may not work as well) |
+| Audio | mp3, mp4, mpeg, wav, m4a, aac, opus, ogg, aiff, wma, etc. (transcribed at import; must contain speech) |
+| Other | Copy-pasted text, your Gemini Chats (opt-in integration) |
+
+**Per-source cap:** 500,000 words OR 200 MB, whichever is smaller. **Per-notebook source count** depends on your tier — see the table below.
+
+> **YouTube caveats:** videos without captions can't be imported (text transcript only — no video / audio analysis). Private or deleted videos are auto-removed within 30 days. New videos may take 72 hours to become available.
+
+## Tier breakdown (mid-2026)
+
+| Tier | How you get it | Sources per notebook | Audio Overviews / day | Notebooks |
+|---|---|---|---|---|
+| **Standard** (Free) | Free Gmail / Google account | 50 | 3 | 100 |
+| **Plus** | Google AI Plus subscription | 100 | 6 | 200 |
+| **Pro** | Google AI Pro plan OR qualifying Workspace edition | 300 | 20 | 500 |
+| **Ultra** | Google AI Ultra plan OR AI Ultra Access add-on | 600 | 200 | 500 |
+| **Enterprise** | $9 USD / licence / month via Google Cloud | 5× Standard or more | 5× Standard or more | 5× Standard or more |
+
+> **Marked "Subject to Change" in Google's docs.** Numbers above were verified mid-May 2026 and Google adjusts them quarterly.
+
+For Workspace users, NotebookLM is now a **core service** (like Gmail and Calendar) for many qualifying paid Workspace editions, but the exact tier you receive depends on your plan. Higher Workspace editions (Business Plus, Business Standard, Enterprise Plus, Enterprise Standard) get Pro-level limits with enterprise-grade privacy. Lower paid editions (Business Starter, etc.) get Standard limits with the same enterprise-grade privacy. Some editions (Business Base, Essentials Starter, Workspace Individual, G Suite, Cloud Identity, Chrome / Android Enterprise) get NotebookLM as an additional service under standard Google ToS. There's also an Expanded Level Access tier (via the AI Expanded Access add-on) that sits between Pro and Ultra (400 sources / notebook). See [the Workspace mapping page](https://support.google.com/notebooklm/answer/16337734) for the current per-edition table.
+
+## What's in the Studio panel
+
+The right-hand "Studio" panel is where the agent generates artefacts from your notebook:
+
+| Artefact | What it is |
+|---|---|
+| **Audio Overview** | Two AI hosts in podcast-style conversation. Four formats: **Deep Dive** (default), **The Brief** (one speaker, under 2 min), **The Critique** (constructive eval), **The Debate** (formal back-and-forth). 80+ output languages. Interactive Mode (English only) lets you join the conversation by voice. |
+| **Video Overview** | Three formats: Cinematic (Ultra-only, English-only, 18+), Explainer, Brief. About 10 visual styles (Classic, Whiteboard, Watercolor, Retro Print, Heritage, Paper-craft, Kawaii, Anime, plus Custom and Auto) for the non-Cinematic formats. 80+ output languages. |
+| **Mind Map** | Interactive branching diagram of main topics + relationships. Zoom, expand/collapse, click a node to ask a question about it. **Not in the mobile app.** |
+| **Reports** | FAQ, Study Guide, Briefing Document, AI-suggested type. Export to Google Docs (data tables to Sheets). |
+| **Slide Decks** | Detailed Deck (full text) or Presenter Slides (visual + talking points). Export as PDF or PowerPoint. 18+. |
+| **Infographics** | Single-image visual summary. 18+. Square / Portrait / Landscape. Export as PNG. |
+| **Flashcards & Quizzes** | Easy / Medium / Hard. Track progress (Got it! / Missed it!). Download flashcards as CSV. |
+| **Data Tables** | Generated from sources; export as Google Sheets (each table → its own tab). |
+| **Notes** | Up to 1,000 per notebook. Save chat responses. Export to Docs / Sheets. Real-time collaboration with editors. |
+- **Deep Research** | Research agent — automatically browses up to hundreds of websites and imports findings as new sources. 18+. Limits scale with tier (Standard 10/month → Ultra 200/day). |
+
+## What model is under the hood?
+
+The June 2024 global-expansion blog post that announced multi-language support named **Gemini 1.5 Pro**. The September 2024 Audio Overviews launch post mentions Gemini 1.5 in passing without specifying the sub-version. Current support docs simply say "Access to Gemini models" (Standard tier), "Higher access" (Pro), "Highest access" (Ultra) — Google **no longer publicly discloses the exact model version**. Don't write "Gemini 1.5 Pro" in 2026; it's almost certainly newer.
+
+## Privacy — what Google says
+
+Verbatim from current docs:
+
+**All users (Standard / Plus / consumer accounts):**
+> *"Your data is protected, and is not used to train NotebookLM unless you provide feedback. When you share feedback to help us improve, we may review the full context of that interaction, including your queries, uploads, and the model's responses."*
+
+**Workspace / Workspace for Education users (stronger):**
+> *"Your uploads, queries and the model's responses in NotebookLM will not be reviewed by human reviewers, even when you provide thumbs up or down feedback, and will not be used to train AI models."*
+
+**Enterprise (Google Cloud — strongest):**
+> *"Your uploaded files will remain within your GCP project. Data regionalization is honored. Additionally all files, chats and model outputs won't be reviewed by human reviewers or used to improve generative AI models."*
+
+Feedback data on consumer accounts is reviewed by trained teams, disconnected from your Google Account before review, and retained for up to 3 years.
+
+## Why this matters
+
+Three things to call out:
+
+- **Source grounding ≠ hallucination-free.** NotebookLM is strict about *where it looks* (your uploaded sources only), not about whether what it says is correct. Every output ships with the disclaimer "may contain inaccuracies" and Mind Maps say "please double check its responses." Treat it as a research assistant, not an oracle.
+- **Notebooks are isolated.** NotebookLM cannot reference multiple notebooks at once. If your "research" spans three projects, you're chatting with one of them at a time. (Compare with Gemini app's broader context across your Google account.)
+- **Public sharing has tier asymmetries.** "Anyone with a link" public sharing is **disabled for Workspace Enterprise and Education accounts.** Private email-based sharing always works.
+
+## Honest take
+
+NotebookLM is one of the most-praised consumer Google AI products in current sourced material. The repeated selling points across launch posts, case studies, and reviews are:
+
+1. **Audio Overviews** — even sceptics report finding the podcast format genuinely useful
+2. **Source grounding** — the "I won't make things up" promise feels real in practice for most users
+3. **It just works on the free tier** — most personal research workflows never need a paid tier
+
+The trade-offs:
+
+- Notebook isolation is real workflow friction
+- Mobile app is described as an "early version" with feature gaps (no Mind Maps, Notes, Reports, or Data Tables on mobile)
+- Cinematic Video Overviews are paywalled hard (Ultra-only, English-only, 18+)
+- The free tier "may use your data to improve products" if you give feedback — the Workspace / Enterprise tiers are stronger on this
+
+## What's next
+
+- [§NLM.2 Use cases](/google/notebooklm/use-cases/) — twelve real-world shapes from official docs and case studies
+- [§NLM.3 Enterprise](/google/notebooklm/enterprise/) — the $9/licence/month tier, VPC-SC, IAM, data residency
+- [§GEM.1 Gems](/google/gems/overview/) — if you want a custom assistant in the Gemini app instead of a research notebook
