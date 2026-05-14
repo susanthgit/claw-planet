@@ -150,7 +150,7 @@ If two locations define the same skill, the higher-precedence one wins.
 
 ## Channels (24+ messaging surfaces)
 
-OpenClaw connects to a *lot* of channels — see [§3.2 Channels](/connections/channels/) for the full catalog. The official list as of last review:
+OpenClaw connects to a *lot* of channels — see [§3.2 Channels](/openclaw/connections/channels/) for the full catalog. The official list as of last review:
 
 WhatsApp · Telegram · Slack · Discord · Google Chat · Signal · iMessage · BlueBubbles · IRC · Microsoft Teams · Matrix · Feishu · LINE · Mattermost · Nextcloud Talk · Nostr · Synology Chat · Tlon · Twitch · Zalo · Zalo Personal · WeChat · QQ · WebChat · Yuanbao · plus voice nodes on macOS / iOS / Android.
 
@@ -220,7 +220,7 @@ There's also **Active memory** (memory injected into the current session's conte
 
 **Optional process isolation for non-`main` sessions.** Default backend is Docker; SSH and OpenShell backends are also available. Set `agents.defaults.sandbox.mode: "non-main"`. Typical sandbox policy allows `bash`, `process`, `read`, `write`, `edit`, `sessions_*`; denies `browser`, `canvas`, `nodes`, `cron`, `discord`, `gateway`.
 
-> *Why this matters:* the default ("tools run on host for `main` session") is fine when it's just you. The moment you let other people DM your agent — friends, colleagues, group chats — you want non-main sessions sandboxed. See [§6 Security](/security/).
+> *Why this matters:* the default ("tools run on host for `main` session") is fine when it's just you. The moment you let other people DM your agent — friends, colleagues, group chats — you want non-main sessions sandboxed. See [§6 Security](/openclaw/security/).
 
 [Sandboxing docs →](https://docs.openclaw.ai/gateway/sandboxing)
 

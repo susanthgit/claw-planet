@@ -26,13 +26,13 @@ product: "openclaw-runtime"
 
 ## When this is the right setup
 
-You want a $130 always-on assistant that lives on your desk. You don't need voice (Pi has no native voice node — see [§1.4 drawback #6](/overview/honest-drawbacks/)). You're either already on Pi or want the cheapest credible "I have an agent" path.
+You want a $130 always-on assistant that lives on your desk. You don't need voice (Pi has no native voice node — see [§1.4 drawback #6](/openclaw/overview/honest-drawbacks/)). You're either already on Pi or want the cheapest credible "I have an agent" path.
 
 The Pi 5 with 8GB is the **strongest first OpenClaw box** for most people: cheap, low power (~5W), silent (with passive cooling for light loads), small enough to put on your monitor, and powerful enough for the runtime + a small local model if you want.
 
 ## What you'll have at the end
 
-A Pi running an OpenClaw Gateway as a `systemd` user service, restarting on boot, on your home network with a static IP or hostname. Connected to whichever channels you use (Telegram is the easiest first; Slack works fine; iMessage requires a Mac in the chain — see [§3.2 Channels](/connections/channels/)).
+A Pi running an OpenClaw Gateway as a `systemd` user service, restarting on boot, on your home network with a static IP or hostname. Connected to whichever channels you use (Telegram is the easiest first; Slack works fine; iMessage requires a Mac in the chain — see [§3.2 Channels](/openclaw/connections/channels/)).
 
 ## Hardware shopping list
 
@@ -105,7 +105,7 @@ openclaw --version
 openclaw onboard --install-daemon
 ```
 
-The onboarder will create the workspace, prompt for channel pairing, and install a `systemd` user service. Same flow as [§2.4 Linux server step 3](/setup/linux-server/).
+The onboarder will create the workspace, prompt for channel pairing, and install a `systemd` user service. Same flow as [§2.4 Linux server step 3](/openclaw/setup/linux-server/).
 
 ## Step 6 — Enable lingering (start on boot)
 
@@ -124,7 +124,7 @@ openclaw doctor
 openclaw agent --message "Hello from the Pi. What's the time?"
 ```
 
-If the agent responds, the runtime is wired. Now pair the channels you use ([§3.2 Channels](/connections/channels/)).
+If the agent responds, the runtime is wired. Now pair the channels you use ([§3.2 Channels](/openclaw/connections/channels/)).
 
 ## Model choice on a Pi (the important one)
 
@@ -213,13 +213,13 @@ This is roughly what a polished Pi-OpenClaw setup looks like:
 ## Things to try once it works
 
 - **Schedule a 9am daily summary cron** that hits your calendar API and DMs you.
-- **Run the agent on a local 3B model** for one week, then swap back to Claude. Notice the quality difference. (See [§5 Use cases — Pi-hosted always-on home agent](/use-cases/) for a real recipe.)
+- **Run the agent on a local 3B model** for one week, then swap back to Claude. Notice the quality difference. (See [§5 Use cases — Pi-hosted always-on home agent](/openclaw/use-cases/) for a real recipe.)
 - **Add a second channel** (e.g. Slack workspace at home or work). Test that the agent identity feels consistent.
 - **Set up a "what's overnight on Hacker News" cron** — agent reads HN, posts a summary to your DM at 7am. Fun, low-stakes, teaches you the cron + browser-tool flow.
 
 ## What to read next
 
-- [§5.4 Pi-hosted always-on home agent](/use-cases/) (planned) — the full recipe
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — even at home, defaults matter
-- [§3.2 Channels](/connections/channels/) — pair the messaging surfaces you use
-- [§2.4 Linux server](/setup/linux-server/) — same shape for non-Pi Linux boxes
+- [§5.4 Pi-hosted always-on home agent](/openclaw/use-cases/) (planned) — the full recipe
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — even at home, defaults matter
+- [§3.2 Channels](/openclaw/connections/channels/) — pair the messaging surfaces you use
+- [§2.4 Linux server](/openclaw/setup/linux-server/) — same shape for non-Pi Linux boxes

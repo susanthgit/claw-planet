@@ -1,0 +1,57 @@
+# Claw Planet — Cloudflare Pages _redirects
+#
+# Batch 0b URL migration (2026-05-14)
+# The 8 OpenClaw legacy section URLs moved from root paths to /openclaw/*.
+#
+# Order matters: Cloudflare applies the first matching rule, so the exact-prefix
+# redirects (no-slash + trailing-slash) appear BEFORE the wildcard rules. This
+# ensures `/setup` and `/setup/` both redirect cleanly to `/openclaw/setup/`
+# rather than relying on wildcard splat behaviour for edge cases.
+#
+# Each section gets 3 rules:
+#   1. bare path (no trailing slash)         → /openclaw/<section>/
+#   2. bare path with trailing slash         → /openclaw/<section>/
+#   3. anything deeper (wildcard with splat) → /openclaw/<section>/:splat
+#
+# Verify with: curl -sI -o /dev/null -w '%{http_code} %{redirect_url}\n' \
+#   https://claw.aguidetocloud.com/setup/laptop/
+
+# ── /overview/ → /openclaw/overview/ ──────────────────────────────────────────
+/overview              /openclaw/overview/              301
+/overview/             /openclaw/overview/              301
+/overview/*            /openclaw/overview/:splat        301
+
+# ── /setup/ → /openclaw/setup/ ────────────────────────────────────────────────
+/setup                 /openclaw/setup/                 301
+/setup/                /openclaw/setup/                 301
+/setup/*               /openclaw/setup/:splat           301
+
+# ── /connections/ → /openclaw/connections/ ────────────────────────────────────
+/connections           /openclaw/connections/           301
+/connections/          /openclaw/connections/           301
+/connections/*         /openclaw/connections/:splat     301
+
+# ── /plugins/ → /openclaw/plugins/ ────────────────────────────────────────────
+/plugins               /openclaw/plugins/               301
+/plugins/              /openclaw/plugins/               301
+/plugins/*             /openclaw/plugins/:splat         301
+
+# ── /use-cases/ → /openclaw/use-cases/ ────────────────────────────────────────
+/use-cases             /openclaw/use-cases/             301
+/use-cases/            /openclaw/use-cases/             301
+/use-cases/*           /openclaw/use-cases/:splat       301
+
+# ── /security/ → /openclaw/security/ ──────────────────────────────────────────
+/security              /openclaw/security/              301
+/security/             /openclaw/security/              301
+/security/*            /openclaw/security/:splat        301
+
+# ── /resources/ → /openclaw/resources/ ────────────────────────────────────────
+/resources             /openclaw/resources/             301
+/resources/            /openclaw/resources/             301
+/resources/*           /openclaw/resources/:splat       301
+
+# ── /faq/ → /openclaw/faq/ ────────────────────────────────────────────────────
+/faq                   /openclaw/faq/                   301
+/faq/                  /openclaw/faq/                   301
+/faq/*                 /openclaw/faq/:splat             301

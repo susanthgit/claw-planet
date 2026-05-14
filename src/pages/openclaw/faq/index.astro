@@ -7,7 +7,7 @@ const faq = [
   {
     num: '10.1',
     q: 'Is OpenClaw production-ready in 2026?',
-    a: 'It depends on what you mean by production. Single-user always-on (your personal assistant): yes. Multi-tenant SaaS: with significant DIY work — multi-agent routing helps but auth/scale/RBAC are your problem. Team deployment for 5–50 people: possible but you are the sysadmin, not the ops vendor. See <a href="/overview/honest-drawbacks/">§1.4 honest drawbacks #1</a> for the single-user-shape constraint.',
+    a: 'It depends on what you mean by production. Single-user always-on (your personal assistant): yes. Multi-tenant SaaS: with significant DIY work — multi-agent routing helps but auth/scale/RBAC are your problem. Team deployment for 5–50 people: possible but you are the sysadmin, not the ops vendor. See <a href="/openclaw/overview/honest-drawbacks/">§1.4 honest drawbacks #1</a> for the single-user-shape constraint.',
   },
   {
     num: '10.2',
@@ -17,17 +17,17 @@ const faq = [
   {
     num: '10.3',
     q: 'How much does running an OpenClaw agent cost?',
-    a: 'Three rough cost lines (illustrative, 2026-05): hosting (laptop = $0 marginal, Pi 5 = ~$2/month electricity, Hetzner VM = ~$15/month, Azure VM = ~$30/month list price), model API calls (~$1–25/month for typical personal use depending on model), optional governance services (Honcho memory, etc. — depends). All hosting figures are list prices off public web pages; model figures are back-of-envelope estimates not measured runs. See <a href="/setup/hardware-matrix/">§2.1 hardware matrix</a> and <a href="/connections/models/#cost-notes-rough-illustrative-figures-202605">§3.4 model cost notes</a> for the basis.',
+    a: 'Three rough cost lines (illustrative, 2026-05): hosting (laptop = $0 marginal, Pi 5 = ~$2/month electricity, Hetzner VM = ~$15/month, Azure VM = ~$30/month list price), model API calls (~$1–25/month for typical personal use depending on model), optional governance services (Honcho memory, etc. — depends). All hosting figures are list prices off public web pages; model figures are back-of-envelope estimates not measured runs. See <a href="/openclaw/setup/hardware-matrix/">§2.1 hardware matrix</a> and <a href="/openclaw/connections/models/#cost-notes-rough-illustrative-figures-202605">§3.4 model cost notes</a> for the basis.',
   },
   {
     num: '10.4',
     q: 'Can I run OpenClaw on a Raspberry Pi 4?',
-    a: 'Yes, with constraints. The 8GB Pi 4 is fine for runtime + hosted-API model. The 4GB Pi 4 is tight (you will feel cold-start lag, cannot run local models comfortably). Pi 5 with 8GB is the recommended starter box at $130 all-in. See <a href="/setup/raspberry-pi/">§2.6</a> for the full Pi setup.',
+    a: 'Yes, with constraints. The 8GB Pi 4 is fine for runtime + hosted-API model. The 4GB Pi 4 is tight (you will feel cold-start lag, cannot run local models comfortably). Pi 5 with 8GB is the recommended starter box at $130 all-in. See <a href="/openclaw/setup/raspberry-pi/">§2.6</a> for the full Pi setup.',
   },
   {
     num: '10.5',
     q: 'How do I keep adversarial users from hijacking my bot?',
-    a: 'Defaults are sensible (DM policy = pairing, sandbox = off, etc.). The moment you connect a public channel or open DM to people you do not know, run through <a href="/security/self-hosting-checklist/">§6.1 the 12 checks</a>. Particularly: turn on sandbox for non-main sessions, never set <code>dmPolicy="open"</code> + <code>"*"</code> in allowFrom without thinking, and run <code>openclaw doctor</code> after every config change.',
+    a: 'Defaults are sensible (DM policy = pairing, sandbox = off, etc.). The moment you connect a public channel or open DM to people you do not know, run through <a href="/openclaw/security/self-hosting-checklist/">§6.1 the 12 checks</a>. Particularly: turn on sandbox for non-main sessions, never set <code>dmPolicy="open"</code> + <code>"*"</code> in allowFrom without thinking, and run <code>openclaw doctor</code> after every config change.',
   },
   {
     num: '10.6',
@@ -69,9 +69,9 @@ const faq = [
 
   <div class="cross-refs">
     <strong>see also:</strong>
-    <a href="/overview/concepts/">§1.2 concepts</a>
-    <a href="/overview/honest-drawbacks/">§1.4 honest drawbacks</a>
-    <a href="/security/">§6 security</a>
+    <a href="/openclaw/overview/concepts/">§1.2 concepts</a>
+    <a href="/openclaw/overview/honest-drawbacks/">§1.4 honest drawbacks</a>
+    <a href="/openclaw/security/">§6 security</a>
     <a href="/methodology/">methodology</a>
   </div>
 </BaseLayout>

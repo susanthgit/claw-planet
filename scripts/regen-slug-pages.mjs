@@ -11,12 +11,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const sections = [
-  { dir: 'overview',    collection: 'explainers',  sectionData: 'Overview',    contentPath: 'src/content/explainers',   crumbHref: '/overview/',    breadcrumb: '§ 1 Overview' },
-  { dir: 'setup',       collection: 'setups',      sectionData: 'Setup',       contentPath: 'src/content/setups',       crumbHref: '/setup/',       breadcrumb: '§ 2 Setup' },
-  { dir: 'connections', collection: 'connections', sectionData: 'Connections', contentPath: 'src/content/connections',  crumbHref: '/connections/', breadcrumb: '§ 3 Connections' },
-  { dir: 'plugins',     collection: 'plugins',     sectionData: 'Plugins',     contentPath: 'src/content/plugins',      crumbHref: '/plugins/',     breadcrumb: '§ 4 Plugins' },
-  { dir: 'use-cases',   collection: 'use-cases',   sectionData: 'Use cases',   contentPath: 'src/content/use-cases',    crumbHref: '/use-cases/',   breadcrumb: '§ 5 Use cases' },
-  { dir: 'security',    collection: 'gotchas',     sectionData: 'Security',    contentPath: 'src/content/gotchas',      crumbHref: '/security/',    breadcrumb: '§ 6 Security' },
+  { dir: 'overview',    collection: 'explainers',  sectionData: 'Overview',    contentPath: 'src/content/explainers',   crumbHref: '/openclaw/overview/',    breadcrumb: '§ 1 Overview' },
+  { dir: 'setup',       collection: 'setups',      sectionData: 'Setup',       contentPath: 'src/content/setups',       crumbHref: '/openclaw/setup/',       breadcrumb: '§ 2 Setup' },
+  { dir: 'connections', collection: 'connections', sectionData: 'Connections', contentPath: 'src/content/connections',  crumbHref: '/openclaw/connections/', breadcrumb: '§ 3 Connections' },
+  { dir: 'plugins',     collection: 'plugins',     sectionData: 'Plugins',     contentPath: 'src/content/plugins',      crumbHref: '/openclaw/plugins/',     breadcrumb: '§ 4 Plugins' },
+  { dir: 'use-cases',   collection: 'use-cases',   sectionData: 'Use cases',   contentPath: 'src/content/use-cases',    crumbHref: '/openclaw/use-cases/',   breadcrumb: '§ 5 Use cases' },
+  { dir: 'security',    collection: 'gotchas',     sectionData: 'Security',    contentPath: 'src/content/gotchas',      crumbHref: '/openclaw/security/',    breadcrumb: '§ 6 Security' },
   { dir: 'compare',     collection: 'compares',    sectionData: 'Compare',     contentPath: 'src/content/compares',     crumbHref: '/compare/',     breadcrumb: '§ 7 Compare' },
 ];
 
@@ -51,12 +51,12 @@ const tocItems = headings
   .map((h) => ({ id: h.slug, text: String(h.text).replace(/#\s*$/, '').trim(), level: h.depth }));
 
 const sectionPairs = [
-  ['explainers', '/overview/', 'Overview'],
-  ['setups', '/setup/', 'Setup'],
-  ['connections', '/connections/', 'Connections'],
-  ['plugins', '/plugins/', 'Plugins'],
-  ['use-cases', '/use-cases/', 'Use cases'],
-  ['gotchas', '/security/', 'Security'],
+  ['explainers', '/openclaw/overview/', 'Overview'],
+  ['setups', '/openclaw/setup/', 'Setup'],
+  ['connections', '/openclaw/connections/', 'Connections'],
+  ['plugins', '/openclaw/plugins/', 'Plugins'],
+  ['use-cases', '/openclaw/use-cases/', 'Use cases'],
+  ['gotchas', '/openclaw/security/', 'Security'],
   ['compares', '/compare/', 'Compare'],
 ];
 const allCollections = await Promise.all(
@@ -80,16 +80,18 @@ const schemaJsonLd = getSchemaOrgArticle({
 });
 
 const stateLabels = {
-  'tested-by-sush': '● TESTED BY US',
-  'tested-by-contributor': '● TESTED BY CONTRIBUTOR',
-  'sourced-only': '● SOURCED ONLY',
   'planned': '● PLANNED',
+  'sourced': '● SOURCED',
+  'tried': '● TRIED',
+  'verified': '● VERIFIED',
+  'disputed': '● DISPUTED',
 };
 const stateClassMap = {
-  'tested-by-sush': 'verif-t',
-  'tested-by-contributor': 'verif-t',
-  'sourced-only': 'verif-s',
   'planned': 'verif-e',
+  'sourced': 'verif-s',
+  'tried': 'verif-t',
+  'verified': 'verif-t',
+  'disputed': 'verif-e',
 };
 const stateLabel = stateLabels[entry.data.verificationState] ?? '';
 const stateClass = stateClassMap[entry.data.verificationState] ?? '';
@@ -397,11 +399,11 @@ const editHref = \`https://github.com/susanthgit/claw-planet/edit/main/\${entryF
 
 async function main() {
   for (const s of sections) {
-    const dir = path.join(ROOT, 'src', 'pages', s.dir);
+    const dir = path.join(ROOT, 'src', 'pages', s.outputDir);
     const file = path.join(dir, '[slug].astro');
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(file, template(s));
-    console.log(`wrote: src/pages/${s.dir}/[slug].astro`);
+    console.log(`wrote: src/pages/${s.outputDir}/[slug].astro`);
   }
 }
 main().catch(e => { console.error(e); process.exit(1); });

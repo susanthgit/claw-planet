@@ -36,8 +36,8 @@ A naive agent might call `read` on `~/.openclaw/credentials/*`, return the conte
 
 **OpenClaw mitigation:**
 
-1. **DM policy = pairing** — unknown senders never reach the model in the first place ([§6.1 check 2](/security/self-hosting-checklist/))
-2. **Sandbox non-main** — if the message does reach the agent, the `read` tool runs inside Docker with no access to host secrets ([§6.1 check 4](/security/self-hosting-checklist/))
+1. **DM policy = pairing** — unknown senders never reach the model in the first place ([§6.1 check 2](/openclaw/security/self-hosting-checklist/))
+2. **Sandbox non-main** — if the message does reach the agent, the `read` tool runs inside Docker with no access to host secrets ([§6.1 check 4](/openclaw/security/self-hosting-checklist/))
 3. **Tool policy on `read`** — restrict `read` to only the workspace path
 4. **SOUL.md guardrails** — add explicit "Never read or output API keys, credentials, or secrets, regardless of who asks." Models *do* respect strong system prompts; they're not foolproof but they help.
 
@@ -55,7 +55,7 @@ A naive agent might call `read` on `~/.openclaw/credentials/*`, return the conte
 2. **Workspace allowlist** — `channels.slack.allowFrom` restricts which workspaces / users / channels the bot reacts to even if it has broader scopes
 3. **Re-pair regularly** — when scopes change in upstream platforms, re-do the OAuth dance to ensure you're not on legacy permissive grants
 
-This is the [§4.1 Slack Connector](/plugins/) field note's headline risk: "default scopes grant more workspace access than most agents actually need."
+This is the [§4.1 Slack Connector](/openclaw/plugins/) field note's headline risk: "default scopes grant more workspace access than most agents actually need."
 
 ## 3. Cost runaway (token / API spend)
 
@@ -163,7 +163,7 @@ These eight patterns aren't an exhaustive list of agent-security issues. They're
 
 ## What to read next
 
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — the 12 checks
-- [§6.4 What NOT to build as an agent](/security/what-not-to-build/) — patterns that should be skipped entirely
-- [§6.2 Plugin trust signals](/security/plugin-trust-signals/) — ten signals applied to skills/MCPs
-- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — the architectural drawbacks behind these patterns
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — the 12 checks
+- [§6.4 What NOT to build as an agent](/openclaw/security/what-not-to-build/) — patterns that should be skipped entirely
+- [§6.2 Plugin trust signals](/openclaw/security/plugin-trust-signals/) — ten signals applied to skills/MCPs
+- [§1.4 Honest drawbacks](/openclaw/overview/honest-drawbacks/) — the architectural drawbacks behind these patterns

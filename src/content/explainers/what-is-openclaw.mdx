@@ -78,7 +78,7 @@ If you only remember five things from this page, make it these:
 
 2. **There's one agent runtime per Gateway by default.** It's a single persistent assistant — not a swarm. (Multi-agent routing is supported when you actively configure it: different agents for different channels or accounts. The default shape is one.)
 
-3. **The workspace is a directory of plain markdown files.** [SOUL.md](/overview/concepts/#soul-md) is its personality, [AGENTS.md](/overview/concepts/#agents-md) is its operating instructions, [USER.md](/overview/concepts/#user-md) is what it knows about you, and so on. You can edit them with `vim`. You can put them in a git repo. They're injected into the system prompt every time the agent starts a session.
+3. **The workspace is a directory of plain markdown files.** [SOUL.md](/openclaw/overview/concepts/#soul-md) is its personality, [AGENTS.md](/openclaw/overview/concepts/#agents-md) is its operating instructions, [USER.md](/openclaw/overview/concepts/#user-md) is what it knows about you, and so on. You can edit them with `vim`. You can put them in a git repo. They're injected into the system prompt every time the agent starts a session.
 
 4. **Channels connect the Gateway to messaging surfaces.** WhatsApp, Telegram, Slack, Discord, iMessage, and 19+ more. Each channel has a default `pairing` policy — unknown senders get a pairing code, not your agent.
 
@@ -90,14 +90,14 @@ That's the shape. Everything else in this reference — security gotchas, setup 
 
 We have not run OpenClaw end-to-end ourselves yet (verification state on this page is `sourced`). The page above is compiled from official docs and the canonical GitHub README. Where we say "the agent does X," we mean "the docs say the agent does X" — not "we ran it and watched X happen."
 
-Setup pages like [§2.3 Laptop quick-start](/setup/laptop/) carry the same honesty: each declares whether we've actually executed the install or only sourced it from documentation. When that flips from `sourced` to `tested` the page says so, with a date.
+Setup pages like [§2.3 Laptop quick-start](/openclaw/setup/laptop/) carry the same honesty: each declares whether we've actually executed the install or only sourced it from documentation. When that flips from `sourced` to `tested` the page says so, with a date.
 
 ## What to read next
 
 | You're trying to | Go to |
 |---|---|
-| Understand the canonical config files (SOUL.md, AGENTS.md, etc.) | [§1.2 Concepts & glossary](/overview/concepts/) |
-| See how the pieces fit together visually | [§1.3 Architecture diagram](/overview/architecture/) |
-| Know what OpenClaw is *not* great at | [§1.4 Honest drawbacks](/overview/honest-drawbacks/) |
-| Install it on your laptop today | [§2.3 Laptop quick-start](/setup/laptop/) |
-| Browse the channels (Slack, WhatsApp, etc.) you can connect | [§3.2 Channels](/connections/channels/) |
+| Understand the canonical config files (SOUL.md, AGENTS.md, etc.) | [§1.2 Concepts & glossary](/openclaw/overview/concepts/) |
+| See how the pieces fit together visually | [§1.3 Architecture diagram](/openclaw/overview/architecture/) |
+| Know what OpenClaw is *not* great at | [§1.4 Honest drawbacks](/openclaw/overview/honest-drawbacks/) |
+| Install it on your laptop today | [§2.3 Laptop quick-start](/openclaw/setup/laptop/) |
+| Browse the channels (Slack, WhatsApp, etc.) you can connect | [§3.2 Channels](/openclaw/connections/channels/) |

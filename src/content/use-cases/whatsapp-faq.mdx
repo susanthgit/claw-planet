@@ -24,7 +24,7 @@ product: "openclaw-runtime"
 
 ## What you'll have at the end
 
-A WhatsApp number that, when customers message it, **answers their FAQ in plain language using your knowledge base** — and remembers past customers so repeat questions get answered with continuity. About 90 minutes if you've got hello-world ([§5.1](/use-cases/hello-world-laptop/)) running.
+A WhatsApp number that, when customers message it, **answers their FAQ in plain language using your knowledge base** — and remembers past customers so repeat questions get answered with continuity. About 90 minutes if you've got hello-world ([§5.1](/openclaw/use-cases/hello-world-laptop/)) running.
 
 This is the "small business, no chatbot platform" recipe. Useful for a freelancer, a tutor, a small studio, a consulting practice — anyone who fields the same questions repeatedly and wants the agent to take the first cut.
 
@@ -36,7 +36,7 @@ Trade-off: you maintain it. SaaS chatbots are turn-key; this is your responsibil
 
 ## What you need
 
-- Hello-world working ([§5.1](/use-cases/hello-world-laptop/))
+- Hello-world working ([§5.1](/openclaw/use-cases/hello-world-laptop/))
 - A WhatsApp Business account (different from personal WhatsApp; needed for the official channel)
 - A knowledge base — could be a single FAQ markdown file, could be a Notion export, could be your existing website's FAQ page
 - About 90 minutes (most of it is the WhatsApp Business setup)
@@ -78,7 +78,7 @@ This is the most important security step in this recipe. WhatsApp FAQ-bot is *pu
 
 This is one of the few times we recommend `dmPolicy="open"` + `"*"` — for a public FAQ bot, that's the desired behaviour. **But** make sure:
 
-1. **Sandbox is on for non-main sessions** ([§6.1 check 4](/security/self-hosting-checklist/)). Public input → adversarial-input-likely.
+1. **Sandbox is on for non-main sessions** ([§6.1 check 4](/openclaw/security/self-hosting-checklist/)). Public input → adversarial-input-likely.
 2. **Rate limits are set** (above) — limits abuse + caps your model API spend.
 3. **Tool policy denies dangerous tools** for non-main sessions — `exec`, `browser`, `write` outside scope, etc.
 
@@ -99,7 +99,7 @@ faq/
 
 Each file is markdown with the questions/answers in your own voice. The agent will read these to answer customer questions.
 
-For a slightly more sophisticated setup, use **QMD memory** ([§3.5](/connections/memory/)) — it indexes the markdown semantically so the agent finds the right answer faster:
+For a slightly more sophisticated setup, use **QMD memory** ([§3.5](/openclaw/connections/memory/)) — it indexes the markdown semantically so the agent finds the right answer faster:
 
 ```json
 {
@@ -204,7 +204,7 @@ WhatsApp Business onboarding has changed multiple times in recent years. The exa
 
 ## What to read next
 
-- [§5.2 Slack agent that does real work](/use-cases/slack-real-work/) — internal-team analogue of this
-- [§5.5 RAG over personal docs](/use-cases/rag-personal-docs/) (planned) — same shape, but for personal knowledge base
-- [§3.5 Memory](/connections/memory/) — for the QMD setup
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — public-DM-bot hardening
+- [§5.2 Slack agent that does real work](/openclaw/use-cases/slack-real-work/) — internal-team analogue of this
+- [§5.5 RAG over personal docs](/openclaw/use-cases/rag-personal-docs/) (planned) — same shape, but for personal knowledge base
+- [§3.5 Memory](/openclaw/connections/memory/) — for the QMD setup
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — public-DM-bot hardening

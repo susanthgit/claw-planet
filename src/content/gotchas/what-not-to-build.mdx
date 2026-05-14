@@ -79,7 +79,7 @@ The pattern is consistent: when a non-agentic solution exists and works, prefer 
 
 **Why it's usually wrong:**
 
-- **Cold-start latency** in OpenClaw is real (see [§1.4 drawback #2](/overview/honest-drawbacks/)). A response in 5 seconds for an agent with significant workspace context is normal — not great for live chat.
+- **Cold-start latency** in OpenClaw is real (see [§1.4 drawback #2](/openclaw/overview/honest-drawbacks/)). A response in 5 seconds for an agent with significant workspace context is normal — not great for live chat.
 - **Streaming partially helps** but customers still notice the gap.
 - **Edge cases compound.** A human chat agent handles "wait, customer is frustrated, switch tone" instantly. An agent's tone-shift requires explicit handling.
 
@@ -92,7 +92,7 @@ The pattern is consistent: when a non-agentic solution exists and works, prefer 
 **Why it's usually wrong:**
 
 - **Mistakes are public.** A bad merge, deploy, or commit is visible. Reverting is possible but reputational damage isn't.
-- **Adversarial input becomes destructive.** [§6.3 pattern #1 prompt injection](/security/practical-patterns/) is mostly recoverable from when the agent has read-only scope. With write-to-production scope, "tell the agent to push a commit" becomes attack vector.
+- **Adversarial input becomes destructive.** [§6.3 pattern #1 prompt injection](/openclaw/security/practical-patterns/) is mostly recoverable from when the agent has read-only scope. With write-to-production scope, "tell the agent to push a commit" becomes attack vector.
 - **The 95% case isn't the right benchmark.** "It works most of the time" is the wrong bar for irreversible actions.
 
 **Build instead:** the agent prepares the change (PR, draft, plan), a human approves and ships. The "human in the loop" is cheap insurance for irreversible operations.
@@ -154,7 +154,7 @@ If you've shipped an agent in one of these spaces and it works, lovely. We'd gen
 
 ## What to read next
 
-- [§5 Use cases](/use-cases/) — agentic patterns that DO work
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — the operational posture
+- [§5 Use cases](/openclaw/use-cases/) — agentic patterns that DO work
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — the operational posture
 - [§7 Compare](/compare/) — when OpenClaw's agent shape fits vs other shapes
-- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — the architectural drawbacks behind several of these
+- [§1.4 Honest drawbacks](/openclaw/overview/honest-drawbacks/) — the architectural drawbacks behind several of these

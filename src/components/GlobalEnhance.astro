@@ -110,8 +110,8 @@
       if (Date.now() - lastG < 1000) {
         if (e.key === 'h') { e.preventDefault(); window.location.href = '/'; return; }
         if (e.key === 'm') { e.preventDefault(); window.location.href = '/methodology/'; return; }
-        if (e.key === 's') { e.preventDefault(); window.location.href = '/setup/'; return; }
-        if (e.key === 'o') { e.preventDefault(); window.location.href = '/overview/'; return; }
+        if (e.key === 's') { e.preventDefault(); window.location.href = '/openclaw/setup/'; return; }
+        if (e.key === 'o') { e.preventDefault(); window.location.href = '/openclaw/overview/'; return; }
       }
       // j = next, k = prev (read from EntryFooter prev/next links)
       if (e.key === 'j' || e.key === 'k') {
@@ -123,17 +123,17 @@
 
     /* === inline glossary tooltips === */
     const GLOSSARY = {
-      'Gateway': { url: '/overview/concepts/#gateway', def: 'The persistent OpenClaw daemon that runs on your machine — handles channel webhooks, sessions, and plugin loading. One per box.' },
-      'agent runtime': { url: '/overview/concepts/#agent-runtime', def: 'The single agent process inside the Gateway. Built on the Pi agent core (models, tools, prompt pipeline).' },
-      'workspace': { url: '/overview/concepts/#workspace', def: 'The directory of plain markdown files that defines the agent — SOUL.md, AGENTS.md, USER.md, and so on.' },
-      'channels': { url: '/overview/concepts/#channels', def: 'Where messages come from and go to — 24+ supported (Slack, WhatsApp, iMessage, Discord, Telegram, etc.).' },
-      'channel': { url: '/overview/concepts/#channels', def: 'Where messages come from and go to — 24+ supported (Slack, WhatsApp, iMessage, Discord, Telegram, etc.).' },
-      'tools': { url: '/overview/concepts/#tools', def: 'Capabilities the agent can call — built-ins (read_file, http_request), skills, or MCP servers.' },
-      'skills': { url: '/overview/concepts/#skill', def: 'OpenClaw plugins that add tools. Live inside the workspace.' },
-      'skill': { url: '/overview/concepts/#skill', def: 'An OpenClaw plugin that adds a tool. Lives inside the workspace.' },
-      'MCP': { url: '/overview/concepts/#mcp', def: "Model Context Protocol — Anthropic's open standard for connecting agents to external tools/data. OpenClaw consumes MCP servers via its mcp bridge." },
-      'plugin': { url: '/overview/concepts/#plugin', def: 'A package added to OpenClaw — channel adapter, skill, memory engine, model provider, etc.' },
-      'plugins': { url: '/overview/concepts/#plugin', def: 'Packages added to OpenClaw — channel adapters, skills, memory engines, model providers, etc.' },
+      'Gateway': { url: '/openclaw/overview/concepts/#gateway', def: 'The persistent OpenClaw daemon that runs on your machine — handles channel webhooks, sessions, and plugin loading. One per box.' },
+      'agent runtime': { url: '/openclaw/overview/concepts/#agent-runtime', def: 'The single agent process inside the Gateway. Built on the Pi agent core (models, tools, prompt pipeline).' },
+      'workspace': { url: '/openclaw/overview/concepts/#workspace', def: 'The directory of plain markdown files that defines the agent — SOUL.md, AGENTS.md, USER.md, and so on.' },
+      'channels': { url: '/openclaw/overview/concepts/#channels', def: 'Where messages come from and go to — 24+ supported (Slack, WhatsApp, iMessage, Discord, Telegram, etc.).' },
+      'channel': { url: '/openclaw/overview/concepts/#channels', def: 'Where messages come from and go to — 24+ supported (Slack, WhatsApp, iMessage, Discord, Telegram, etc.).' },
+      'tools': { url: '/openclaw/overview/concepts/#tools', def: 'Capabilities the agent can call — built-ins (read_file, http_request), skills, or MCP servers.' },
+      'skills': { url: '/openclaw/overview/concepts/#skill', def: 'OpenClaw plugins that add tools. Live inside the workspace.' },
+      'skill': { url: '/openclaw/overview/concepts/#skill', def: 'An OpenClaw plugin that adds a tool. Lives inside the workspace.' },
+      'MCP': { url: '/openclaw/overview/concepts/#mcp', def: "Model Context Protocol — Anthropic's open standard for connecting agents to external tools/data. OpenClaw consumes MCP servers via its mcp bridge." },
+      'plugin': { url: '/openclaw/overview/concepts/#plugin', def: 'A package added to OpenClaw — channel adapter, skill, memory engine, model provider, etc.' },
+      'plugins': { url: '/openclaw/overview/concepts/#plugin', def: 'Packages added to OpenClaw — channel adapters, skills, memory engines, model providers, etc.' },
     };
 
     function shouldSkipNode(node) {

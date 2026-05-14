@@ -56,7 +56,7 @@ The agent runs an arbitrary command in your shell. Powerful and dangerous in equ
 
 **Example use:** *"What's the git status of this repo?"* → agent calls `exec("git status")` → reports back.
 
-> *Security note:* `exec` is the most-restricted built-in tool in default sandbox setups. Non-`main` sessions running in Docker can't escape the container. Read [§6.3 pattern #5](/security/practical-patterns/) for the injection failure mode.
+> *Security note:* `exec` is the most-restricted built-in tool in default sandbox setups. Non-`main` sessions running in Docker can't escape the container. Read [§6.3 pattern #5](/openclaw/security/practical-patterns/) for the injection failure mode.
 
 The optional `apply_patch` shape is gated by `tools.exec.applyPatch` — useful for code-edit workflows where you want the agent to produce a unified diff that you then apply.
 
@@ -80,7 +80,7 @@ OpenClaw's Model Context Protocol bridge. Lets the agent use tools defined by ex
 
 **Example use:** *"Find me all the issues assigned to me."* → agent uses an `mcp` GitHub server to query → returns the list.
 
-The MCP layer is how OpenClaw connects to the broader MCP plugin world. See [§4 Plugins](/plugins/) for specific MCP field notes.
+The MCP layer is how OpenClaw connects to the broader MCP plugin world. See [§4 Plugins](/openclaw/plugins/) for specific MCP field notes.
 
 ## Tool policy and sandbox
 
@@ -93,7 +93,7 @@ These are two orthogonal mechanisms:
 
 You can have a tool denied even outside a sandbox (most defensive), or allowed inside a sandbox (defence-in-depth — the tool exists but limited blast radius).
 
-The sane default: **sandbox non-main + deny dangerous tools in non-main**. See [§6.1 check 4 + check 5](/security/self-hosting-checklist/).
+The sane default: **sandbox non-main + deny dangerous tools in non-main**. See [§6.1 check 4 + check 5](/openclaw/security/self-hosting-checklist/).
 
 ## Adding tools beyond the built-ins
 
@@ -161,7 +161,7 @@ We have not exhaustively benchmarked every tool. Specific tool latency, error mo
 
 ## What to read next
 
-- [§3.4 Models](/connections/models/) — what the model brings to tool selection
-- [§4 Plugins](/plugins/) — specific tool plugins (skills + MCP) reviewed
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — tool exec security posture
-- [§5 Use cases](/use-cases/) — recipes that show tools used in anger
+- [§3.4 Models](/openclaw/connections/models/) — what the model brings to tool selection
+- [§4 Plugins](/openclaw/plugins/) — specific tool plugins (skills + MCP) reviewed
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — tool exec security posture
+- [§5 Use cases](/openclaw/use-cases/) — recipes that show tools used in anger

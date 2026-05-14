@@ -24,7 +24,7 @@ product: "openclaw-runtime"
 
 ## What you'll have at the end
 
-A Slack bot that **reads your team's standup channel, posts a daily summary every morning at 9am, and can answer ad-hoc questions about what was discussed**. About 60 minutes once you've got hello-world ([§5.1](/use-cases/hello-world-laptop/)) working.
+A Slack bot that **reads your team's standup channel, posts a daily summary every morning at 9am, and can answer ad-hoc questions about what was discussed**. About 60 minutes once you've got hello-world ([§5.1](/openclaw/use-cases/hello-world-laptop/)) working.
 
 This is the recipe that takes the agent from "useful for me alone" to "useful for my team."
 
@@ -36,7 +36,7 @@ It also exercises three OpenClaw mechanisms together: **channels** (Slack), **au
 
 ## What you need
 
-- Hello-world working ([§5.1](/use-cases/hello-world-laptop/))
+- Hello-world working ([§5.1](/openclaw/use-cases/hello-world-laptop/))
 - A Slack workspace where you have admin rights or can get an admin to approve a bot
 - About 60 minutes (most of it is the OAuth dance + initial config)
 
@@ -51,7 +51,7 @@ openclaw channels add slack
 This walks you through:
 
 - Creating a Slack app in the workspace (you'll need admin or admin-blessing)
-- OAuth scopes (the onboarder asks for the *minimum* — see [§6.2 signal #4](/security/plugin-trust-signals/))
+- OAuth scopes (the onboarder asks for the *minimum* — see [§6.2 signal #4](/openclaw/security/plugin-trust-signals/))
 - Pairing — the bot gets added to channels you allow
 
 Once paired, verify:
@@ -77,7 +77,7 @@ In your `~/.openclaw/openclaw.json`:
 }
 ```
 
-`allowChannels` is your way of scoping the agent: only `#standup` will reach it (other channels' messages don't even get processed). This is the [§6.1](/security/self-hosting-checklist/) hygienic shape.
+`allowChannels` is your way of scoping the agent: only `#standup` will reach it (other channels' messages don't even get processed). This is the [§6.1](/openclaw/security/self-hosting-checklist/) hygienic shape.
 
 ## Step 3 — Edit AGENTS.md to give it standup context
 
@@ -159,7 +159,7 @@ Beyond the daily summary, your team should be able to DM the bot questions like:
 
 > *"What did Sarah say about the deploy yesterday?"*
 
-For this to work well, the agent needs **memory**. The default builtin engine works for short windows (a few days); for longer recall, set up [§3.5 QMD memory](/connections/memory/) so the agent has semantic search over historical messages.
+For this to work well, the agent needs **memory**. The default builtin engine works for short windows (a few days); for longer recall, set up [§3.5 QMD memory](/openclaw/connections/memory/) so the agent has semantic search over historical messages.
 
 Configuration sketch:
 
@@ -213,7 +213,7 @@ This recipe is sourced from official Slack channel + cron docs and standard agen
 
 ## What to read next
 
-- [§5.3 WhatsApp FAQ answerer](/use-cases/whatsapp-faq/) (planned) — similar shape for customer-facing
-- [§5.4 Pi-hosted always-on home agent](/use-cases/pi-home-agent/) — host this on a Pi instead of your laptop
-- [§3.5 Memory](/connections/memory/) — for the recall capability
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — Slack-specific hardening
+- [§5.3 WhatsApp FAQ answerer](/openclaw/use-cases/whatsapp-faq/) (planned) — similar shape for customer-facing
+- [§5.4 Pi-hosted always-on home agent](/openclaw/use-cases/pi-home-agent/) — host this on a Pi instead of your laptop
+- [§3.5 Memory](/openclaw/connections/memory/) — for the recall capability
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — Slack-specific hardening

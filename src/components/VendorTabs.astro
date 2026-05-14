@@ -5,9 +5,10 @@
  * MobileDrawer at narrow widths.
  *
  * Active tab: derived from the URL path prefix. If the path starts with
- * /anthropic/, the Anthropic tab is active, etc. The 42 existing OpenClaw
- * pages still live at /overview/ /setup/ etc. (URL migration is Batch 0b);
- * those paths map to the OpenClaw tab via the OPENCLAW_LEGACY_PREFIXES list.
+ * /anthropic/, the Anthropic tab is active, etc. OpenClaw content lives
+ * under /openclaw/setup/, /openclaw/overview/, etc. (Batch 0b URL migration
+ * completed 2026-05-14). Old root-level paths (/setup/, /overview/, ...) are
+ * served as Cloudflare Pages 301 redirects from public/_redirects.
  *
  * Phase 1 vendors (in tab order):
  *   OpenClaw · Anthropic · OpenAI · Google · Microsoft · Compare · Updates
@@ -30,17 +31,9 @@ const TAILS = [
   { slug: 'updates', label: 'Updates', href: '/updates/', tone: 'tail' },
 ];
 
-// Existing OpenClaw URL prefixes that should highlight the OpenClaw tab as
-// active. After Batch 0b's URL migration these will move under /openclaw/.
-const OPENCLAW_LEGACY_PREFIXES = [
-  '/overview/', '/setup/', '/connections/', '/plugins/',
-  '/use-cases/', '/security/', '/resources/', '/faq/',
-];
-
-function isActive(href: string, isOpenClaw: boolean): boolean {
+function isActive(href: string): boolean {
   if (path === href) return true;
   if (path.startsWith(href) && href !== '/') return true;
-  if (isOpenClaw && OPENCLAW_LEGACY_PREFIXES.some(p => path.startsWith(p))) return true;
   return false;
 }
 ---
@@ -51,9 +44,9 @@ function isActive(href: string, isOpenClaw: boolean): boolean {
       {VENDORS.map(v => (
         <a
           href={v.href}
-          class={`vt vt-${v.tone} ${isActive(v.href, v.slug === 'openclaw') ? 'is-active' : ''}`}
+          class={`vt vt-${v.tone} ${isActive(v.href) ? 'is-active' : ''}`}
           data-vendor={v.slug}
-          aria-current={isActive(v.href, v.slug === 'openclaw') ? 'page' : undefined}
+          aria-current={isActive(v.href) ? 'page' : undefined}
         >{v.label}</a>
       ))}
       <span class="vt-sep" aria-hidden="true">·</span>

@@ -9,12 +9,12 @@ import VerificationBanner from '@components/VerificationBanner.astro';
 import { getCollection, render } from 'astro:content';
 import { sectionConfig, getPrevNext, getReadingTime, getSchemaOrgArticle, getRelated } from '@utils/entry-helpers';
 
-const cfg = sectionConfig['setup'];
+const cfg = sectionConfig['connections'];
 
 export async function getStaticPaths() {
-  const all = await getCollection('setups');
+  const all = await getCollection('connections');
   return all
-    .filter((e) => e.data.section === 'Setup' && e.data.status === 'published')
+    .filter((e) => e.data.section === 'Connections' && e.data.status === 'published')
     .map((entry) => ({
       params: { slug: entry.id.replace(/\.mdx?$/, '') },
       props: { entry },
@@ -29,12 +29,12 @@ const tocItems = headings
   .map((h) => ({ id: h.slug, text: String(h.text).replace(/#s*$/, '').trim(), level: h.depth }));
 
 const sectionPairs = [
-  ['explainers', '/overview/', 'Overview'],
-  ['setups', '/setup/', 'Setup'],
-  ['connections', '/connections/', 'Connections'],
-  ['plugins', '/plugins/', 'Plugins'],
-  ['use-cases', '/use-cases/', 'Use cases'],
-  ['gotchas', '/security/', 'Security'],
+  ['explainers', '/openclaw/overview/', 'Overview'],
+  ['setups', '/openclaw/setup/', 'Setup'],
+  ['connections', '/openclaw/connections/', 'Connections'],
+  ['plugins', '/openclaw/plugins/', 'Plugins'],
+  ['use-cases', '/openclaw/use-cases/', 'Use cases'],
+  ['gotchas', '/openclaw/security/', 'Security'],
   ['compares', '/compare/', 'Compare'],
 ];
 const allCollections = await Promise.all(
@@ -74,7 +74,7 @@ const stateClassMap = {
 const stateLabel = stateLabels[entry.data.verificationState] ?? '';
 const stateClass = stateClassMap[entry.data.verificationState] ?? '';
 
-const entryFile = `src/content/setups/${entry.id}`;
+const entryFile = `src/content/connections/${entry.id}`;
 const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`;
 ---
 
@@ -84,13 +84,13 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
   entryFile={entryFile}
   lastUpdated={entry.data.lastReviewedAt}
   schemaJsonLd={schemaJsonLd}
-  ogImage={`/og/setup/${slugBase}.png`}
+  ogImage={`/og/connections/${slugBase}.png`}
   margin={{ tocItems }}
 >
   <article class="entry-page">
     <header class="entry-header">
       <div class="crumb">
-        <a href="/setup/">§ 2 Setup</a>
+        <a href="/openclaw/connections/">§ 3 Connections</a>
         <span>/</span>
         <span class="num">§ {entry.data.sectionNumber}</span>
         {readingTime && <span class="reading-time">· {readingTime}</span>}

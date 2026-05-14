@@ -36,10 +36,10 @@ You can run an OpenClaw Gateway on a wide spectrum of hardware — from a Raspbe
 | **Raspberry Pi 5 (8GB)** | 8GB | Good — runtime fine; small local model only | None (no voice node) | $80 + power supply + SD card ≈ $130 | Cheap always-on. Most people's first OpenClaw box. |
 | **Raspberry Pi 4 (4GB or 8GB)** | 4GB / 8GB | OK with caveats — see Pi page | None | $40–$70 | Already-have-one starter. 4GB is tight. |
 | **Old laptop (recycle)** | 4GB+ | Depends on age — anything from ~2018+ likely fine | Maybe (Mac yes, others limited) | Free if you have one | Best value if you've got one collecting dust. |
-| **Azure VM (B-series small)** | 2GB+ (B2s = 4GB) | Workable for text channels; no local model | None | ~$40–$100/month | Production-style deployment. See [§2.5 Azure](/setup/azure/). |
-| **Azure Container Apps** | configurable | Workable for stateless restarts; persistence needs care | None | scales with use | Serverless-ish path. See [§2.5 Azure](/setup/azure/). |
+| **Azure VM (B-series small)** | 2GB+ (B2s = 4GB) | Workable for text channels; no local model | None | ~$40–$100/month | Production-style deployment. See [§2.5 Azure](/openclaw/setup/azure/). |
+| **Azure Container Apps** | configurable | Workable for stateless restarts; persistence needs care | None | scales with use | Serverless-ish path. See [§2.5 Azure](/openclaw/setup/azure/). |
 | **Old gaming desktop with GPU** | 16GB+ + GPU | Excellent if you want to run local models | Limited | already have it | If you've already invested in local LLMs (Ollama et al), the Gateway can drive them locally. |
-| **NAS (Synology / TrueNAS / Unraid)** | depends on model | Possible via Docker — see [§2.7 Docker](/setup/docker/) | None | already have it | Quiet 24/7 home server you already pay for in electricity. |
+| **NAS (Synology / TrueNAS / Unraid)** | depends on model | Possible via Docker — see [§2.7 Docker](/openclaw/setup/docker/) | None | already have it | Quiet 24/7 home server you already pay for in electricity. |
 
 ## What "fit" actually means
 
@@ -73,9 +73,9 @@ A common mistake is to over-spec the box because "AI = expensive hardware." That
 The decision really comes down to:
 
 1. **What's always-on?** (Pi / NUC / NAS / VM are 24/7. A laptop closes.)
-2. **Do you want voice?** (Mac/iOS/Android only — see [§1.4 drawback #6](/overview/honest-drawbacks/).)
+2. **Do you want voice?** (Mac/iOS/Android only — see [§1.4 drawback #6](/openclaw/overview/honest-drawbacks/).)
 3. **Do you want a local model?** (Then RAM and possibly GPU dominate; otherwise hosted API is fine.)
-4. **What's the threat surface?** (Always-on internet-facing changes the security calculus — see [§6.1 Self-hosting checklist](/security/self-hosting-checklist/).)
+4. **What's the threat surface?** (Always-on internet-facing changes the security calculus — see [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/).)
 
 ## Recommended starter box
 
@@ -87,7 +87,7 @@ If you don't have anything yet and want the cheapest credible path to "I have an
 - A case with a fan (the Pi 5 will throttle without one) ($15)
 - An ethernet cable to your router (faster + more reliable than wifi)
 
-Total: **~$130**. Boot Raspberry Pi OS Lite (or Ubuntu Server). Follow [§2.6 Raspberry Pi](/setup/raspberry-pi/). Connect the channels you actually use. Done.
+Total: **~$130**. Boot Raspberry Pi OS Lite (or Ubuntu Server). Follow [§2.6 Raspberry Pi](/openclaw/setup/raspberry-pi/). Connect the channels you actually use. Done.
 
 ## What we are NOT going to claim
 
@@ -96,8 +96,8 @@ We have not benchmarked OpenClaw on every box in the table. RAM/CPU floors are i
 ## What to read next
 
 - **You picked your hardware.** → §2.2 Decision tree (planned for P0b) or jump to the right setup page below
-- [§2.3 Laptop quick-start](/setup/laptop/) — Mac / Linux desktop / Windows WSL2
-- [§2.6 Raspberry Pi](/setup/raspberry-pi/) — Pi 4 / Pi 5
-- [§2.5 Azure](/setup/azure/) — Container Apps + VM paths
-- [§2.7 Docker](/setup/docker/) — packaging method that wraps several of the above
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — turn the box into a credible deployment
+- [§2.3 Laptop quick-start](/openclaw/setup/laptop/) — Mac / Linux desktop / Windows WSL2
+- [§2.6 Raspberry Pi](/openclaw/setup/raspberry-pi/) — Pi 4 / Pi 5
+- [§2.5 Azure](/openclaw/setup/azure/) — Container Apps + VM paths
+- [§2.7 Docker](/openclaw/setup/docker/) — packaging method that wraps several of the above
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — turn the box into a credible deployment

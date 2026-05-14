@@ -12,7 +12,7 @@ const connectionEntries = allConnections
 const catalogEntries = connectionEntries.map(e => ({
   num: e.data.sectionNumber,
   title: e.data.title,
-  href: `/connections/${e.id.replace(/\.mdx?$/, '')}/`,
+  href: `/openclaw/connections/${e.id.replace(/\.mdx?$/, '')}/`,
   description: e.data.description,
   state: e.data.verificationState,
   date: e.data.lastReviewedAt,
@@ -22,7 +22,7 @@ const tested = connectionEntries.filter(e => e.data.verificationState.startsWith
 const sourced = connectionEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = connectionEntries.filter(e => e.data.verificationState === 'planned').length;
 
-const lede = `The integration <em>patterns</em>, not the marketplace packages. <strong>Channels</strong> bring messages in and out (Slack, WhatsApp, Discord, etc.). <strong>Tools</strong> let the agent do work (browser, filesystem, web search, code exec). <strong>Models</strong> are the brains (Claude, GPT, local Ollama). <strong>Memory</strong> is what survives a restart (built-in, Honcho, QMD). For specific plugins/packages reviewed individually, see <a href="/plugins/">§4 Plugins</a>.`;
+const lede = `The integration <em>patterns</em>, not the marketplace packages. <strong>Channels</strong> bring messages in and out (Slack, WhatsApp, Discord, etc.). <strong>Tools</strong> let the agent do work (browser, filesystem, web search, code exec). <strong>Models</strong> are the brains (Claude, GPT, local Ollama). <strong>Memory</strong> is what survives a restart (built-in, Honcho, QMD). For specific plugins/packages reviewed individually, see <a href="/openclaw/plugins/">§4 Plugins</a>.`;
 ---
 
 <BaseLayout

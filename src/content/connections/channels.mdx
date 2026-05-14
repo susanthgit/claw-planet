@@ -58,7 +58,7 @@ If you're learning OpenClaw and want to test it works, the picking order is:
 
 All channels in OpenClaw inherit the same security defaults:
 
-1. **DM policy = `pairing` by default.** Unknown senders get a one-time code, not your agent. ([§6.1 check 2](/security/self-hosting-checklist/))
+1. **DM policy = `pairing` by default.** Unknown senders get a one-time code, not your agent. ([§6.1 check 2](/openclaw/security/self-hosting-checklist/))
 2. **`allowFrom` allowlist** in `~/.openclaw/openclaw.json`. Even after pairing, only senders on the allowlist reach the agent.
 3. **Per-channel rate limits** (configurable).
 4. **Webhook signature validation** (where the channel supports it — e.g. Slack signing secret).
@@ -81,15 +81,15 @@ Pair **Telegram** or **WhatsApp**. Both are mobile-native. Telegram's bot model 
 
 ### "I want a community/server bot"
 
-**Discord** is the cleanest. Public Discord channels with `dmPolicy="open"` need a fully sandboxed agent (see [§6.1 check 4](/security/self-hosting-checklist/)) — *do this carefully.*
+**Discord** is the cleanest. Public Discord channels with `dmPolicy="open"` need a fully sandboxed agent (see [§6.1 check 4](/openclaw/security/self-hosting-checklist/)) — *do this carefully.*
 
 ### "I want voice without a Mac"
 
-Voice nodes are macOS / iOS / Android only. On Linux, you're text-channels-only for now. See [§1.4 drawback #6](/overview/honest-drawbacks/) for the honest take.
+Voice nodes are macOS / iOS / Android only. On Linux, you're text-channels-only for now. See [§1.4 drawback #6](/openclaw/overview/honest-drawbacks/) for the honest take.
 
 ## What to know before pairing
 
-- **OAuth scopes** for Slack/Discord/Teams/Google Chat are broader than they need to be by default. Read what you're granting before clicking through. Scope minimisation is [§6.2 signal #4](/security/plugin-trust-signals/).
+- **OAuth scopes** for Slack/Discord/Teams/Google Chat are broader than they need to be by default. Read what you're granting before clicking through. Scope minimisation is [§6.2 signal #4](/openclaw/security/plugin-trust-signals/).
 - **Bot identity** — give your bot a distinct username/handle so its messages are visibly bot-tagged. Cleaner conversation flow.
 - **Allowlist before testing in public.** Even your own DM should be in `allowFrom` before you're surprised by the pairing prompt.
 
@@ -128,8 +128,8 @@ We've not paired all 24 channels ourselves. The docs source is canonical for wha
 
 ## What to read next
 
-- [§3.1 Index](/connections/) — patterns vs packages framing
-- [§3.3 Tools](/connections/tools/) — what the agent does (built-in tools)
-- [§3.4 Models](/connections/models/) — the brain choice
-- [§4 Plugins](/plugins/) — specific channel connector field notes (Slack et al)
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — security posture for channels
+- [§3.1 Index](/openclaw/connections/) — patterns vs packages framing
+- [§3.3 Tools](/openclaw/connections/tools/) — what the agent does (built-in tools)
+- [§3.4 Models](/openclaw/connections/models/) — the brain choice
+- [§4 Plugins](/openclaw/plugins/) — specific channel connector field notes (Slack et al)
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — security posture for channels

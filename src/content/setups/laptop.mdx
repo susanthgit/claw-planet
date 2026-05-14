@@ -63,7 +63,7 @@ openclaw onboard --install-daemon
 
 This is the **recommended setup path** per the official docs. It walks you through:
 
-1. **Creating the workspace** at `~/.openclaw/workspace` (creates the seven workspace files: SOUL.md, AGENTS.md, TOOLS.md, BOOTSTRAP.md, IDENTITY.md, USER.md, HEARTBEAT.md). See [§1.2 Concepts](/overview/concepts/) for what each does.
+1. **Creating the workspace** at `~/.openclaw/workspace` (creates the seven workspace files: SOUL.md, AGENTS.md, TOOLS.md, BOOTSTRAP.md, IDENTITY.md, USER.md, HEARTBEAT.md). See [§1.2 Concepts](/openclaw/overview/concepts/) for what each does.
 2. **Picking your channels** — pair Telegram, Slack, etc. Skip anything you don't want yet; you can add later.
 3. **Picking your model provider** — paste an API key or sign in via OAuth (OpenAI subscriptions work via OAuth).
 4. **Installing the daemon** so the Gateway stays running across reboots. On macOS that's `launchd`; on Linux it's a `systemd` user service.
@@ -104,12 +104,12 @@ Assuming you paired Telegram during onboarding:
 
 1. Open Telegram and find your bot (the onboarder told you its handle).
 2. DM it: *"What's the time?"*
-3. The bot should respond. The first response can take 5–15 seconds (cold start — see [§1.4 drawback #2](/overview/honest-drawbacks/)).
+3. The bot should respond. The first response can take 5–15 seconds (cold start — see [§1.4 drawback #2](/openclaw/overview/honest-drawbacks/)).
 
 If nothing happens, check your `--verbose` Gateway log for the inbound message. Common issues:
 
 - **Pairing not approved.** The default DM policy is `pairing` — unknown senders get a code instead of a response. Check the Gateway log for a pairing prompt and approve with `openclaw pairing approve telegram <code>`.
-- **Allowlist excludes you.** You're not in `channels.telegram.allowFrom`. Edit `~/.openclaw/openclaw.json` and add your Telegram username (or `"*"` for development — but **NOT** in production; see [§6.1](/security/self-hosting-checklist/)).
+- **Allowlist excludes you.** You're not in `channels.telegram.allowFrom`. Edit `~/.openclaw/openclaw.json` and add your Telegram username (or `"*"` for development — but **NOT** in production; see [§6.1](/openclaw/security/self-hosting-checklist/)).
 
 ## Step 6 — Run `openclaw doctor`
 
@@ -148,9 +148,9 @@ Plus channels for whatever else you paired. Every message in any channel hits yo
 ## Things to try once it works
 
 - **Edit SOUL.md and watch the agent change personality.** Add `## Communication style\n- Reply in haiku unless asked otherwise.` to SOUL.md. Restart the agent (`openclaw daemon restart`). Send a message. Marvel at the haiku.
-- **Add a skill from the bundled set.** `openclaw skills list` to see what ships, then `openclaw skills enable <skill-name>` to activate one. (Skills loading order is: workspace → project-agent → personal → managed → bundled — see [§1.2 Concepts](/overview/concepts/#skill).)
+- **Add a skill from the bundled set.** `openclaw skills list` to see what ships, then `openclaw skills enable <skill-name>` to activate one. (Skills loading order is: workspace → project-agent → personal → managed → bundled — see [§1.2 Concepts](/openclaw/overview/concepts/#skill).)
 - **Ask the agent to read its own workspace.** *"Show me what's in my AGENTS.md and tell me one thing I should consider adding."* It uses the built-in `read` tool to open the file and reasons about it.
-- **Set up a cron job.** `openclaw cron add` to schedule a daily 9am check-in. See [§1.2 Concepts → automation](/overview/concepts/#cron-jobs) for the shape.
+- **Set up a cron job.** `openclaw cron add` to schedule a daily 9am check-in. See [§1.2 Concepts → automation](/openclaw/overview/concepts/#cron-jobs) for the shape.
 
 ## Common pitfalls
 
@@ -165,7 +165,7 @@ Plus channels for whatever else you paired. Every message in any channel hits yo
 
 ## What to do next
 
-- **Lock down the install before exposing it.** [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — even on a laptop, the defaults need a once-over.
-- **Add more channels.** [§3.2 Channels](/connections/channels/) catalogs all 24+.
-- **Try a use case.** [§5.1 Hello-world recipe](/use-cases/) (planned).
+- **Lock down the install before exposing it.** [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — even on a laptop, the defaults need a once-over.
+- **Add more channels.** [§3.2 Channels](/openclaw/connections/channels/) catalogs all 24+.
+- **Try a use case.** [§5.1 Hello-world recipe](/openclaw/use-cases/) (planned).
 - **Promote this page.** When Sush runs every step on his M2 MacBook, this page goes from `sourced` to `tried` with a real session log.

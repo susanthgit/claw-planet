@@ -143,7 +143,7 @@ For a back-of-envelope "personal assistant" usage profile (~1000 messages/month,
 
 Heavy agentic workflows (long sessions, multiple tool calls per message) can be 5–10× this. **Measure your own usage before you trust the estimate.**
 
-> *Cost-runaway pattern:* see [§6.3 pattern #3](/security/practical-patterns/). Set provider-side spending alerts and hard caps before you tinker.
+> *Cost-runaway pattern:* see [§6.3 pattern #3](/openclaw/security/practical-patterns/). Set provider-side spending alerts and hard caps before you tinker.
 
 ## Auth profiles (per-agent)
 
@@ -168,7 +168,7 @@ openclaw auth login openai
 
 - **Run the agent on Sonnet for a week, then Haiku for a week.** Notice which tasks degrade. Adjust your default based on real workload, not first-principles.
 - **Configure failover** Claude → GPT-4o → Gemini. Stress-test by temporarily revoking Claude's key. Watch the agent gracefully fall through.
-- **Try a local 3B model on a Pi.** See [§2.6 Raspberry Pi](/setup/raspberry-pi/) for the setup. Quality calibration is worthwhile even if you go back to hosted models afterwards.
+- **Try a local 3B model on a Pi.** See [§2.6 Raspberry Pi](/openclaw/setup/raspberry-pi/) for the setup. Quality calibration is worthwhile even if you go back to hosted models afterwards.
 - **Set spending alerts at $5 / $10 / $25 thresholds** on your model provider account. Cheap insurance.
 
 ## What we are NOT going to claim
@@ -177,7 +177,7 @@ Model quality rankings change with every major release. The 2026-05 picks above 
 
 ## What to read next
 
-- [§3.3 Tools](/connections/tools/) — what the model invokes
-- [§3.5 Memory](/connections/memory/) — the persistence the model leans on
-- [§6.3 Practical patterns](/security/practical-patterns/) — cost-runaway pattern in particular
-- [§2.6 Raspberry Pi](/setup/raspberry-pi/) — local-model walkthrough
+- [§3.3 Tools](/openclaw/connections/tools/) — what the model invokes
+- [§3.5 Memory](/openclaw/connections/memory/) — the persistence the model leans on
+- [§6.3 Practical patterns](/openclaw/security/practical-patterns/) — cost-runaway pattern in particular
+- [§2.6 Raspberry Pi](/openclaw/setup/raspberry-pi/) — local-model walkthrough

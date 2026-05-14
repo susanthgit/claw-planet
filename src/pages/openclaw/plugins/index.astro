@@ -12,7 +12,7 @@ const pluginEntries = allPlugins
 const catalogEntries = pluginEntries.map(e => ({
   num: e.data.sectionNumber,
   title: e.data.title,
-  href: `/plugins/${e.id.replace(/\.mdx?$/, '')}/`,
+  href: `/openclaw/plugins/${e.id.replace(/\.mdx?$/, '')}/`,
   description: e.data.description,
   state: e.data.verificationState,
   date: e.data.lastReviewedAt,

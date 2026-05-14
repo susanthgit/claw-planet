@@ -12,7 +12,7 @@ const setupEntries = allSetups
 const catalogEntries = setupEntries.map(e => ({
   num: e.data.sectionNumber,
   title: e.data.title,
-  href: `/setup/${e.id.replace(/\.mdx?$/, '')}/`,
+  href: `/openclaw/setup/${e.id.replace(/\.mdx?$/, '')}/`,
   description: e.data.description,
   state: e.data.verificationState,
   date: e.data.lastReviewedAt,

@@ -12,7 +12,7 @@ const overviewEntries = allExplainers
 const catalogEntries = overviewEntries.map(e => ({
   num: e.data.sectionNumber,
   title: e.data.title,
-  href: `/overview/${e.id.replace(/\.mdx?$/, '')}/`,
+  href: `/openclaw/overview/${e.id.replace(/\.mdx?$/, '')}/`,
   description: e.data.description,
   state: e.data.verificationState,
   date: e.data.lastReviewedAt,

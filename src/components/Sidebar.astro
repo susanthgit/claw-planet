@@ -38,25 +38,25 @@ async function loadChildren(name: string, baseHref: string) {
     });
 }
 
-const overviewKids = await loadChildren('explainers', '/overview/');
-const setupKids = await loadChildren('setups', '/setup/');
-const connectionsKids = await loadChildren('connections', '/connections/');
-const pluginsKids = await loadChildren('plugins', '/plugins/');
-const useCasesKids = await loadChildren('use-cases', '/use-cases/');
-const securityKids = await loadChildren('gotchas', '/security/');
+const overviewKids = await loadChildren('explainers', '/openclaw/overview/');
+const setupKids = await loadChildren('setups', '/openclaw/setup/');
+const connectionsKids = await loadChildren('connections', '/openclaw/connections/');
+const pluginsKids = await loadChildren('plugins', '/openclaw/plugins/');
+const useCasesKids = await loadChildren('use-cases', '/openclaw/use-cases/');
+const securityKids = await loadChildren('gotchas', '/openclaw/security/');
 const compareKids = await loadChildren('compares', '/compare/');
 
 const sections = [
-  { num: '§1', title: 'Overview', count: overviewKids.length, slug: '/overview/', children: overviewKids },
-  { num: '§2', title: 'Setup', count: setupKids.length, slug: '/setup/', children: setupKids },
-  { num: '§3', title: 'Connections', count: connectionsKids.length, slug: '/connections/', children: connectionsKids },
-  { num: '§4', title: 'Plugins', count: pluginsKids.length, slug: '/plugins/', children: pluginsKids },
-  { num: '§5', title: 'Use cases', count: useCasesKids.length, slug: '/use-cases/', children: useCasesKids },
-  { num: '§6', title: 'Security', count: securityKids.length, slug: '/security/', children: securityKids },
+  { num: '§1', title: 'Overview', count: overviewKids.length, slug: '/openclaw/overview/', children: overviewKids },
+  { num: '§2', title: 'Setup', count: setupKids.length, slug: '/openclaw/setup/', children: setupKids },
+  { num: '§3', title: 'Connections', count: connectionsKids.length, slug: '/openclaw/connections/', children: connectionsKids },
+  { num: '§4', title: 'Plugins', count: pluginsKids.length, slug: '/openclaw/plugins/', children: pluginsKids },
+  { num: '§5', title: 'Use cases', count: useCasesKids.length, slug: '/openclaw/use-cases/', children: useCasesKids },
+  { num: '§6', title: 'Security', count: securityKids.length, slug: '/openclaw/security/', children: securityKids },
   { num: '§7', title: 'Compare', count: compareKids.length, slug: '/compare/', children: compareKids },
   { num: '§8', title: 'Updates', count: coverage.sections.updates.current, slug: '/updates/' },
-  { num: '§9', title: 'Resources', count: coverage.sections.resources.current, slug: '/resources/' },
-  { num: '§10', title: 'FAQ', count: coverage.sections.faq.current, slug: '/faq/' },
+  { num: '§9', title: 'Resources', count: coverage.sections.resources.current, slug: '/openclaw/resources/' },
+  { num: '§10', title: 'FAQ', count: coverage.sections.faq.current, slug: '/openclaw/faq/' },
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/$/, '') + '/';

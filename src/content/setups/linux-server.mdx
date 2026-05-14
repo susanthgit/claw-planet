@@ -32,9 +32,9 @@ You want **always-on**, you don't need a screen attached, and you're comfortable
 - A spare Intel NUC sitting on a shelf at home
 - A modest cloud VM (DigitalOcean droplet, Hetzner Cloud, AWS Lightsail) — $5–$20/month
 - An old desktop you've turned into a home server
-- A NAS running native Linux (vs. NAS-via-Docker which is [§2.7 Docker](/setup/docker/))
+- A NAS running native Linux (vs. NAS-via-Docker which is [§2.7 Docker](/openclaw/setup/docker/))
 
-> **What this isn't:** a turn-key managed deploy. You'll be the sysadmin. If you want managed-feeling, [§2.5 Azure](/setup/azure/) Container Apps is the closer shape.
+> **What this isn't:** a turn-key managed deploy. You'll be the sysadmin. If you want managed-feeling, [§2.5 Azure](/openclaw/setup/azure/) Container Apps is the closer shape.
 
 ## What you'll have at the end
 
@@ -149,7 +149,7 @@ openclaw doctor
 openclaw agent --message "Health check from $(hostname). What's the time?"
 ```
 
-Should respond with the time and a sentence acknowledging the hostname. If yes, your runtime is wired correctly. Now pair the channels you actually use ([§3.2 Channels](/connections/channels/)).
+Should respond with the time and a sentence acknowledging the hostname. If yes, your runtime is wired correctly. Now pair the channels you actually use ([§3.2 Channels](/openclaw/connections/channels/)).
 
 ## What's now running on the box
 
@@ -181,7 +181,7 @@ Approximate monthly cost depending on your hardware choice:
 | Hetzner CCX13 (4 vCPU / 8GB / 80GB) | $0 | ~$15/month |
 | DigitalOcean Premium AMD 4GB | $0 | ~$24/month |
 | AWS Lightsail 2GB | $0 | ~$10/month |
-| Azure B2s (4GB) | $0 | ~$30/month → see [§2.5 Azure](/setup/azure/) |
+| Azure B2s (4GB) | $0 | ~$30/month → see [§2.5 Azure](/openclaw/setup/azure/) |
 
 Your model API costs are separate from this. A typical hobbyist using Claude or GPT for normal-volume chat runs $5–$20 / month in API calls.
 
@@ -198,12 +198,12 @@ Your model API costs are separate from this. A typical hobbyist using Claude or 
 ## Things to try
 
 - **Set up a daily summary cron.** `openclaw cron add` and schedule a 9am morning brief. The agent reads its memory + any RSS feeds you've configured and DMs you a summary.
-- **Run the agent with a different SOUL.md per project.** Use multi-agent routing — different Slack workspaces hit different agents with different personalities. See [§1.2 Concepts → multi-agent](/overview/concepts/#multi-agent-routing).
+- **Run the agent with a different SOUL.md per project.** Use multi-agent routing — different Slack workspaces hit different agents with different personalities. See [§1.2 Concepts → multi-agent](/openclaw/overview/concepts/#multi-agent-routing).
 - **Pair this with a Pi for redundancy.** Two boxes, two Gateways (note: multi-gateway is "advanced"), shared workspace via private git. If one dies, the other keeps responding.
 
 ## What to read next
 
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — turn the box into a credible deployment
-- [§2.7 Docker](/setup/docker/) — containerised version of this same shape
-- [§2.5 Azure](/setup/azure/) — managed-ier shapes if you want to skip the sysadmin
-- [§3.2 Channels](/connections/channels/) — pair the messaging surfaces you actually use
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — turn the box into a credible deployment
+- [§2.7 Docker](/openclaw/setup/docker/) — containerised version of this same shape
+- [§2.5 Azure](/openclaw/setup/azure/) — managed-ier shapes if you want to skip the sysadmin
+- [§3.2 Channels](/openclaw/connections/channels/) — pair the messaging surfaces you actually use

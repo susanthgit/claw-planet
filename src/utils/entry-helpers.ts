@@ -10,12 +10,12 @@
  */
 
 export const sectionConfig = {
-  overview: { key: 'overview', collection: 'explainers', breadcrumb: '§ 1 Overview', sectionName: 'Overview', href: '/overview/', contentPath: 'src/content/explainers' },
-  setup: { key: 'setup', collection: 'setups', breadcrumb: '§ 2 Setup', sectionName: 'Setup', href: '/setup/', contentPath: 'src/content/setups' },
-  connections: { key: 'connections', collection: 'connections', breadcrumb: '§ 3 Connections', sectionName: 'Connections', href: '/connections/', contentPath: 'src/content/connections' },
-  plugins: { key: 'plugins', collection: 'plugins', breadcrumb: '§ 4 Plugins', sectionName: 'Plugins', href: '/plugins/', contentPath: 'src/content/plugins' },
-  'use-cases': { key: 'use-cases', collection: 'use-cases', breadcrumb: '§ 5 Use cases', sectionName: 'Use cases', href: '/use-cases/', contentPath: 'src/content/use-cases' },
-  security: { key: 'security', collection: 'gotchas', breadcrumb: '§ 6 Security', sectionName: 'Security', href: '/security/', contentPath: 'src/content/gotchas' },
+  overview: { key: 'overview', collection: 'explainers', breadcrumb: '§ 1 Overview', sectionName: 'Overview', href: '/openclaw/overview/', contentPath: 'src/content/explainers' },
+  setup: { key: 'setup', collection: 'setups', breadcrumb: '§ 2 Setup', sectionName: 'Setup', href: '/openclaw/setup/', contentPath: 'src/content/setups' },
+  connections: { key: 'connections', collection: 'connections', breadcrumb: '§ 3 Connections', sectionName: 'Connections', href: '/openclaw/connections/', contentPath: 'src/content/connections' },
+  plugins: { key: 'plugins', collection: 'plugins', breadcrumb: '§ 4 Plugins', sectionName: 'Plugins', href: '/openclaw/plugins/', contentPath: 'src/content/plugins' },
+  'use-cases': { key: 'use-cases', collection: 'use-cases', breadcrumb: '§ 5 Use cases', sectionName: 'Use cases', href: '/openclaw/use-cases/', contentPath: 'src/content/use-cases' },
+  security: { key: 'security', collection: 'gotchas', breadcrumb: '§ 6 Security', sectionName: 'Security', href: '/openclaw/security/', contentPath: 'src/content/gotchas' },
   compare: { key: 'compare', collection: 'compares', breadcrumb: '§ 7 Compare', sectionName: 'Compare', href: '/compare/', contentPath: 'src/content/compares' },
 };
 

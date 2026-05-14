@@ -12,7 +12,7 @@ const useCaseEntries = allUseCases
 const catalogEntries = useCaseEntries.map(e => ({
   num: e.data.sectionNumber,
   title: e.data.title,
-  href: `/use-cases/${e.id.replace(/\.mdx?$/, '')}/`,
+  href: `/openclaw/use-cases/${e.id.replace(/\.mdx?$/, '')}/`,
   description: e.data.description,
   state: e.data.verificationState,
   date: e.data.lastReviewedAt,
@@ -22,7 +22,7 @@ const tested = useCaseEntries.filter(e => e.data.verificationState.startsWith('t
 const sourced = useCaseEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = useCaseEntries.filter(e => e.data.verificationState === 'planned').length;
 
-const lede = `End-to-end recipes — concrete things to <em>build</em> with OpenClaw. Every recipe assumes <a href="/use-cases/hello-world-laptop/">§5.1 hello-world</a> works (your baseline). They get progressively more ambitious from there: a Slack bot for a team, a WhatsApp FAQ answerer for a small business, a Pi-hosted always-on home agent, and a RAG agent over your personal docs. Each recipe declares its verification state — right now they're all <strong>sourced</strong> because Sush is just starting. Expect them to flip to <strong>tried</strong> as he runs them.`;
+const lede = `End-to-end recipes — concrete things to <em>build</em> with OpenClaw. Every recipe assumes <a href="/openclaw/use-cases/hello-world-laptop/">§5.1 hello-world</a> works (your baseline). They get progressively more ambitious from there: a Slack bot for a team, a WhatsApp FAQ answerer for a small business, a Pi-hosted always-on home agent, and a RAG agent over your personal docs. Each recipe declares its verification state — right now they're all <strong>sourced</strong> because Sush is just starting. Expect them to flip to <strong>tried</strong> as he runs them.`;
 ---
 
 <BaseLayout

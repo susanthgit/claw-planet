@@ -53,7 +53,7 @@ If your workspace is light, this is fine. If you've been adding to AGENTS.md mem
 
 The skill system loads from multiple precedence-ordered locations including `~/.openclaw/skills` for **managed skills** and the bundled set. There's no formal review process for community-contributed skills mentioned in the official docs — community blogs reference a "ClawHub" marketplace, but a tech-savvy reader should treat any skill they didn't write themselves the way they'd treat a random npm package.
 
-We'll catalogue specific skills in [§4 Plugins](/plugins/) with field notes that declare what we checked. But the *category-level* drawback is real: the marketplace's safety surface is mostly your own diligence.
+We'll catalogue specific skills in [§4 Plugins](/openclaw/plugins/) with field notes that declare what we checked. But the *category-level* drawback is real: the marketplace's safety surface is mostly your own diligence.
 
 > *Why this matters:* before installing a skill that handles secrets or talks to external services, read the source. Don't assume "it's in the registry" means "someone vetted it."
 
@@ -65,7 +65,7 @@ Per the README's security section: *"Default: tools run on the host for the `mai
 
 That's a sensible default for a single-user setup on your own laptop. But it means if a sketchy MCP server or compromised channel sends adversarial input, the agent could call `exec` with that input — on your host, with your permissions. The mitigation is `agents.defaults.sandbox.mode: "non-main"` to put non-`main` sessions inside Docker (or SSH / OpenShell). But you have to opt in.
 
-> *Why this matters:* if you connect a public Discord channel or open DM to the agent, **change the sandbox default first** ([§6.1 Self-hosting checklist](/security/self-hosting-checklist/)). Don't run with the default if untrusted input can reach the agent.
+> *Why this matters:* if you connect a public Discord channel or open DM to the agent, **change the sandbox default first** ([§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/)). Don't run with the default if untrusted input can reach the agent.
 
 **Sourced from:** [README "Security model"](https://github.com/openclaw/openclaw#security-model-important) · [Sandboxing](https://docs.openclaw.ai/gateway/sandboxing) · [DM policy](https://docs.openclaw.ai/channels/pairing)
 
@@ -122,6 +122,6 @@ The ones above are **architectural drawbacks visible from reading the docs**. Pr
 
 ## What to read next
 
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — turn drawback #4 into an action plan
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — turn drawback #4 into an action plan
 - [§7.1 OpenClaw vs MCP-based stacks](/compare/openclaw-vs-mcp-stacks/) — drawback #1 (single-user shape) compared head-to-head
-- [§2 Setup](/setup/) — drawback #5 (operational floor) is where the setup pages spend most of their pages
+- [§2 Setup](/openclaw/setup/) — drawback #5 (operational floor) is where the setup pages spend most of their pages

@@ -176,7 +176,7 @@ The `exec` tool runs shell commands. By default, on `main` sessions, it can run 
 - **Sandbox non-main sessions** (Check #4) — already covered.
 - **Tool policy** for `main` if you want to lock yourself down (e.g. deny `exec` outright if your agent never needs it).
 
-Some users go further and put the whole Gateway inside a Docker container ([§2.7 Docker](/setup/docker/)) so even `main` session is contained.
+Some users go further and put the whole Gateway inside a Docker container ([§2.7 Docker](/openclaw/setup/docker/)) so even `main` session is contained.
 
 **Source:** [Tool policy](https://docs.openclaw.ai/gateway/sandbox-vs-tool-policy-vs-elevated)
 
@@ -232,7 +232,7 @@ If you're deploying OpenClaw in a context where security is professionally your 
 
 ## What to read next
 
-- [§6.2 Plugin trust signals](/security/plugin-trust-signals/) — what we look for when sampling plugins for [§4](/plugins/)
-- [§6.3 Practical patterns](/security/practical-patterns/) — common classes of issue you'll meet
-- [§6.4 What NOT to build as an agent](/security/what-not-to-build/) — counter-intuitive guidance
-- [§1.4 Honest drawbacks](/overview/honest-drawbacks/) — the architectural drawbacks this checklist works around
+- [§6.2 Plugin trust signals](/openclaw/security/plugin-trust-signals/) — what we look for when sampling plugins for [§4](/openclaw/plugins/)
+- [§6.3 Practical patterns](/openclaw/security/practical-patterns/) — common classes of issue you'll meet
+- [§6.4 What NOT to build as an agent](/openclaw/security/what-not-to-build/) — counter-intuitive guidance
+- [§1.4 Honest drawbacks](/openclaw/overview/honest-drawbacks/) — the architectural drawbacks this checklist works around

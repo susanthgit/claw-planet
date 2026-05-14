@@ -50,7 +50,7 @@ When loaded, the agent gets these tools:
 - `fs_edit` — surgical edits (find/replace style)
 - `fs_delete` — delete a file (often gated)
 
-These layer alongside OpenClaw's built-in `read`/`write`/`edit`/`exec` ([§3.3 Tools](/connections/tools/)). The difference: built-ins default to the workspace; Filesystem MCP can be scoped to **any directory you allow it**.
+These layer alongside OpenClaw's built-in `read`/`write`/`edit`/`exec` ([§3.3 Tools](/openclaw/connections/tools/)). The difference: built-ins default to the workspace; Filesystem MCP can be scoped to **any directory you allow it**.
 
 ## Why you'd use it
 
@@ -101,7 +101,7 @@ With Filesystem MCP scoped to `~/projects/`: agent reads issues, writes the file
 
 **Medium.** The risk shape is *if you scope it too widely, the agent has broad filesystem access*. Two scenarios where this matters:
 
-1. **Adversarial input via channels.** If your agent is reachable from any channel ([§3.2](/connections/channels/)) and Filesystem MCP is scoped to your home directory, prompt injection could exfiltrate `~/.ssh/id_rsa` or similar. **Mitigation:** scope tightly. `~/projects/` not `~/`.
+1. **Adversarial input via channels.** If your agent is reachable from any channel ([§3.2](/openclaw/connections/channels/)) and Filesystem MCP is scoped to your home directory, prompt injection could exfiltrate `~/.ssh/id_rsa` or similar. **Mitigation:** scope tightly. `~/projects/` not `~/`.
 
 2. **Confused agent.** Agents make mistakes. An agent told to "clean up old files" with broad delete permissions can do real damage. **Mitigation:** scope tightly. Don't give `fs_delete` tools where you wouldn't trust a junior intern with `rm -rf`.
 
@@ -118,7 +118,7 @@ Other implementations exist (community forks, language-specific reimplementation
 | Field | Value |
 |---|---|
 | **Category** | MCP server / tool extension |
-| **Layer** | Tools ([§3.3](/connections/tools/)) |
+| **Layer** | Tools ([§3.3](/openclaw/connections/tools/)) |
 | **Install method** | OpenClaw MCP config block |
 | **Built-in alternative** | Workspace-scoped `read`/`write`/`edit` (less powerful, safer scope) |
 | **License** | MIT |

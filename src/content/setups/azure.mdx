@@ -23,7 +23,7 @@ vendor: "openclaw"
 product: "openclaw-runtime"
 ---
 
-> **Microsoft disclosure.** Sush works at Microsoft. Microsoft makes Azure. We cover Azure as one of several reasonable cloud paths because it's a common ask, not because of who pays the bills. If your team's already on Azure with reserved-instance pricing, this page applies. If not, [§2.4 Linux server](/setup/linux-server/) on Hetzner / DigitalOcean / a Pi is usually cheaper for personal use.
+> **Microsoft disclosure.** Sush works at Microsoft. Microsoft makes Azure. We cover Azure as one of several reasonable cloud paths because it's a common ask, not because of who pays the bills. If your team's already on Azure with reserved-instance pricing, this page applies. If not, [§2.4 Linux server](/openclaw/setup/linux-server/) on Hetzner / DigitalOcean / a Pi is usually cheaper for personal use.
 
 ## When this is the right setup
 
@@ -34,9 +34,9 @@ The two paths we cover:
 | Path | Shape | Best for |
 |---|---|---|
 | **Azure Container Apps** | Serverless container with persistent storage volume | "I want to deploy and forget" with autoscale-to-zero |
-| **Azure VM (B-series)** | A full Linux box you SSH into | Same as [§2.4 Linux server](/setup/linux-server/) but on Azure infrastructure |
+| **Azure VM (B-series)** | A full Linux box you SSH into | Same as [§2.4 Linux server](/openclaw/setup/linux-server/) but on Azure infrastructure |
 
-> If you want neither — i.e., you're learning OpenClaw on the side and don't want to think about Azure at all — start on a laptop ([§2.3](/setup/laptop/)) or a Pi ([§2.6](/setup/raspberry-pi/)) and come back to Azure when you have a real reason.
+> If you want neither — i.e., you're learning OpenClaw on the side and don't want to think about Azure at all — start on a laptop ([§2.3](/openclaw/setup/laptop/)) or a Pi ([§2.6](/openclaw/setup/raspberry-pi/)) and come back to Azure when you have a real reason.
 
 ## Path A — Azure Container Apps
 
@@ -95,7 +95,7 @@ az containerapp create \
 
 ## Path B — Azure VM
 
-Pick this if you want the [§2.4 Linux server](/setup/linux-server/) shape but on Azure infrastructure. Use cases: existing Azure presence, Entra ID-managed identity for the model provider, regional compliance.
+Pick this if you want the [§2.4 Linux server](/openclaw/setup/linux-server/) shape but on Azure infrastructure. Use cases: existing Azure presence, Entra ID-managed identity for the model provider, regional compliance.
 
 ### Sizing
 
@@ -109,7 +109,7 @@ The B-series is "burstable" — fine for the bursty pattern of agent traffic (id
 
 ### Setup
 
-It's literally [§2.4 Linux server](/setup/linux-server/) once the VM exists. Specifically:
+It's literally [§2.4 Linux server](/openclaw/setup/linux-server/) once the VM exists. Specifically:
 
 1. Create the VM (Ubuntu 22.04 LTS recommended).
 2. SSH in.
@@ -135,18 +135,18 @@ It's literally [§2.4 Linux server](/setup/linux-server/) once the VM exists. Sp
 ## Things to try
 
 - **Use Entra ID-managed identity** to authenticate to Azure-hosted services (Storage, Key Vault) without managing keys. The OpenClaw Gateway can use the standard Azure SDK to pick up the managed identity token automatically.
-- **Wire OpenClaw alerts to Microsoft Teams.** Pair Teams as a channel, set up a cron job that summarises Application Insights traces every morning, posts to a Teams channel. ([§3.2 Channels → Microsoft Teams](/connections/channels/)).
+- **Wire OpenClaw alerts to Microsoft Teams.** Pair Teams as a channel, set up a cron job that summarises Application Insights traces every morning, posts to a Teams channel. ([§3.2 Channels → Microsoft Teams](/openclaw/connections/channels/)).
 - **Deploy as part of a Bicep/Terraform stack.** Azure Verified Modules or AVMs include patterns for Container Apps + Azure Files + secrets. Folds OpenClaw into your standard infra-as-code.
 
 ## When to NOT use Azure
 
 - **Personal-only, cost-sensitive.** Hetzner/DO/Linode are 30–60% cheaper for the same Linux shape.
 - **Latency-sensitive.** If your channels and you are physically close to a non-Azure region (e.g., NZ, where Sush is), latency to Microsoft's NZ regions might be higher than to a closer non-Microsoft region. Test before committing.
-- **You actively don't want a Microsoft-tied tech stack.** Fair. Use [§2.4 Linux server](/setup/linux-server/).
+- **You actively don't want a Microsoft-tied tech stack.** Fair. Use [§2.4 Linux server](/openclaw/setup/linux-server/).
 
 ## What to read next
 
-- [§2.4 Linux server](/setup/linux-server/) — the underlying shape if you pick the VM path
-- [§2.7 Docker](/setup/docker/) — image patterns that apply to Container Apps
-- [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — production-shape posture
+- [§2.4 Linux server](/openclaw/setup/linux-server/) — the underlying shape if you pick the VM path
+- [§2.7 Docker](/openclaw/setup/docker/) — image patterns that apply to Container Apps
+- [§6.1 Self-hosting checklist](/openclaw/security/self-hosting-checklist/) — production-shape posture
 - [§7.1 OpenClaw vs MCP-based stacks](/compare/) — the architectural decision behind even running this
