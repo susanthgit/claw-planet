@@ -7,42 +7,53 @@
  * the MDX file doesn't supply a custom verificationNote; if it does, the
  * custom note replaces the default.
  *
- * Three colour variants:
- *   - tested-by-us (olive)
- *   - sourced-only (amber, default for unset)
- *   - planned       (claw red)
+ * Colour variants (after v0b multi-vendor expansion, 2026-05-14):
+ *   - tried / verified (olive)
+ *   - sourced (amber, default for unset)
+ *   - disputed / planned (claw red)
  *
  * The state pill + "last reviewed/tested" meta now lives INSIDE this banner,
  * so the previous .entry-meta row is replaced.
  */
 
 export interface Props {
-  state?: 'tested-by-sush' | 'tested-by-contributor' | 'sourced-only' | 'planned';
+  state?: 'planned' | 'sourced' | 'tried' | 'verified' | 'disputed';
   lastReviewedAt?: string;
   lastTestedAt?: string;
   customNote?: string;
+  testedBy?: 'sush' | 'contributor';
 }
 
-const { state = 'sourced-only', lastReviewedAt, lastTestedAt, customNote } = Astro.props;
+const { state = 'sourced', lastReviewedAt, lastTestedAt, customNote, testedBy } = Astro.props;
 
 const variants = {
-  'tested-by-sush': {
+  'tried': {
     klass: 'verif-t',
-    pillLabel: '● TESTED BY US',
-    headline: 'Sush ran this end-to-end.',
-    defaultBody: 'The commands and steps were executed on real hardware. Date and runtime version recorded below. If something looks off, dispute the entry on GitHub.',
+    pillLabel: testedBy === 'contributor' ? '● TRIED BY CONTRIBUTOR' : '● TRIED BY US',
+    headline: testedBy === 'contributor'
+      ? 'A contributor ran this end-to-end.'
+      : 'Sush ran this end-to-end.',
+    defaultBody: testedBy === 'contributor'
+      ? 'A community contributor verified this on real hardware. The PR or issue is linked in the source list below. Sush has not personally re-run it.'
+      : 'The commands and steps were executed on real hardware. Date, version, and platform are recorded below. If something looks off, dispute the entry on GitHub.',
   },
-  'tested-by-contributor': {
+  'verified': {
     klass: 'verif-t',
-    pillLabel: '● TESTED BY CONTRIBUTOR',
-    headline: 'A contributor ran this end-to-end.',
-    defaultBody: 'A community contributor verified this on real hardware. The PR or issue is linked in the source list below. Sush has not personally re-run it.',
+    pillLabel: '● VERIFIED',
+    headline: 'Sush has tried this and considers it correct.',
+    defaultBody: 'No surprises, no undocumented caveats. Safe to rely on for the platform / version captured below. If you find a discrepancy, dispute the entry on GitHub.',
   },
-  'sourced-only': {
+  'sourced': {
     klass: 'verif-s',
-    pillLabel: '● SOURCED ONLY',
-    headline: 'Sush has not run this end-to-end yet.',
-    defaultBody: 'This page is compiled from official OpenClaw docs and the GitHub repository. When Sush runs it himself, the badge flips to tested-by-us with a date and a runtime version.',
+    pillLabel: '● SOURCED',
+    headline: 'Researched from public docs — not personally run yet.',
+    defaultBody: 'This page is compiled from official vendor docs, public GitHub repos, or vendor blogs. When Sush (or a contributor) runs it on real hardware, the badge flips to TRIED with a date, version, and platform.',
+  },
+  'disputed': {
+    klass: 'verif-e',
+    pillLabel: '● DISPUTED',
+    headline: 'A reader has raised a correctness issue.',
+    defaultBody: 'Treat with caution while we work it out. The linked discussion (in sources below or in the dispute link) has the context. We do not silently hide disputed claims.',
   },
   'planned': {
     klass: 'verif-e',

@@ -19,7 +19,7 @@ const catalogEntries = overviewEntries.map(e => ({
 }));
 
 const tested = overviewEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = overviewEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = overviewEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = overviewEntries.filter(e => e.data.verificationState === 'planned').length;
 
 const lede = `Start here if OpenClaw is new to you. Five-minute orientation, the seven canonical workspace files, a flat schematic of the runtime, and the drawbacks the official docs won't lead with. Every entry is sourced from <a href="https://docs.openclaw.ai">docs.openclaw.ai</a> or the <a href="https://github.com/openclaw/openclaw">canonical GitHub README</a>; the verification state on each one tells you whether we've also run it ourselves yet.`;

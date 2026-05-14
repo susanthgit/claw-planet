@@ -4,7 +4,7 @@ section: "Overview"
 sectionNumber: "1.4"
 description: "What OpenClaw isn't great at — yet. The view that vendor docs won't give you, sourced from community discussions and reading the architecture critically."
 status: "published"
-verificationState: "sourced-only"
+verificationState: "sourced"
 verificationNote: "Opinion piece based on reading official docs and the canonical README. Not yet pressure-tested by running OpenClaw in production. Each drawback links to the source it was inferred from."
 lastReviewedAt: "2026-05-07"
 sources:
@@ -17,6 +17,8 @@ seeAlso:
   - "6.1"
   - "6.2"
   - "7.1"
+vendor: "openclaw"
+product: "openclaw-runtime"
 ---
 
 ## A note before you read this
@@ -114,7 +116,7 @@ If you're a Claude-Pro-only user, you can absolutely use Claude — you'll just 
 
 ## What's not on this list (yet)
 
-We haven't shipped real-world incident reports because we haven't run the system in production. As Sush deploys OpenClaw on his laptop, then his Pi, then maybe an Azure VM, this page will gain "things that broke and how we fixed them" entries. Each one will be `tested-by-sush` with the date and the recovery action.
+We haven't shipped real-world incident reports because we haven't run the system in production. As Sush deploys OpenClaw on his laptop, then his Pi, then maybe an Azure VM, this page will gain "things that broke and how we fixed them" entries. Each one will be `tried` with the date and the recovery action.
 
 The ones above are **architectural drawbacks visible from reading the docs**. Production drawbacks (specific bugs, latency outliers, channel flakiness, model-failover edge cases) come later.
 

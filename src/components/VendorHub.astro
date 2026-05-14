@@ -1,0 +1,238 @@
+---
+/**
+ * VendorHub — landing page for each vendor tab.
+ *
+ * Renders the vendor banner (logo · name · short blurb · official-docs link)
+ * followed by a grid of product cards. Each product card has: name, type
+ * (CLI · hosted product · low-code platform · API/SDK · runtime · catalogue),
+ * status (live · coming-in-batch-X · planned), and a short description.
+ *
+ * Used by /openclaw/, /anthropic/, /openai/, /google/, /microsoft/ index
+ * pages. Fully data-driven via Props.
+ */
+
+export interface Product {
+  slug: string;            // e.g. 'claude-code'
+  name: string;            // e.g. 'Claude Code'
+  type: 'CLI' | 'Hosted product' | 'Low-code platform' | 'API / SDK' | 'Runtime' | 'Catalogue';
+  status: 'live' | 'coming-in-batch' | 'planned' | 'phase-2';
+  description: string;
+  href?: string;           // only when status=live; click target
+  batchHint?: string;      // e.g. 'Batch A' for coming-in-batch
+}
+
+export interface Props {
+  vendor: {
+    slug: string;
+    name: string;             // e.g. 'Anthropic'
+    blurb: string;            // short description of the vendor in Sush's voice
+    officialUrl?: string;     // vendor's official docs/site
+    officialLabel?: string;   // e.g. 'docs.anthropic.com'
+    status: 'live' | 'coming-in-batch' | 'phase-2';
+    statusNote?: string;      // e.g. 'Day-1 sourced seed shipping in Batch A'
+  };
+  products: Product[];
+}
+
+const { vendor, products } = Astro.props;
+---
+
+<section class="vendor-hub">
+  <div class="vh-banner">
+    <div class="vh-banner-tag">VENDOR · {vendor.slug.toUpperCase()}</div>
+    <h1 class="vh-title">{vendor.name}</h1>
+    <p class="vh-blurb">{vendor.blurb}</p>
+    <div class="vh-meta">
+      {vendor.officialUrl && (
+        <span class="vh-meta-item">
+          <strong>Official</strong>
+          <a href={vendor.officialUrl} target="_blank" rel="noopener">{vendor.officialLabel ?? vendor.officialUrl}</a>
+        </span>
+      )}
+      <span class="vh-meta-item">
+        <strong>Status</strong>
+        <span class={`vh-status vh-status-${vendor.status.replace(/[^a-z-]/g, '')}`}>
+          {vendor.status === 'live' && 'Live'}
+          {vendor.status === 'coming-in-batch' && 'Day-1 sourced seed coming soon'}
+          {vendor.status === 'phase-2' && 'Phase 2 (later)'}
+        </span>
+      </span>
+      {vendor.statusNote && (
+        <span class="vh-meta-item">
+          <strong>Note</strong>
+          <span>{vendor.statusNote}</span>
+        </span>
+      )}
+    </div>
+  </div>
+
+  <h2 class="vh-section">Products on Claw</h2>
+  <div class="vh-grid">
+    {products.map(p => {
+      const cardClass = p.status === 'live' ? 'vh-card vh-card-live'
+        : p.status === 'coming-in-batch' ? 'vh-card vh-card-pending'
+        : p.status === 'phase-2' ? 'vh-card vh-card-phase2'
+        : 'vh-card vh-card-planned';
+      const Tag = (p.status === 'live' && p.href) ? 'a' : 'div';
+      const TagProps = (p.status === 'live' && p.href) ? { href: p.href } : {};
+      return (
+        <Tag class={cardClass} {...TagProps}>
+          <div class="vh-card-meta">
+            <span class="vh-card-type">{p.type}</span>
+            <span class={`vh-card-status vh-card-status-${p.status}`}>
+              {p.status === 'live' && '● live'}
+              {p.status === 'coming-in-batch' && `○ ${p.batchHint ?? 'pending'}`}
+              {p.status === 'phase-2' && '○ phase 2'}
+              {p.status === 'planned' && '○ planned'}
+            </span>
+          </div>
+          <h3 class="vh-card-name">{p.name}</h3>
+          <p class="vh-card-desc">{p.description}</p>
+        </Tag>
+      );
+    })}
+  </div>
+</section>
+
+<style>
+  .vendor-hub { max-width: 920px; }
+
+  .vh-banner {
+    border: 1px solid var(--rule-faint);
+    background: var(--canvas);
+    padding: 28px 32px 24px;
+    margin: 0 0 40px;
+    position: relative;
+  }
+  .vh-banner-tag {
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    background: var(--paper);
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+  }
+  .vh-title {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  .vh-blurb {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink-mid);
+    margin: 0 0 18px;
+    max-width: 760px;
+  }
+  .vh-meta {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule-faint);
+    display: flex;
+    gap: 28px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    flex-wrap: wrap;
+  }
+  .vh-meta-item {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .vh-meta-item strong {
+    color: var(--ink-faint);
+    font-weight: 600;
+    font-size: 9.5px;
+    letter-spacing: var(--ls-widest);
+    text-transform: uppercase;
+  }
+  .vh-meta-item a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .vh-meta-item a:hover { color: var(--claw); }
+
+  .vh-status-live { color: var(--olive); font-weight: 600; }
+  .vh-status-cominginbatch { color: var(--amber); font-weight: 600; }
+  .vh-status-phase2 { color: var(--ink-faint); font-weight: 500; }
+
+  .vh-section {
+    font-size: 12px;
+    font-family: var(--mono);
+    font-weight: 600;
+    letter-spacing: var(--ls-widest);
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin: 0 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--rule-faint);
+  }
+
+  .vh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .vh-card {
+    display: block;
+    padding: 18px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+  }
+  .vh-card-live { border-left: 3px solid var(--olive); }
+  .vh-card-pending { border-left: 3px solid var(--amber); opacity: 0.85; }
+  .vh-card-phase2 { border-left: 3px solid var(--rule); opacity: 0.7; }
+  .vh-card-planned { border-left: 3px solid var(--claw); opacity: 0.7; }
+  a.vh-card:hover {
+    border-color: var(--claw);
+    background: var(--paper-warm);
+  }
+
+  .vh-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-wider);
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .vh-card-status-live { color: var(--olive); }
+  .vh-card-status-coming-in-batch { color: var(--amber); }
+  .vh-card-status-phase-2 { color: var(--ink-faint); }
+  .vh-card-status-planned { color: var(--claw); }
+  .vh-card-name {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .vh-card-desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-mid);
+    margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    .vh-banner { padding: 22px 18px 18px; }
+    .vh-title { font-size: 26px; }
+    .vh-blurb { font-size: 15px; }
+    .vh-meta { gap: 18px; }
+  }
+</style>

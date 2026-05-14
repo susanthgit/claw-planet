@@ -12,7 +12,7 @@ export interface Entry {
   href: string;
   description: string;
   ref?: string;
-  state?: 'tested-by-sush' | 'tested-by-contributor' | 'sourced-only' | 'planned' | 'published' | 'trusted' | 'answered' | 'deep' | 'sourced' | 'early' | 'live' | 'map-complete';
+  state?: 'planned' | 'sourced' | 'tried' | 'verified' | 'disputed' | 'published' | 'trusted' | 'answered' | 'deep' | 'early' | 'live' | 'map-complete';
   pillLabel?: string;
   date?: string;
 }
@@ -25,9 +25,9 @@ const { entries } = Astro.props;
 
 function pillClass(state?: string): string {
   if (!state) return '';
-  if (['tested-by-sush', 'tested-by-contributor', 'published', 'trusted', 'answered', 'deep', 'live', 'map-complete'].includes(state)) return 't';
-  if (['sourced-only', 'sourced'].includes(state)) return 's';
-  if (['planned', 'early'].includes(state)) return 'e';
+  if (['tried', 'verified', 'published', 'trusted', 'answered', 'deep', 'live', 'map-complete'].includes(state)) return 't';
+  if (['sourced'].includes(state)) return 's';
+  if (['planned', 'disputed', 'early'].includes(state)) return 'e';
   return '';
 }
 
@@ -35,15 +35,15 @@ function pillText(state?: string, fallback?: string): string {
   if (fallback) return fallback;
   if (!state) return '';
   const map: Record<string, string> = {
-    'tested-by-sush': 'tested',
-    'tested-by-contributor': 'tested',
-    'sourced-only': 'sourced',
+    'tried': 'tried',
+    'verified': 'verified',
+    'sourced': 'sourced',
+    'disputed': 'disputed',
     'planned': 'planned',
     'published': 'published',
     'trusted': 'trusted',
     'answered': 'answered',
     'deep': 'deep',
-    'sourced': 'sourced',
     'early': 'early',
     'live': 'live',
     'map-complete': 'map complete',

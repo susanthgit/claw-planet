@@ -2,7 +2,7 @@
   "name": "claw-planet",
   "version": "0.1.0",
   "private": true,
-  "description": "Claw Planet — a plain-English study reference for the OpenClaw agent runtime. Concepts, setup paths, connections, plugins, security gotchas, and what's currently changing.",
+  "description": "Claw — a practitioner's field notebook for AI tools you can run, wire, script, compare, or operationally reason about. Claude Code, Codex CLI, Gemini CLI, NotebookLM, Microsoft Copilot Studio + ATK, GitHub Copilot, OpenClaw, and the MCP servers that wire them together.",
   "homepage": "https://claw.aguidetocloud.com",
   "repository": {
     "type": "git",

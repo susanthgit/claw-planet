@@ -19,7 +19,7 @@ const catalogEntries = compareEntries.map(e => ({
 }));
 
 const tested = compareEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = compareEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = compareEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = compareEntries.filter(e => e.data.verificationState === 'planned').length;
 
 const lede = `OpenClaw vs the alternatives. Same axes per matchup — capability, cost, lock-in, maturity, where it leads, where it lags. Currently one deep matchup live (vs MCP-based stacks); more matchups (vs Claude Code, vs LangChain) ship as Sush gains direct experience comparing.`;

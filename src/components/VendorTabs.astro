@@ -1,0 +1,137 @@
+---
+/**
+ * VendorTabs — sub-nav row below the Header showing the 5 vendor tabs +
+ * Compare + Updates. Sticky just below the Header; collapses into the
+ * MobileDrawer at narrow widths.
+ *
+ * Active tab: derived from the URL path prefix. If the path starts with
+ * /anthropic/, the Anthropic tab is active, etc. The 42 existing OpenClaw
+ * pages still live at /overview/ /setup/ etc. (URL migration is Batch 0b);
+ * those paths map to the OpenClaw tab via the OPENCLAW_LEGACY_PREFIXES list.
+ *
+ * Phase 1 vendors (in tab order):
+ *   OpenClaw · Anthropic · OpenAI · Google · Microsoft · Compare · Updates
+ *
+ * Phase 2 (later): Meta/Llama · Mistral · xAI · Perplexity.
+ */
+
+const path = Astro.url.pathname;
+
+const VENDORS = [
+  { slug: 'openclaw',  label: 'OpenClaw',  href: '/openclaw/',  tone: 'oc' },
+  { slug: 'anthropic', label: 'Anthropic', href: '/anthropic/', tone: 'an' },
+  { slug: 'openai',    label: 'OpenAI',    href: '/openai/',    tone: 'oa' },
+  { slug: 'google',    label: 'Google',    href: '/google/',    tone: 'gg' },
+  { slug: 'microsoft', label: 'Microsoft', href: '/microsoft/', tone: 'ms' },
+];
+
+const TAILS = [
+  { slug: 'compare', label: 'Compare', href: '/compare/', tone: 'tail' },
+  { slug: 'updates', label: 'Updates', href: '/updates/', tone: 'tail' },
+];
+
+// Existing OpenClaw URL prefixes that should highlight the OpenClaw tab as
+// active. After Batch 0b's URL migration these will move under /openclaw/.
+const OPENCLAW_LEGACY_PREFIXES = [
+  '/overview/', '/setup/', '/connections/', '/plugins/',
+  '/use-cases/', '/security/', '/resources/', '/faq/',
+];
+
+function isActive(href: string, isOpenClaw: boolean): boolean {
+  if (path === href) return true;
+  if (path.startsWith(href) && href !== '/') return true;
+  if (isOpenClaw && OPENCLAW_LEGACY_PREFIXES.some(p => path.startsWith(p))) return true;
+  return false;
+}
+---
+
+<nav class="vendor-tabs" aria-label="Vendor sections">
+  <div class="vendor-tabs-inner">
+    <div class="vendor-tabs-row">
+      {VENDORS.map(v => (
+        <a
+          href={v.href}
+          class={`vt vt-${v.tone} ${isActive(v.href, v.slug === 'openclaw') ? 'is-active' : ''}`}
+          data-vendor={v.slug}
+          aria-current={isActive(v.href, v.slug === 'openclaw') ? 'page' : undefined}
+        >{v.label}</a>
+      ))}
+      <span class="vt-sep" aria-hidden="true">·</span>
+      {TAILS.map(t => (
+        <a
+          href={t.href}
+          class={`vt vt-tail ${path.startsWith(t.href) ? 'is-active' : ''}`}
+          aria-current={path.startsWith(t.href) ? 'page' : undefined}
+        >{t.label}</a>
+      ))}
+    </div>
+  </div>
+</nav>
+
+<style>
+  .vendor-tabs {
+    background: var(--canvas);
+    border-bottom: 1px solid var(--rule-faint);
+    position: sticky;
+    top: var(--header-h);
+    z-index: calc(var(--z-sticky) - 1);
+  }
+  .vendor-tabs-inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 var(--page-pad-x);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .vendor-tabs-inner::-webkit-scrollbar { display: none; }
+
+  .vendor-tabs-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+    min-width: max-content;
+  }
+
+  .vt {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--ink-mute);
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: color var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+    white-space: nowrap;
+  }
+  .vt:hover {
+    color: var(--ink);
+    border-color: var(--rule);
+    background: var(--paper-warm);
+  }
+  .vt.is-active {
+    color: var(--claw);
+    border-color: var(--claw);
+    background: var(--canvas);
+    font-weight: 600;
+  }
+
+  .vt-sep {
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    margin: 0 6px;
+  }
+
+  .vt-tail {
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 880px) {
+    .vendor-tabs-inner { padding: 0 12px; }
+    .vt { padding: 5px 10px; font-size: 11px; }
+  }
+</style>

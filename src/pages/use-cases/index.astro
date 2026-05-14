@@ -19,10 +19,10 @@ const catalogEntries = useCaseEntries.map(e => ({
 }));
 
 const tested = useCaseEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = useCaseEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = useCaseEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = useCaseEntries.filter(e => e.data.verificationState === 'planned').length;
 
-const lede = `End-to-end recipes — concrete things to <em>build</em> with OpenClaw. Every recipe assumes <a href="/use-cases/hello-world-laptop/">§5.1 hello-world</a> works (your baseline). They get progressively more ambitious from there: a Slack bot for a team, a WhatsApp FAQ answerer for a small business, a Pi-hosted always-on home agent, and a RAG agent over your personal docs. Each recipe declares its verification state — right now they're all <strong>sourced-only</strong> because Sush is just starting. Expect them to flip to <strong>tested-by-sush</strong> as he runs them.`;
+const lede = `End-to-end recipes — concrete things to <em>build</em> with OpenClaw. Every recipe assumes <a href="/use-cases/hello-world-laptop/">§5.1 hello-world</a> works (your baseline). They get progressively more ambitious from there: a Slack bot for a team, a WhatsApp FAQ answerer for a small business, a Pi-hosted always-on home agent, and a RAG agent over your personal docs. Each recipe declares its verification state — right now they're all <strong>sourced</strong> because Sush is just starting. Expect them to flip to <strong>tried</strong> as he runs them.`;
 ---
 
 <BaseLayout

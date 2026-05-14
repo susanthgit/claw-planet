@@ -4,7 +4,7 @@ section: "Overview"
 sectionNumber: "1.3"
 description: "How an OpenClaw deployment fits together — Gateway, agent runtime, channels, tools, models, memory — visualised as a flat schematic."
 status: "published"
-verificationState: "sourced-only"
+verificationState: "sourced"
 verificationNote: "Diagram derived from the architecture described in docs.openclaw.ai/concepts/agent and the Gateway architecture page. Not yet running on any Sush-owned hardware."
 lastReviewedAt: "2026-05-07"
 sources:
@@ -15,6 +15,8 @@ seeAlso:
   - "1.1"
   - "1.2"
   - "3.1"
+vendor: "openclaw"
+product: "openclaw-runtime"
 ---
 
 ## The whole shape on one page
@@ -127,7 +129,7 @@ Three things to notice:
 
 ## What we are NOT going to claim
 
-We have not run OpenClaw end-to-end yet. The diagram describes the architecture in the docs and the README. Where we say "the message flows through X then Y," we mean "the docs say it flows through X then Y." When we eventually run it on Sush's laptop and watch the message hops with `--verbose`, this page will get promoted from `sourced-only` to `tested-by-sush` with the real session log.
+We have not run OpenClaw end-to-end yet. The diagram describes the architecture in the docs and the README. Where we say "the message flows through X then Y," we mean "the docs say it flows through X then Y." When we eventually run it on Sush's laptop and watch the message hops with `--verbose`, this page will get promoted from `sourced` to `tried` with the real session log.
 
 ## What to read next
 

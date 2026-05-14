@@ -19,7 +19,7 @@ const catalogEntries = connectionEntries.map(e => ({
 }));
 
 const tested = connectionEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = connectionEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = connectionEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = connectionEntries.filter(e => e.data.verificationState === 'planned').length;
 
 const lede = `The integration <em>patterns</em>, not the marketplace packages. <strong>Channels</strong> bring messages in and out (Slack, WhatsApp, Discord, etc.). <strong>Tools</strong> let the agent do work (browser, filesystem, web search, code exec). <strong>Models</strong> are the brains (Claude, GPT, local Ollama). <strong>Memory</strong> is what survives a restart (built-in, Honcho, QMD). For specific plugins/packages reviewed individually, see <a href="/plugins/">§4 Plugins</a>.`;

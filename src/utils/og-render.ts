@@ -43,10 +43,11 @@ async function getFonts() {
 }
 
 const STATE_COLOURS = {
-  'tested-by-sush':         { bg: '#F2F5E5', fg: '#5C7038', border: '#8FA64A', label: 'TESTED' },
-  'tested-by-contributor':  { bg: '#F2F5E5', fg: '#5C7038', border: '#8FA64A', label: 'TESTED' },
-  'sourced-only':           { bg: '#FBE9C8', fg: '#9C5F00', border: '#D69934', label: 'SOURCED' },
-  'planned':                { bg: '#FFE0E0', fg: '#A82020', border: '#FF4747', label: 'PLANNED' },
+  'planned':   { bg: '#FFE0E0', fg: '#A82020', border: '#FF4747', label: 'PLANNED' },
+  'sourced':   { bg: '#FBE9C8', fg: '#9C5F00', border: '#D69934', label: 'SOURCED' },
+  'tried':     { bg: '#F2F5E5', fg: '#5C7038', border: '#8FA64A', label: 'TRIED' },
+  'verified':  { bg: '#E0F0DA', fg: '#3F5526', border: '#6B8A3F', label: 'VERIFIED' },
+  'disputed':  { bg: '#FFE0E0', fg: '#A82020', border: '#FF4747', label: 'DISPUTED' },
 };
 
 export interface OgOpts {

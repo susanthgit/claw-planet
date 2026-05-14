@@ -20,8 +20,9 @@ export interface Props {
   name: string;
   subtitle?: string;
   summary: string;
-  state: 'tested-by-sush' | 'tested-by-contributor' | 'sourced-only' | 'planned';
+  state: 'planned' | 'sourced' | 'tried' | 'verified' | 'disputed';
   stateDate?: string;
+  testedBy?: 'sush' | 'contributor';
   props: Prop[];
   disputeUrl?: string;
 }
@@ -35,23 +36,25 @@ const {
   summary,
   state,
   stateDate,
+  testedBy,
   props,
   disputeUrl = 'https://github.com/susanthgit/claw-planet/issues/new?template=dispute.md',
 } = Astro.props;
 
-function stateLabel(s: string, d?: string): string {
+function stateLabel(s: string, d?: string, by?: string): string {
   const map: Record<string, string> = {
-    'tested-by-sush': 'TESTED BY US',
-    'tested-by-contributor': 'TESTED BY CONTRIBUTOR',
-    'sourced-only': 'SOURCED ONLY',
+    'tried': by === 'contributor' ? 'TRIED BY CONTRIBUTOR' : 'TRIED BY US',
+    'verified': 'VERIFIED',
+    'sourced': 'SOURCED',
+    'disputed': 'DISPUTED',
     'planned': 'PLANNED',
   };
   return d ? `● ${map[s]} · ${d}` : `● ${map[s]}`;
 }
 
 function stateClass(s: string): string {
-  if (s.startsWith('tested')) return 'verif-t';
-  if (s === 'sourced-only') return 'verif-s';
+  if (s === 'tried' || s === 'verified') return 'verif-t';
+  if (s === 'sourced') return 'verif-s';
   return 'verif-e';
 }
 ---

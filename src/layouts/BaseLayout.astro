@@ -11,6 +11,7 @@
  * - Footer with independence + Microsoft disclosure
  */
 import Header from '@components/Header.astro';
+import VendorTabs from '@components/VendorTabs.astro';
 import CosmosBar from '@components/CosmosBar.astro';
 import Sidebar from '@components/Sidebar.astro';
 import MarginCol from '@components/MarginCol.astro';
@@ -42,7 +43,7 @@ export interface Props {
 
 const {
   title,
-  description = "A plain-English study reference for the OpenClaw agent runtime. Setup, connections, plugins, security gotchas, and what's currently changing — by Sush.",
+  description = "A practitioner's field notebook for AI tools you can run, wire, script, compare, or operationally reason about — Claude Code, Codex CLI, Gemini CLI, NotebookLM, Microsoft Copilot Studio + ATK, GitHub Copilot, OpenClaw, and the MCP servers that wire them together. By Sush.",
   canonical,
   ogImage,
   noIndex = false,
@@ -141,6 +142,7 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).toStri
   <a href="#main" class="skip-link">Skip to main content</a>
 
   <Header entryFile={entryFile} lastUpdated={lastUpdated} />
+  <VendorTabs />
 
   <div class="page">
     <Sidebar />

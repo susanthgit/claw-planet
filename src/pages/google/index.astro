@@ -1,0 +1,29 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import VendorHub from '@components/VendorHub.astro';
+
+const vendor = {
+  slug: 'google',
+  name: 'Google',
+  blurb: 'Gemini, the model family — plus the developer surfaces that wrap it: Gemini CLI (terminal coding agent), Google AI Studio (web playground for prompt design + small apps), and the hosted products people actually use day-to-day — NotebookLM (research notebook over your own sources) and Gemini chat. NotebookLM is the standout — Sush has heard a lot of good things but has never used it himself. Coming soon.',
+  officialUrl: 'https://ai.google.dev',
+  officialLabel: 'ai.google.dev',
+  status: 'coming-in-batch' as const,
+  statusNote: 'Day-1 sourced seed shipping in Batch C (~16 pages: Gemini CLI · NotebookLM dossier · Google AI Studio · Gemini chat).',
+};
+
+const products = [
+  { slug: 'gemini-cli', name: 'Gemini CLI', type: 'CLI' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'Google\'s terminal coding agent — Node CLI you install, reads your repo, calls Gemini with tool use. The "Gemini equivalent of Claude Code / Codex CLI." Recent shipping cadence is heavy.' },
+  { slug: 'notebooklm', name: 'NotebookLM', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'Hosted research notebook — upload sources (PDFs, links, audio), ask questions grounded in YOUR documents, generate audio overviews. The audio overview feature is what everyone talks about. Dossier on use cases + limits + privacy.' },
+  { slug: 'ai-studio', name: 'Google AI Studio', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'Web playground for prompt design + building small Gemini-powered apps. Free tier with rate limits. The on-ramp before you commit to a Vertex AI project.' },
+  { slug: 'gemini-chat', name: 'Gemini chat', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch C', description: 'The hosted chat product (gemini.google.com). Gems (custom personalities), Deep Research, Workspace integration. Lighter dossier — captures what it\'s genuinely good at vs the marketing.' },
+];
+---
+
+<BaseLayout
+  title="Google — Claw"
+  description="Google vendor hub on Claw — plain-English field notes on Gemini CLI, NotebookLM, Google AI Studio, and Gemini chat. Day-1 sourced seed shipping in Batch C."
+  ogImage="/og/home.png"
+>
+  <VendorHub vendor={vendor} products={products} />
+</BaseLayout>

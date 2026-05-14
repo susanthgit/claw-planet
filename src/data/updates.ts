@@ -36,7 +36,7 @@ export const updates: Update[] = [
     tag: 'NEWS',
     title: 'Claw Planet goes live',
     href: '/',
-    meta: 'Soft launch with §1 Overview, §2 Setup, §3 Connections, §4 Plugins, §5 Use cases, §6 Security, §7 Compare. All entries sourced-only until Sush actually runs OpenClaw end-to-end.',
+    meta: 'Soft launch with §1 Overview, §2 Setup, §3 Connections, §4 Plugins, §5 Use cases, §6 Security, §7 Compare. All entries sourced until Sush actually runs OpenClaw end-to-end.',
   },
   {
     date: '2026-05-07',

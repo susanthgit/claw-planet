@@ -3,36 +3,43 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Methodology — Claw Planet sourcing rules"
-  description="How Claw Planet works editorially — verification states, field-note pattern, voice rules, dispute mechanism, source-of-truth disciplines."
+  title="Methodology — how Claw works editorially"
+  description="How Claw works editorially — verification states (sourced/tried/verified/disputed/planned), field-note pattern, scope guardrails, voice rules, sources discipline, dispute mechanism."
 >
   <article class="prose-page">
     <header>
       <h1>Methodology</h1>
       <p class="lede">
-        How this site works editorially. What we do and don't claim. The disciplines that make the
-        verification states + field notes credible.
+        How this site works editorially. What we do and don't claim. The disciplines that make
+        the verification states + field notes credible.
       </p>
     </header>
 
     <h2 id="verification-states">Verification states</h2>
     <p>
       Every applicable page (setup methods, plugin field notes, use-case recipes) declares a
-      <strong>verification state</strong> visibly. There are four:
+      <strong>verification state</strong> visibly. There are five:
     </p>
     <table>
       <thead><tr><th>State</th><th>Meaning</th><th>What it means for you</th></tr></thead>
       <tbody>
-        <tr><td><strong>tested-by-sush</strong></td><td>Sush ran it. Date + version + hardware noted.</td><td>You can follow with confidence; we know it works.</td></tr>
-        <tr><td><strong>tested-by-contributor</strong></td><td>Someone else ran it; PR/issue linked.</td><td>Verified, but not by us. Cross-reference with the linked PR.</td></tr>
-        <tr><td><strong>sourced-only</strong></td><td>Compiled from official + community docs; we have NOT run it.</td><td>Sensible likely-correct path; verify before relying on in production.</td></tr>
+        <tr><td><strong>sourced</strong></td><td>Researched from public docs / repos / vendor blogs. Sush has NOT personally run it yet. Most entries start here.</td><td>A sensible likely-correct path; verify before relying on it in production.</td></tr>
+        <tr><td><strong>tried</strong></td><td>Sush (or a contributor) ran it on real hardware. Date + version + platform + account tier captured in <code>verificationContext</code>.</td><td>You can follow with confidence; we know it works in this exact configuration.</td></tr>
+        <tr><td><strong>verified</strong></td><td>Tried, and Sush considers it correct (no surprises, no undocumented caveats). The highest signal.</td><td>The thing works as documented. Safe to rely on.</td></tr>
+        <tr><td><strong>disputed</strong></td><td>A reader has raised that something is incorrect, with linked discussion.</td><td>Treat with caution while we work it out. Read the linked dispute.</td></tr>
         <tr><td><strong>planned</strong></td><td>Stub — does NOT appear in top nav until promoted.</td><td>Not yet ready. Don't follow.</td></tr>
       </tbody>
     </table>
     <p>
-      Right now most pages are <code>sourced-only</code> because Sush is just starting his OpenClaw
-      run. As he runs setups + recipes, pages flip to <code>tested-by-sush</code> with the actual
-      session log + date.
+      Most pages start as <code>sourced</code> on day 1 — Sush prepopulates the learning roadmap
+      from public docs so he knows what's possible to try. As he experiments, pages flip to
+      <code>tried</code> with the actual session log + platform/version notes. We don't backfill
+      claims we haven't verified.
+    </p>
+    <p>
+      <strong>The verification context</strong> on a <code>tried</code> entry typically captures
+      tool · version · platform · account tier · who tried it · when. Different versions of the
+      same tool can behave differently, so the context matters.
     </p>
 
     <h2 id="field-notes">Field notes (not reviews)</h2>
@@ -59,7 +66,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     <p>
       Every entry has an "edit this page on GitHub" link and a "dispute or correct this entry" link.
       If we got something wrong, the right path is a GitHub issue or PR. We respond to corrections
-      from plugin authors and from readers. We don't gate corrections behind editorial pride.
+      from plugin authors, vendor maintainers, and from readers. We don't gate corrections behind
+      editorial pride.
     </p>
 
     <h2 id="voice">Voice rules</h2>
@@ -76,49 +84,87 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       mode for roadmap docs.
     </p>
 
-    <h2 id="sources">Sources &amp; citations</h2>
+    <h2 id="scope">Scope guardrails</h2>
     <p>
-      Every page that makes factual claims links to its sources. Most sources are
-      <a href="https://docs.openclaw.ai">docs.openclaw.ai</a>,
-      <a href="https://github.com/openclaw/openclaw">github.com/openclaw/openclaw</a>, or scoped
-      community resources (Adversa, BCG CIO brief, etc.). Where we synthesise across sources, we say
-      so.
+      Claw covers <strong>practitioner AI tools you can run, wire, script, compare, or
+      operationally reason about</strong> — install paths, configuration, plugins/MCP/connectors,
+      hands-on experiments, use-case recipes, pricing &amp; limits, privacy &amp; security models,
+      "when to pick X over Y" comparisons, vendor updates. Voice-lint enforces this scope.
+    </p>
+    <p>
+      <strong>Out of scope:</strong>
+    </p>
+    <ul>
+      <li><strong>Prompt-engineering articles</strong> — not vendor-product-shaped; drifts into endless think-pieces.</li>
+      <li><strong>Model benchmark rankings</strong> — stales weekly; not learning-roadmap shape.</li>
+      <li><strong>AI ethics / safety / regulation commentary</strong> — easy to get wrong publicly; not builder-shaped.</li>
+      <li><strong>General "what is AI?" explainers</strong> — that's <a href="https://plainai.aguidetocloud.com/">Plain AI</a>'s lane.</li>
+      <li><strong>Vendor PR / marketing reposts</strong> — no honest take = no value.</li>
+      <li><strong>AI news / punditry / hot takes</strong> — field notes ≠ commentary.</li>
+      <li><strong>Customer engagement detail</strong> — data classification rule. Microsoft-related content on Claw uses ONLY publicly-sourced material.</li>
+    </ul>
+    <p>
+      <strong>Positive inclusion test</strong> — a page belongs in Claw only if it answers ≥1 of:
+      Can Sush install/run/configure it? Can it connect to files/repos/tools/agents/workflows?
+      Does it change how Sush chooses between practitioner tools? Is there a concrete
+      privacy/security/operational decision? Did Sush try it (or plan to)?
     </p>
 
-    <h2 id="primitive-map">Sourced primitive map</h2>
+    <h2 id="sources">Sources &amp; citations</h2>
     <p>
-      Before any content page was written, we built
+      Every page that makes factual claims links to its sources. For each vendor, sources include
+      official docs (e.g. <a href="https://docs.anthropic.com">docs.anthropic.com</a>,
+      <a href="https://learn.microsoft.com">learn.microsoft.com</a>,
+      <a href="https://ai.google.dev">ai.google.dev</a>,
+      <a href="https://platform.openai.com/docs">platform.openai.com/docs</a>,
+      <a href="https://docs.openclaw.ai">docs.openclaw.ai</a>), vendor blogs, official GitHub
+      repos, and scoped community resources where appropriate. Where we synthesise across sources,
+      we say so.
+    </p>
+    <p>
+      <strong>Microsoft entries</strong> are held to a stricter standard — public sources ONLY.
+      No customer engagement detail. No internal-classified material. Voice-lint enforces a
+      citation-required check on Microsoft pages.
+    </p>
+
+    <h2 id="primitive-map">Sourced primitive map (OpenClaw)</h2>
+    <p>
+      For the OpenClaw section, we built
       <a href="https://github.com/susanthgit/claw-planet/blob/main/src/data/openclaw-primitives.json">
-      <code>src/data/openclaw-primitives.json</code></a> — 46 primitives grounded in real source URLs.
-      Every concept page derives from this map. If we use an umbrella term that isn't in OpenClaw
-      docs (e.g. "Connections" as our category for channels+tools+models+memory), it's flagged with
-      <code>officialSource: null</code> so readers know it's our framing, not OpenClaw's.
+      <code>src/data/openclaw-primitives.json</code></a> — 46 primitives grounded in real source
+      URLs. Every OpenClaw concept page derives from this map. If we use an umbrella term that
+      isn't in OpenClaw docs (e.g. "Connections" as our category for channels+tools+models+memory),
+      it's flagged with <code>officialSource: null</code> so readers know it's our framing, not
+      OpenClaw's.
     </p>
     <p>
       <strong>Why this matters:</strong> a tech-savvy OpenClaw reader spots invented or fuzzy
-      primitives quickly. The primitive map is the source-of-truth that keeps us honest.
+      primitives quickly. The primitive map is the source-of-truth that keeps us honest. We expect
+      to build similar maps for each vendor as their sections grow.
     </p>
 
     <h2 id="independence">Independence</h2>
     <p>
-      Claw Planet is an independent guide by Sush.
-      <strong>Not affiliated with or endorsed by OpenClaw, ClawHub, or any plugin author</strong>
-      unless explicitly stated. Sush works at Microsoft — Microsoft makes Azure. We cover Azure
-      where it's a sensible OpenClaw option; we don't favour it because of who pays the bills.
-      Microsoft disclosure is inline at the top of any page that discusses MS-related deployments
-      (<a href="/setup/azure/">§2.5 Azure</a> is the main one).
+      Claw is an independent guide by Sush.
+      <strong>Not affiliated with or endorsed by Anthropic, OpenAI, Google, Microsoft, the
+      OpenClaw project, or any plugin author</strong> unless explicitly stated. Sush works at
+      Microsoft as a Copilot Solution Engineer — all Microsoft content on Claw uses only
+      publicly-sourced material (Microsoft Learn, official blogs, public GitHub, his own
+      experiments at home). No customer engagement detail. Microsoft disclosure is inline at the
+      top of any page that discusses MS-related deployments.
     </p>
     <p>
       No paid tier. No email walls. No telemetry. No affiliate links unless explicitly disclosed.
-      <a href="https://github.com/susanthgit/claw-planet">Repo</a> is open under MIT for code, CC BY
-      4.0 for content where applicable.
+      <a href="https://github.com/susanthgit/claw-planet">Repo</a> is open under MIT for code,
+      CC BY 4.0 for content where applicable.
     </p>
 
     <h2 id="cadence">Cadence</h2>
     <p>
       No schedule. Sush ships when there's something worth shipping. Watching
       <a href="https://github.com/susanthgit/claw-planet">the repo</a> on GitHub is the way to see
-      changes as they land.
+      changes as they land. The <a href="/updates/">§8 Updates</a> page is the human-readable
+      changelog.
     </p>
 
     <h2 id="ratchet">Quality ratchet</h2>
@@ -136,20 +182,22 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       <li><strong>Vendor-sponsored content.</strong> Ever.</li>
       <li><strong>"Get started" / "Try now" CTAs.</strong> The site is reading-shape, not selling-shape.</li>
       <li><strong>Email capture.</strong> No popup. No newsletter wall.</li>
+      <li><strong>Out-of-scope topics</strong> (see §Scope guardrails above).</li>
     </ul>
 
     <h2 id="what-we-do">What we do</h2>
     <ul>
-      <li><strong>Plain English.</strong> Even for technical concepts.</li>
-      <li><strong>Honest verification states.</strong> Sourced-only is the default until we run it.</li>
+      <li><strong>Plain English.</strong> Even for technical concepts. Jargon explained on first use.</li>
+      <li><strong>Honest verification states.</strong> Sourced is the default until we run it.</li>
       <li><strong>Cross-links forward and back.</strong> Every entry links to prerequisites + next steps.</li>
       <li><strong>"Why this matters"</strong> blocks for important concepts.</li>
       <li><strong>"Things to try"</strong> sections for action.</li>
       <li><strong>Sourced everywhere.</strong> Hover any link; it goes to a real source.</li>
+      <li><strong>Verification context</strong> on every tried entry — tool · version · platform · account tier.</li>
     </ul>
 
     <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--rule-faint); font-family: var(--mono); font-size: 12px; color: var(--ink-faint);">
-      Last reviewed 2026-05-07. <a href="https://github.com/susanthgit/claw-planet/edit/main/src/pages/methodology.astro" target="_blank" rel="noopener" style="color: var(--ink-mute);">edit on GitHub →</a>
+      Last reviewed 2026-05-14. <a href="https://github.com/susanthgit/claw-planet/edit/main/src/pages/methodology.astro" target="_blank" rel="noopener" style="color: var(--ink-mute);">edit on GitHub →</a>
     </p>
   </article>
 </BaseLayout>

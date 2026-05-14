@@ -16,8 +16,9 @@ import { getCollection } from 'astro:content';
 import coverage from '@data/coverage.json';
 
 function badge(state: string | undefined): { state: 't' | 's' | 'e'; label: string } {
-  if (state === 'tested-by-sush' || state === 'tested-by-contributor') return { state: 't', label: 'tested' };
-  if (state === 'sourced-only') return { state: 's', label: 'sourced' };
+  if (state === 'tried' || state === 'verified') return { state: 't', label: state === 'verified' ? 'verified' : 'tried' };
+  if (state === 'sourced') return { state: 's', label: 'sourced' };
+  if (state === 'disputed') return { state: 'e', label: 'disputed' };
   if (state === 'planned') return { state: 'e', label: 'planned' };
   return { state: 's', label: 'sourced' };
 }

@@ -4,7 +4,7 @@ section: "Setup"
 sectionNumber: "2.1"
 description: "What hardware can run an OpenClaw Gateway, what you trade off at each tier, and what to actually buy if you're starting from zero."
 status: "published"
-verificationState: "sourced-only"
+verificationState: "sourced"
 verificationNote: "Compiled from official runtime requirements (Node 24 recommended, 22.14+ minimum, WSL2 strongly recommended on Windows) plus public hardware specs. Power and thermal numbers for Pi cited from Raspberry Pi Foundation product pages. Not yet validated against Sush's actual boxes."
 lastReviewedAt: "2026-05-07"
 environment: "other"
@@ -16,6 +16,8 @@ seeAlso:
   - "1.1"
   - "2.3"
   - "2.6"
+vendor: "openclaw"
+product: "openclaw-runtime"
 ---
 
 ## Read this first
@@ -89,7 +91,7 @@ Total: **~$130**. Boot Raspberry Pi OS Lite (or Ubuntu Server). Follow [§2.6 Ra
 
 ## What we are NOT going to claim
 
-We have not benchmarked OpenClaw on every box in the table. RAM/CPU floors are inferred from Node runtime requirements + architectural docs + community discussion. **Specific timing numbers (cold-start latency, memory-at-rest) need actual runs to confirm.** Sush will run on his M2 MacBook (Mac column promotes to `tested-by-sush`) and a Pi 5 (Pi column promotes to `tested-by-sush`) — those two will get real numbers first.
+We have not benchmarked OpenClaw on every box in the table. RAM/CPU floors are inferred from Node runtime requirements + architectural docs + community discussion. **Specific timing numbers (cold-start latency, memory-at-rest) need actual runs to confirm.** Sush will run on his M2 MacBook (Mac column promotes to `tried`) and a Pi 5 (Pi column promotes to `tried`) — those two will get real numbers first.
 
 ## What to read next
 

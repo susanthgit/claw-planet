@@ -19,7 +19,7 @@ const catalogEntries = pluginEntries.map(e => ({
 }));
 
 const tested = pluginEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = pluginEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = pluginEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = pluginEntries.filter(e => e.data.verificationState === 'planned').length;
 
 const lede = `Independent <strong>field notes</strong>, not formal scorecards. Each entry declares what we checked, what we didn't, sources used, and a dispute link for the maintainer. We're not affiliated with any plugin author unless explicitly stated. Lighter editorial stance than a "verdict bands" review — more like research notes you can act on. See <a href="/methodology/">methodology</a> for how field notes work.`;

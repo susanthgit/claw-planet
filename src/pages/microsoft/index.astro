@@ -1,0 +1,31 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import VendorHub from '@components/VendorHub.astro';
+
+const vendor = {
+  slug: 'microsoft',
+  name: 'Microsoft',
+  blurb: 'Microsoft\'s builder-shaped AI surfaces — Microsoft 365 Agents Toolkit (ATK) for declarative agents and plugins, Copilot Studio for low-code agent builders, Azure AI Foundry for managed model + agent infrastructure, GitHub Copilot for IDE + CLI assistance, and the M365 Declarative Agents framework. Sush\'s day-job slice — he\'s a Copilot Solution Engineer at Microsoft NZ. All entries on Claw use ONLY publicly-sourced material (Microsoft Learn · official blogs · public GitHub · personal experiments). No customer engagement detail. Ever.',
+  officialUrl: 'https://learn.microsoft.com',
+  officialLabel: 'learn.microsoft.com',
+  status: 'coming-in-batch' as const,
+  statusNote: 'Day-1 sourced seed shipping in Batch D (~8 pages: ATK + Copilot Studio). Wider Microsoft coverage (Foundry, GitHub Copilot, Declarative Agents, MCP for Microsoft) deferred to Phase 1.1.',
+};
+
+const products = [
+  { slug: 'm365-atk', name: 'M365 Agents Toolkit (ATK)', type: 'CLI' as const, status: 'coming-in-batch' as const, batchHint: 'Batch D', description: 'CLI + VS Code extension for scaffolding declarative agents, API plugins, and MCP plugins for Microsoft 365 Copilot. The builder surface for "agents inside Copilot Chat." Public docs only.' },
+  { slug: 'copilot-studio', name: 'Copilot Studio', type: 'Low-code platform' as const, status: 'coming-in-batch' as const, batchHint: 'Batch D', description: 'Low-code agent builder — point-and-click flows, connectors to Microsoft Graph + 1,500 other services, publish to Teams / web / M365 Copilot. Field notes on building a non-trivial agent end-to-end.' },
+  { slug: 'azure-ai-foundry', name: 'Azure AI Foundry', type: 'API / SDK' as const, status: 'phase-2' as const, description: 'Azure\'s managed model + agent platform — model catalogue, Agent Service, evaluations, observability. Sush experiments here weekly. Coverage deferred to Phase 1.1.' },
+  { slug: 'github-copilot', name: 'GitHub Copilot', type: 'CLI' as const, status: 'phase-2' as const, description: 'GitHub\'s in-editor + CLI coding assistant. IDE integration, Copilot Chat, Copilot CLI, customisation via instructions/prompts/agents.md. Coverage deferred to Phase 1.1.' },
+  { slug: 'declarative-agents', name: 'Declarative Agents (M365)', type: 'API / SDK' as const, status: 'phase-2' as const, description: 'The manifest-based agent format that runs inside Microsoft 365 Copilot. Conversation starters, instructions, capabilities (web search, Graph connectors, code interpreter), plugin actions. Coverage deferred to Phase 1.1.' },
+  { slug: 'mcp-for-microsoft', name: 'MCP for Microsoft surfaces', type: 'Catalogue' as const, status: 'phase-2' as const, description: 'How MCP servers plug into Microsoft 365 Copilot, Copilot Studio, GitHub Copilot, and VS Code. Cross-vendor overlap with Anthropic + OpenAI is the interesting bit. Coverage deferred to Phase 1.1.' },
+];
+---
+
+<BaseLayout
+  title="Microsoft — Claw"
+  description="Microsoft vendor hub on Claw — builder-only, public-sourced-only field notes on M365 Agents Toolkit (ATK), Copilot Studio, Azure AI Foundry, GitHub Copilot, Declarative Agents, and MCP for Microsoft surfaces. No customer engagement detail."
+  ogImage="/og/home.png"
+>
+  <VendorHub vendor={vendor} products={products} />
+</BaseLayout>

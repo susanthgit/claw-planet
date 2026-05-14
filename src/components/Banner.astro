@@ -20,9 +20,9 @@ export interface Props {
 }
 
 const {
-  topic = 'OpenClaw v2026.5.x',
-  lastReviewed = '2026-05-08',
-  edition = 'v0a · first cut',
+  topic = 'AI dev tooling · multi-vendor',
+  lastReviewed = '2026-05-14',
+  edition = 'v0b · field notebook',
   licence = 'CC BY 4.0 where applicable',
   source = 'github.com/susanthgit/claw-planet',
 } = Astro.props;
@@ -32,19 +32,18 @@ const {
   <div class="banner-tag">FRONT MATTER · {lastReviewed}</div>
 
   <p class="banner-lede">
-    <strong>OpenClaw</strong> is a personal AI assistant you run on your own machine.
-    One process — the <em>Gateway</em> — sits on your laptop and connects to the messaging apps
-    you already use (WhatsApp, Telegram, Slack, iMessage, Discord, twenty-plus more). When a
-    message comes in, the Gateway hands it to a single agent process that reads its config
-    files, calls a model, runs whatever tools are needed, and replies on the same channel.
-    Local-first. Single-user. Yours.
+    <strong>Claw</strong> is a practitioner's field notebook for AI tools you can
+    <em>run, wire, script, compare,</em> or operationally reason about. Claude Code, Codex CLI,
+    Gemini CLI, NotebookLM, Microsoft Copilot Studio + Agents Toolkit, GitHub Copilot, OpenClaw —
+    plus the MCP servers and plugins that wire them together. For tech practitioners catching up
+    on the AI tooling shipping right now.
   </p>
 
   <p class="banner-body">
-    <strong>Claw Planet</strong> is a study reference for that runtime — concepts, install paths,
-    connection patterns, plugin field notes, security gotchas, and what's currently changing.
     Every entry declares whether it's been <span class="b-pill b-t">tested by us</span> or
-    <span class="b-pill b-s">sourced only</span> from docs. That honesty is the contract.
+    <span class="b-pill b-s">sourced only</span> from public docs. Entries start as research
+    from official sources — they transition to <span class="b-pill b-t">tested</span> as we
+    actually run them. That honesty is the contract.
   </p>
 
   <div class="banner-meta">

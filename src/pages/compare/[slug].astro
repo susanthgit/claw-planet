@@ -58,16 +58,18 @@ const schemaJsonLd = getSchemaOrgArticle({
 });
 
 const stateLabels = {
-  'tested-by-sush': '● TESTED BY US',
-  'tested-by-contributor': '● TESTED BY CONTRIBUTOR',
-  'sourced-only': '● SOURCED ONLY',
   'planned': '● PLANNED',
+  'sourced': '● SOURCED',
+  'tried': '● TRIED',
+  'verified': '● VERIFIED',
+  'disputed': '● DISPUTED',
 };
 const stateClassMap = {
-  'tested-by-sush': 'verif-t',
-  'tested-by-contributor': 'verif-t',
-  'sourced-only': 'verif-s',
   'planned': 'verif-e',
+  'sourced': 'verif-s',
+  'tried': 'verif-t',
+  'verified': 'verif-t',
+  'disputed': 'verif-e',
 };
 const stateLabel = stateLabels[entry.data.verificationState] ?? '';
 const stateClass = stateClassMap[entry.data.verificationState] ?? '';

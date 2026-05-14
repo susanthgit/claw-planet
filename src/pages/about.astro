@@ -14,65 +14,70 @@ const cosmosMap = [
   { slug: 'shift',    name: 'Shift',             url: 'https://shift.aguidetocloud.com/',       tagline: 'how AI is changing real jobs, role by role' },
   { slug: 'plainai',  name: 'Plain AI',          url: 'https://plainai.aguidetocloud.com/',     tagline: 'AI explained plainly, for everyone' },
   { slug: 'agentic',  name: 'Agentic',           url: 'https://agents.aguidetocloud.com/',      tagline: 'MCP reviews, recipes, vendor takes — for techies building with agents' },
-  { slug: 'claw',     name: 'Claw',              url: 'https://claw.aguidetocloud.com/',         tagline: 'plain-English study reference for OpenClaw (you are here)', here: true },
+  { slug: 'claw',     name: 'Claw',              url: 'https://claw.aguidetocloud.com/',         tagline: 'field notebook for AI tooling — Claude Code, Codex, Gemini, Copilot Studio + ATK, OpenClaw (you are here)', here: true },
 ];
 ---
 
 <BaseLayout
-  title="About — Claw Planet"
-  description="A plain-English study reference for the OpenClaw agent runtime. Why this exists, who's behind it, the verification-states legend, and the voice rules."
+  title="About — Claw"
+  description="A practitioner's field notebook for AI tools you can run, wire, script, compare, or operationally reason about. Why this exists, who's behind it, the verification-states legend, the scope guardrails."
   ogImage="/og/home.png"
 >
   <Banner />
 
   <SectionHead num="0.1" title="What this is" />
   <SectionBlurb>
-    A plain-English study reference for the OpenClaw agent runtime. Written by someone learning
-    OpenClaw in public. Audience is tech-savvy practitioners catching up on the runtime —
-    Sush himself plus people like him. Senior engineers, IT pros, infra people. Density allowed,
-    marketing voice not allowed.
+    A practitioner's field notebook for AI tools you can run, wire, script, compare, or
+    operationally reason about — Claude Code, Codex CLI, Gemini CLI, NotebookLM, Microsoft
+    Copilot Studio + Agents Toolkit, GitHub Copilot, OpenClaw, and the MCP servers that wire
+    them together. Written by someone learning these in public. Audience is tech practitioners
+    catching up on the AI tooling shipping right now — Sush himself plus people like him.
+    Junior devs welcome (we explain jargon on first use). Density allowed, marketing voice
+    not allowed.
   </SectionBlurb>
 
   <SectionHead num="0.2" title="Why this exists" />
   <SectionBlurb>
-    Most OpenClaw content online is one of: <strong>official docs</strong> (exhaustive, dense,
-    no opinion), <strong>AI-generated SEO tutorials</strong> (worthless), <strong>vendor blogs</strong>
-    (NemoClaw pitch, not unbiased), <strong>HN/Reddit threads</strong> (lottery), or
-    <strong>academic security papers</strong> (impractical). There's no plain-English, opinionated,
-    honest-take, study-shaped reference. Claw Planet is that — written by someone learning the
-    runtime in public, with verification states made visible.
+    Most AI-tooling content online is one of: <strong>vendor docs</strong> (exhaustive, dense,
+    pitch-shaped), <strong>AI-generated SEO tutorials</strong> (worthless), <strong>vendor
+    blogs</strong> (their own pitch, not unbiased), <strong>HN/Reddit threads</strong> (lottery),
+    or <strong>hot-take Twitter</strong> (low signal). There's no plain-English, opinionated,
+    honest-take, hands-on reference that compares vendor tooling fairly across Anthropic, OpenAI,
+    Google, Microsoft, and the open-source side. Claw is that — written by someone learning
+    these tools in public, with verification states made visible.
   </SectionBlurb>
 
-  <SectionHead num="0.3" title="Important — Claw Planet is not OpenClaw" />
+  <SectionHead num="0.3" title="Important — Claw is independent" />
   <SectionBlurb>
-    <strong>OpenClaw</strong> is the runtime — the open-source agent project, with its own repo,
-    community, and releases. <strong>Claw Planet</strong> (this site) is a doc site that <em>teaches</em>
-    OpenClaw. The two are related but they are not the same thing. Don't conflate them. We are
-    independent of the upstream project — corrections welcome from anyone, including the
-    maintainers, with the same dispute mechanism.
+    Claw is <strong>not operated by Anthropic, OpenAI, Google, Microsoft, or the OpenClaw
+    project</strong>. It's a personal volunteer reference. Where official docs and Claw
+    disagree, trust the official docs — they're probably newer than this page. We link to them
+    on every entry. Disputes welcome via the dispute mechanism (§0.8 below).
   </SectionBlurb>
 
   <SectionHead num="0.4" title="Verification states (the legend)" verb="every applicable page declares one" />
   <SectionBlurb>
     Each page or field note declares one verification state, shown in the margin column:
     <ul style="margin-top: var(--space-2); padding-left: var(--space-5);">
-      <li><strong>SOURCED</strong> — citation only, Sush hasn't personally tested. Linked to upstream docs / repo / vendor blog.</li>
-      <li><strong>TESTED-BY-SUSH</strong> — Sush has run the example or installed the thing. The evidence is fresh.</li>
-      <li><strong>WITNESSED</strong> — Sush has seen this work in production (his own setup or a customer's). Highest signal.</li>
+      <li><strong>SOURCED</strong> — researched from official public docs, repos, or vendor blogs. Sush hasn't personally tested. Starting state for most entries.</li>
+      <li><strong>TRIED</strong> — Sush (or a contributor) has run it on a real machine, with date · version · platform · account tier captured.</li>
+      <li><strong>VERIFIED</strong> — tried and considered correct (no surprises, no undocumented caveats). The highest signal.</li>
+      <li><strong>DISPUTED</strong> — a reader has raised that something is incorrect, with linked discussion.</li>
+      <li><strong>PLANNED</strong> — stub. Does NOT appear in top nav until promoted.</li>
     </ul>
-    Pages will flip from sourced → tested-by-sush as Sush works through the install paths and
-    recipes. The legend stays current; we don't backfill claims we haven't verified.
+    Most entries are <code>sourced</code> on day 1 — Sush prepopulates the learning roadmap from public docs so he knows what's possible to try. As he experiments, entries flip to <code>tried</code> with the actual session log + platform/version. We don't backfill claims we haven't verified.
   </SectionBlurb>
 
-  <SectionHead num="0.5" title="The voice rules" />
+  <SectionHead num="0.5" title="The voice + scope rules" />
   <SectionBlurb>
     <ul>
-      <li><strong>Plain English.</strong> Forbidden words are enforced in CI: <em>frontier · ecosystem · agentic capability · in layman's terms · AI-powered · robust · scalable · holistic · synergies · game changer · mission-critical · moat · differentiator · flagship</em>.</li>
+      <li><strong>Plain English.</strong> Forbidden words are enforced in CI: <em>frontier · ecosystem · multimodal · agentic capability · in layman's terms · AI-powered · robust · scalable · holistic · synergies · game changer · mission-critical · moat · differentiator · flagship</em>. <!-- voice-lint:ignore --></li>
       <li><strong>Always explain with examples · scenarios · comparisons.</strong> Definitions alone are not enough.</li>
       <li><strong>Always answer "why does this matter"</strong> for important concepts. If we can't, we leave the section empty rather than padding.</li>
       <li><strong>Honest take.</strong> If a feature is buggy, brittle, or undocumented, the page says so. Field notes carry a dispute link — readers can raise that a note conflicts with their experience, with context.</li>
       <li><strong>Quality over speed.</strong> No marketing voice, no urgency push, no email walls.</li>
-      <li><strong>Sush is also a learner here.</strong> The site is for <em>him</em> first, then everyone who finds it useful. That's the order.</li>
+      <li><strong>Scope guardrails.</strong> Claw does NOT publish: prompt-engineering articles · model benchmark rankings · AI ethics/regulation commentary · general "what is AI?" explainers · vendor PR reposts · AI news/punditry · customer engagement detail. Those belong on other planets (Plain AI), other surfaces (Earth blog), or nowhere.</li>
+      <li><strong>Sush is the primary reader.</strong> The site is for <em>him</em> first, then everyone who finds it useful. That's the order.</li>
     </ul>
   </SectionBlurb>
 
@@ -82,9 +87,11 @@ const cosmosMap = [
     Zealand. 18+ years in IT — infra admin background, not a developer by training. Still feels
     like the curious intern on every new product. <em>What overflows lands here.</em>
     <br /><br />
-    <strong>Microsoft does not sponsor, review, or approve Claw Planet.</strong> This is personal
+    <strong>Microsoft does not sponsor, review, or approve Claw.</strong> This is personal
     volunteer work, written outside work hours, on personal hosting. The takes here are
-    independent — not Microsoft's official position.
+    independent — not Microsoft's official position. All Microsoft-related content on Claw uses
+    only publicly-sourced material (Microsoft Learn, official blogs, public GitHub, Sush's own
+    experiments). No customer engagement detail. No internal-only material.
   </SectionBlurb>
 
   <SectionHead num="0.7" title="Where this sits in the cosmos" verb="7 worlds · own atmospheres · shared belief" />

@@ -4,7 +4,7 @@ section: "Setup"
 sectionNumber: "2.5"
 description: "Run an OpenClaw Gateway on Azure — Container Apps for serverless-ish, VM for full control. Cost notes, networking, security posture, Microsoft disclosure."
 status: "published"
-verificationState: "sourced-only"
+verificationState: "sourced"
 verificationNote: "Compiled from official OpenClaw install docs + Azure documentation. Sush works at Microsoft (disclosure inline). We have not yet stood up an Azure deployment of OpenClaw end-to-end. Pricing figures are 2026-05 list prices and change."
 lastReviewedAt: "2026-05-07"
 environment: "azure"
@@ -19,6 +19,8 @@ seeAlso:
   - "2.4"
   - "2.7"
   - "6.1"
+vendor: "openclaw"
+product: "openclaw-runtime"
 ---
 
 > **Microsoft disclosure.** Sush works at Microsoft. Microsoft makes Azure. We cover Azure as one of several reasonable cloud paths because it's a common ask, not because of who pays the bills. If your team's already on Azure with reserved-instance pricing, this page applies. If not, [§2.4 Linux server](/setup/linux-server/) on Hetzner / DigitalOcean / a Pi is usually cheaper for personal use.
@@ -49,7 +51,7 @@ Total: roughly **$45–$80/month** for a small personal Container Apps deploymen
 
 ### High-level deploy sketch
 
-> **What we have NOT done:** we haven't run the full sequence below ourselves. The shape is correct (we know Container Apps + we know the OpenClaw runtime). Specific commands will likely need calibration on first real run. We'll promote this page from `sourced-only` once Sush stands one up.
+> **What we have NOT done:** we haven't run the full sequence below ourselves. The shape is correct (we know Container Apps + we know the OpenClaw runtime). Specific commands will likely need calibration on first real run. We'll promote this page from `sourced` once Sush stands one up.
 
 ```bash
 # 1. Set up resource group + Container Apps environment

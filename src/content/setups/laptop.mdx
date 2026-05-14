@@ -4,8 +4,8 @@ section: "Setup"
 sectionNumber: "2.3"
 description: "Get an OpenClaw Gateway running on your laptop in about 25 minutes. Mac, Linux desktop, or Windows (via WSL2)."
 status: "published"
-verificationState: "sourced-only"
-verificationNote: "Commands are taken verbatim from the official README and onboarding docs. Sush has not yet run this end-to-end on his M2 MacBook — it'll get promoted to tested-by-sush with the actual session log when he does. If you run it before he does and it works, open a PR to add a contributor verification note."
+verificationState: "sourced"
+verificationNote: "Commands are taken verbatim from the official README and onboarding docs. Sush has not yet run this end-to-end on his M2 MacBook — it'll get promoted to tried with the actual session log when he does. If you run it before he does and it works, open a PR to add a contributor verification note."
 lastReviewedAt: "2026-05-07"
 environment: "laptop"
 runtimeVersion: "Node 24 recommended (22.14+ minimum)"
@@ -19,13 +19,15 @@ seeAlso:
   - "1.1"
   - "2.1"
   - "6.1"
+vendor: "openclaw"
+product: "openclaw-runtime"
 ---
 
 ## What you'll have at the end
 
 A running OpenClaw Gateway on your laptop, connected to at least one channel (Slack or Telegram are easiest), with an agent that responds to your messages. About 25 minutes for someone who's installed npm packages before; longer if Node 24 isn't yet on your machine.
 
-> **Verification state:** this guide is `sourced-only` — every command below comes from the official README. We haven't run the full sequence end-to-end on Sush's machine yet. If you hit a step that doesn't match what's documented, the docs are likely newer than this page; trust them and [tell us](https://github.com/susanthgit/claw-planet/issues/new).
+> **Verification state:** this guide is `sourced` — every command below comes from the official README. We haven't run the full sequence end-to-end on Sush's machine yet. If you hit a step that doesn't match what's documented, the docs are likely newer than this page; trust them and [tell us](https://github.com/susanthgit/claw-planet/issues/new).
 
 ## Before you start
 
@@ -166,4 +168,4 @@ Plus channels for whatever else you paired. Every message in any channel hits yo
 - **Lock down the install before exposing it.** [§6.1 Self-hosting checklist](/security/self-hosting-checklist/) — even on a laptop, the defaults need a once-over.
 - **Add more channels.** [§3.2 Channels](/connections/channels/) catalogs all 24+.
 - **Try a use case.** [§5.1 Hello-world recipe](/use-cases/) (planned).
-- **Promote this page.** When Sush runs every step on his M2 MacBook, this page goes from `sourced-only` to `tested-by-sush` with a real session log.
+- **Promote this page.** When Sush runs every step on his M2 MacBook, this page goes from `sourced` to `tried` with a real session log.

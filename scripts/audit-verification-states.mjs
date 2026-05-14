@@ -19,7 +19,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT_ROOT = path.join(ROOT, 'src', 'content');
 
 const REQUIRED_DIRS = ['setups', 'plugins', 'use-cases'];
-const VALID_STATES = ['tested-by-sush', 'tested-by-contributor', 'sourced-only', 'planned'];
+// Updated to the v0b multi-vendor vocabulary (2026-05-14).
+// Legacy values (sourced-only / tested-by-sush / tested-by-contributor) were
+// migrated by scripts/migrate-frontmatter-multivendor.mjs.
+const VALID_STATES = ['planned', 'sourced', 'tried', 'verified', 'disputed'];
 
 async function walk(dir) {
   const out = [];

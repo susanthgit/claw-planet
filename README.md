@@ -1,15 +1,17 @@
-# Claw Planet
+# Claw
 
-A plain-English study reference for the OpenClaw agent runtime. Concepts, setup
-paths, connections, plugins, security gotchas, and what's currently changing.
-Written for tech-savvy readers in plain English, with every entry declaring
-whether it's been verified or only sourced from docs.
+A practitioner's field notebook for AI tools you can run, wire, script, compare,
+or operationally reason about — Claude Code, Codex CLI, Gemini CLI, NotebookLM,
+Microsoft Copilot Studio + Agents Toolkit, GitHub Copilot, OpenClaw, and the
+MCP servers that wire them together. Written for tech practitioners in plain
+English, with every entry declaring whether it's been actually tried or just
+sourced from docs.
 
 **Live at:** https://claw.aguidetocloud.com
 
 **Repo:** https://github.com/susanthgit/claw-planet
 
-**Sister site:** https://agents.aguidetocloud.com (Agentic Planet — cockpit field guide)
+**Sister site:** https://agents.aguidetocloud.com (Agentic Planet — MCP scorecards)
 
 ---
 
@@ -25,8 +27,8 @@ Voice-lint forbidden words (CI hard-fails on roadmap docs, advisory on public):
 AI-powered · robust · scalable · holistic · synergies · game changer ·
 mission-critical · moat · differentiator · SEO magnet · flagship`
 
-See [Claw Planet Playbook](https://learn.aguidetocloud.com/reference/claw-planet-playbook/)
-for the full voice guardrails, IA, verification states, and decision log.
+See [Claw Planet Playbook](https://learn.aguidetocloud.com/cosmos/claw/playbook/)
+for the full voice guardrails, IA, verification states, scope rules, and decision log.
 
 ---
 

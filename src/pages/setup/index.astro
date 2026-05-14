@@ -19,10 +19,10 @@ const catalogEntries = setupEntries.map(e => ({
 }));
 
 const tested = setupEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = setupEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = setupEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = setupEntries.filter(e => e.data.verificationState === 'planned').length;
 
-const lede = `Five environments, one packaging method, one hardware matrix. Pick where OpenClaw will run — most people start on a laptop or a Pi 5. Every page has runnable commands you can paste, plus sanity-checks and the "what to do when it goes wrong" section we wished existed when learning. Each declares whether we've actually run it; right now everything's <strong>sourced-only</strong> because Sush hasn't run his first OpenClaw yet — pages flip to <strong>tested</strong> as he runs them.`;
+const lede = `Five environments, one packaging method, one hardware matrix. Pick where OpenClaw will run — most people start on a laptop or a Pi 5. Every page has runnable commands you can paste, plus sanity-checks and the "what to do when it goes wrong" section we wished existed when learning. Each declares whether we've actually run it; right now everything's <strong>sourced</strong> because Sush hasn't run his first OpenClaw yet — pages flip to <strong>tested</strong> as he runs them.`;
 ---
 
 <BaseLayout

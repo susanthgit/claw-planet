@@ -1,13 +1,42 @@
 import { defineCollection, z } from 'astro:content';
 
+// Multi-vendor verification vocabulary (v0b expansion, 2026-05-14).
+// Old values (sourced-only, tested-by-sush, tested-by-contributor) were
+// migrated to the new vocabulary by scripts/migrate-frontmatter-multivendor.mjs.
 const verificationState = z.enum([
-  'tested-by-sush',
-  'tested-by-contributor',
-  'sourced-only',
-  'planned',
+  'planned',    // stub, not in nav
+  'sourced',    // researched from public docs, not personally run yet
+  'tried',      // Sush or a contributor ran it on real hardware
+  'verified',   // tried + considered correct
+  'disputed',   // a reader has raised a correctness issue
 ]);
 
 const lifecycle = z.enum(['draft', 'review', 'published', 'archived']);
+
+const vendor = z.enum([
+  'openclaw',
+  'anthropic',
+  'openai',
+  'google',
+  'microsoft',
+  // Phase 2 (later): meta, mistral, xai, perplexity
+]);
+
+const platform = z.enum(['macos', 'windows', 'linux', 'browser', 'mixed']);
+const accountTier = z.enum(['free', 'pro', 'team', 'enterprise']);
+
+// Structured test context — captured on `tried` / `verified` entries to record
+// the exact environment a claim was validated against. Different versions /
+// platforms / account tiers of the same vendor tool can behave differently.
+const verificationContext = z.object({
+  tool: z.string().optional(),
+  version: z.string().optional(),
+  platform: platform.optional(),
+  accountTier: accountTier.optional(),
+  testedBy: z.enum(['sush', 'contributor']).optional(),
+  testedAt: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 const baseFrontmatter = z.object({
   title: z.string(),
@@ -17,6 +46,7 @@ const baseFrontmatter = z.object({
   status: lifecycle.default('draft'),
   verificationState: verificationState.default('planned'),
   verificationNote: z.string().optional(),
+  verificationContext: verificationContext.optional(),
   lastReviewedAt: z.string(),
   lastTestedAt: z.string().optional(),
   noindex: z.boolean().default(false),
@@ -24,6 +54,11 @@ const baseFrontmatter = z.object({
   sushReviewNeeded: z.boolean().default(false),
   sources: z.array(z.string()).optional(),
   seeAlso: z.array(z.string()).optional(),
+  // Multi-vendor fields (v0b expansion). vendor defaults to 'openclaw' so
+  // existing OpenClaw entries don't need explicit tagging (the migration
+  // script tags them anyway for clarity).
+  vendor: vendor.default('openclaw'),
+  product: z.string().optional(),
 });
 
 const setups = defineCollection({

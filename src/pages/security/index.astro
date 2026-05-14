@@ -19,7 +19,7 @@ const catalogEntries = securityEntries.map(e => ({
 }));
 
 const tested = securityEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
-const sourced = securityEntries.filter(e => e.data.verificationState === 'sourced-only').length;
+const sourced = securityEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = securityEntries.filter(e => e.data.verificationState === 'planned').length;
 
 const lede = `Not a CVE tracker. <strong>The patterns to actually do</strong> (and not do) when self-hosting an agent runtime with a third-party plugin marketplace. The 12-item checklist hardens your install, the trust-signals page tells you what to look for in plugins, the practical-patterns page covers the eight failure modes you'll meet, and the "what NOT to build" page is the counter-intuitive list of jobs better served by simpler tools.`;

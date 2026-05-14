@@ -10,16 +10,18 @@ const setups = all
   .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
 const stateLabel: Record<string, string> = {
-  'tested-by-sush': 'tested',
-  'tested-by-contributor': 'tested',
-  'sourced-only': 'sourced',
   'planned': 'planned',
+  'sourced': 'sourced',
+  'tried': 'tried',
+  'verified': 'verified',
+  'disputed': 'disputed',
 };
 const stateClass: Record<string, string> = {
-  'tested-by-sush': 'pill-t',
-  'tested-by-contributor': 'pill-t',
-  'sourced-only': 'pill-s',
   'planned': 'pill-e',
+  'sourced': 'pill-s',
+  'tried': 'pill-t',
+  'verified': 'pill-t',
+  'disputed': 'pill-e',
 };
 
 function timeText(min?: number) {

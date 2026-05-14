@@ -1,0 +1,33 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import VendorHub from '@components/VendorHub.astro';
+
+const vendor = {
+  slug: 'openclaw',
+  name: 'OpenClaw',
+  blurb: 'The open-source persistent agent runtime — a Gateway process you run on your own machine that connects to messaging apps (Slack · Telegram · WhatsApp · iMessage · Discord and 20+ more) and gives a single agent process workspace-file memory, multi-channel reach, and a sandboxed shell. The OpenClaw section is the most mature on Claw — 42 pages, mostly sourced, Sush is in the middle of running it end-to-end. As recipes run on real hardware, entries flip from sourced → tried.',
+  officialUrl: 'https://github.com/openclaw/openclaw',
+  officialLabel: 'github.com/openclaw/openclaw',
+  status: 'live' as const,
+  statusNote: 'URL move to /openclaw/section/... is Batch 0b. Existing URLs still work today.',
+};
+
+const products = [
+  {
+    slug: 'openclaw-runtime',
+    name: 'OpenClaw Gateway + Agent',
+    type: 'Runtime' as const,
+    status: 'live' as const,
+    description: '§1 Overview · §2 Setup (laptop · linux · azure · docker · pi · hardware-matrix) · §3 Connections · §4 Plugins · §5 Use cases · §6 Security · §7 Compare · §8 Updates · §9 Resources · §10 FAQ.',
+    href: '/overview/',
+  },
+];
+---
+
+<BaseLayout
+  title="OpenClaw — Claw"
+  description="OpenClaw vendor hub on Claw — plain-English study reference for the open-source persistent agent runtime. 42 pages: overview, setup, connections, plugins, use cases, security, compare, updates, resources, FAQ."
+  ogImage="/og/home.png"
+>
+  <VendorHub vendor={vendor} products={products} />
+</BaseLayout>
