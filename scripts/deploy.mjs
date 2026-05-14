@@ -74,13 +74,31 @@ function contentTypeFor(p) {
   return m[ext] || 'application/octet-stream';
 }
 
+// Pages "control files" that must be sent as deployment metadata fields,
+// NOT as static assets. When using the Direct Upload REST API, Wrangler
+// would normally extract these for you — we're not using Wrangler, so we
+// have to handle them ourselves. Otherwise Pages treats them as ordinary
+// files at /_redirects etc. and the rules never get applied.
+//   - _redirects: redirect rules (this file enables Batch 0b URL migration)
+//   - _headers:   header rules
+//   - _routes.json + _worker.js: Pages Functions (we don't use these but
+//                                exclude them defensively in case they're
+//                                added later)
+const CONTROL_FILES = new Set(['_redirects', '_headers', '_routes.json', '_worker.js']);
+
 async function buildManifest() {
   const files = await walk(DIST);
   const manifest = {};
   const fileMap = new Map();
+  const controlFiles = {};
   for (const fullPath of files) {
-    const buf = await readFile(fullPath);
     const rel = relative(DIST, fullPath).split(sep).join(posix.sep);
+    const buf = await readFile(fullPath);
+    // Control files are sent as deployment metadata, not asset manifest entries.
+    if (CONTROL_FILES.has(rel)) {
+      controlFiles[rel] = buf.toString('utf8');
+      continue;
+    }
     const urlPath = '/' + rel;
     const ext = '.' + (rel.split('.').pop() || '');
     const base64 = buf.toString('base64');
@@ -93,7 +111,7 @@ async function buildManifest() {
       base64: true,
     });
   }
-  return { manifest, fileMap };
+  return { manifest, fileMap, controlFiles };
 }
 
 async function getUploadJwt() {
@@ -150,11 +168,17 @@ async function uploadAssets(jwt, payloads) {
   }
 }
 
-async function createDeployment(manifest, branch) {
+async function createDeployment(manifest, branch, controlFiles) {
   const url = `${API}/accounts/${ACCOUNT_ID}/pages/projects/${PROJECT}/deployments`;
   const form = new FormData();
   form.append('manifest', JSON.stringify(manifest));
   form.append('branch', branch);
+  // Attach Pages control files as form fields so Pages applies them as
+  // edge config rather than serving them as static assets. Files are
+  // attached as Blobs to ensure the right Content-Disposition.
+  for (const [name, content] of Object.entries(controlFiles ?? {})) {
+    form.append(name, new Blob([content], { type: 'text/plain' }), name);
+  }
   const res = await fetch(url, { method: 'POST', headers, body: form });
   if (!res.ok) throw new Error(`create deployment: ${res.status} ${await res.text()}`);
   const data = await res.json();
@@ -164,9 +188,13 @@ async function createDeployment(manifest, branch) {
 async function main() {
   log(`▸ Deploying ${DIST} to Pages project "${PROJECT}" (branch: ${BRANCH})`);
   log('▸ Building manifest...');
-  const { manifest, fileMap } = await buildManifest();
+  const { manifest, fileMap, controlFiles } = await buildManifest();
   const total = Object.keys(manifest).length;
   log(`  ${total} files in manifest`);
+  const controlNames = Object.keys(controlFiles);
+  if (controlNames.length > 0) {
+    log(`  ${controlNames.length} Pages control file(s) sent as metadata: ${controlNames.join(', ')}`);
+  }
   log('▸ Getting upload JWT...');
   const jwt = await getUploadJwt();
   log('▸ Checking missing files...');
@@ -178,7 +206,7 @@ async function main() {
     await uploadAssets(jwt, payloads);
   }
   log('▸ Creating deployment...');
-  const dep = await createDeployment(manifest, BRANCH);
+  const dep = await createDeployment(manifest, BRANCH, controlFiles);
   log(`✅ Deployment created`);
   log(`   ID: ${dep.id}`);
   log(`   URL: ${dep.url}`);
