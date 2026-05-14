@@ -77,7 +77,7 @@ You want Claude Code to read your team's notion docs.
 
 3. Restart Claude Code.
 
-Now Claude can search Notion, read pages, and (if you allow) write to them. **And the same Notion server works in any MCP-aware host** — drop the same config into ChatGPT's MCP settings or VS Code Copilot's mcp.json.
+Now Claude can search Notion, read pages, and (if you allow) write to them. **The same Notion server can be wired into other MCP-aware hosts** — the server itself is portable; each host has its own config file shape, so you re-describe the server in each host's config rather than copy-pasting one file across all of them.
 
 ## The protocol in one diagram
 
@@ -88,7 +88,7 @@ Now Claude can search Notion, read pages, and (if you allow) write to them. **An
 │  │  Model (Claude)  │                                   │
 │  └────────┬─────────┘                                   │
 │           │                                             │
-│  ┌────────▼─────────┐    JSON-RPC over stdio/HTTP/SSE  │
+│  ┌────────▼─────────┐    JSON-RPC over stdio or Streamable HTTP │
 │  │  MCP Client      │ ◄─────────────────────────────┐  │
 │  └──────────────────┘                                │  │
 └──────────────────────────────────────────────────────│──┘
@@ -107,7 +107,7 @@ Now Claude can search Notion, read pages, and (if you allow) write to them. **An
             └──────────────────────┘       └─────────────────────┘
 ```
 
-- **Transport:** typically stdio (server is a subprocess of the host). HTTP and Server-Sent Events transports exist for remote servers.
+- **Transport:** typically stdio (server is a subprocess of the host). For remote servers, the current recommended transport is **Streamable HTTP**. An older HTTP+SSE transport exists for backwards compatibility but is being phased out.
 - **Protocol:** JSON-RPC 2.0 over the transport.
 - **Discovery:** on connection, the host asks the server "what tools / resources / prompts do you expose?" The server responds with a manifest. The host tells the model what's available.
 
@@ -124,7 +124,7 @@ As of May 2026, MCP is supported by:
 | **VS Code GitHub Copilot** | Supported via the GitHub Copilot Chat MCP extension |
 | **Cursor** | Supported via Cursor's MCP settings |
 | **Copilot Studio (Microsoft)** | Supported via the MCP plugin in M365 Agents Toolkit |
-| **Gemini CLI (Google)** | MCP support landed in late 2025 |
+| **Gemini CLI (Google)** | MCP support — check current Gemini CLI docs for version |
 | **Many community hosts** | Continuum, MCPJam, Cody, Aider, others |
 
 The protocol is genuinely portable. Write a server once; the same binary works across all of these.

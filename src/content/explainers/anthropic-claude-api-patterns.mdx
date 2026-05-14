@@ -46,7 +46,7 @@ messages = [{"role": "user", "content": "What's the weather in Auckland?"}]
 
 while True:
     response = client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-sonnet-4-6",
         max_tokens=1024,
         tools=tools,
         messages=messages,
@@ -95,7 +95,7 @@ When you need the model's response in a specific JSON shape — for downstream p
 
 ```python
 response = client.messages.create(
-    model="claude-sonnet-4-5",
+    model="claude-sonnet-4-6",
     max_tokens=500,
     messages=[{
         "role": "user",
@@ -109,43 +109,36 @@ data = json.loads(response.content[0].text)
 
 This works most of the time. It fails when Claude adds prose around the JSON (*"Here's the result:"*), uses different field names, or wraps it in markdown code fences.
 
-### The reliable way: JSON mode
+### The reliable way: structured outputs via `output_config`
+
+The Claude API has a dedicated structured-outputs surface (different shape from the OpenAI API's `response_format` if you're coming from there). Set `output_config.format` with a `json_schema`:
 
 ```python
 response = client.messages.create(
-    model="claude-sonnet-4-5",
+    model="claude-sonnet-4-6",
     max_tokens=500,
-    response_format={"type": "json_object"},
-    messages=[{"role": "user", "content": "..."}],
-)
-```
-
-The model is constrained to output valid JSON. No prose wrapping, no code fences.
-
-### Even better: JSON schema mode
-
-```python
-response = client.messages.create(
-    model="claude-sonnet-4-5",
-    max_tokens=500,
-    response_format={
-        "type": "json_schema",
-        "schema": {
-            "type": "object",
-            "properties": {
-                "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
-                "score": {"type": "number", "minimum": 0, "maximum": 1},
+    output_config={
+        "format": {
+            "type": "json_schema",
+            "json_schema": {
+                "type": "object",
+                "properties": {
+                    "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+                    "score": {"type": "number", "minimum": 0, "maximum": 1},
+                },
+                "required": ["sentiment", "score"],
             },
-            "required": ["sentiment", "score"],
         },
     },
     messages=[{"role": "user", "content": "..."}],
 )
 ```
 
-The output is guaranteed to match the schema. If Claude can't produce a valid output, it errors rather than returning garbage.
+The API constrains the output to match the schema and validates before returning. You should still defensively handle errors and the occasional refusal — "constrained" isn't "infallible" — but the structural-correctness problem largely goes away.
 
 This is the right default for production. Spend the 5 minutes writing the schema; save the parsing headaches forever.
+
+> ⚠️ If you're cribbing from OpenAI examples, the parameter is `response_format` over there. On Claude's API it's `output_config` with a nested `format`. Don't mix them up — `response_format` is not a Claude API parameter and the call will fail.
 
 ## Pattern 3 — Prompt caching
 
@@ -155,7 +148,7 @@ If your system prompt is large (long instructions, big knowledge dump, complex t
 
 ```python
 response = client.messages.create(
-    model="claude-sonnet-4-5",
+    model="claude-sonnet-4-6",
     max_tokens=500,
     system=[
         {
@@ -183,20 +176,22 @@ The system prompt section with `cache_control` is hashed and cached server-side.
 
 ### Cost math
 
-Cache writes are slightly more expensive than fresh input. Cache reads are ~10% of fresh input. Break-even is typically at **2 calls hitting the same cache.** Anything beyond is pure savings.
+Cache writes cost roughly **1.25× the base input price** (5-minute default lifetime). Cache reads are roughly **0.1× the base input price** (i.e. ~10%). So break-even is typically at **2 calls hitting the same cache** — once you've paid the write premium, every read after that is a significant saving. Anything beyond two calls is pure win.
+
+> Prompt-cache pricing changes occasionally. Verify the current write/read multipliers on [anthropic.com/pricing](https://www.anthropic.com/pricing) before banking on the math.
 
 ## Pattern 4 — Message batches (async bulk work)
 
-For when you have 1,000 prompts to run and they're not time-sensitive.
+For when you have many prompts to run and they're not time-sensitive.
 
 ### The flow
 
 ```python
 batch = client.messages.batches.create(
     requests=[
-        {"custom_id": "ticket_1", "params": {"model": "claude-sonnet-4-5", "max_tokens": 200, "messages": [{"role": "user", "content": "Classify: ..."}]}},
-        {"custom_id": "ticket_2", "params": {"model": "claude-sonnet-4-5", "max_tokens": 200, "messages": [{"role": "user", "content": "Classify: ..."}]}},
-        # ... up to 10,000 per batch
+        {"custom_id": "ticket_1", "params": {"model": "claude-sonnet-4-6", "max_tokens": 200, "messages": [{"role": "user", "content": "Classify: ..."}]}},
+        {"custom_id": "ticket_2", "params": {"model": "claude-sonnet-4-6", "max_tokens": 200, "messages": [{"role": "user", "content": "Classify: ..."}]}},
+        # ... up to 100,000 requests or 256 MB per batch (whichever you hit first)
     ],
 )
 
@@ -207,7 +202,7 @@ while True:
         break
     time.sleep(60)
 
-# Stream the results
+# Stream the results (available for 29 days after creation)
 for result in client.messages.batches.results(batch.id):
     print(result.custom_id, result.result.message.content[0].text)
 ```

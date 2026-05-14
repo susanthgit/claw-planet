@@ -33,7 +33,11 @@ If you have a Claude Pro / Max / Team / Enterprise subscription, this is the sim
 claude
 ```
 
-On first launch, it opens a browser to `claude.ai`. You sign in (or pick the account you're already in), confirm the device, and the CLI gets a token. Token lives at `~/.claude/credentials.json` (Linux/macOS) or `%USERPROFILE%\.claude\credentials.json` (Windows). It's encrypted at rest with the OS keychain on macOS; on Windows + Linux it's a JSON file with a refresh token.
+On first launch, it opens a browser to `claude.ai`. You sign in (or pick the account you're already in), confirm the device, and the CLI gets a token. Token storage varies by platform:
+
+- **macOS:** stored in the encrypted system **Keychain** (no plaintext file on disk)
+- **Linux:** stored at `~/.claude/.credentials.json` (note the leading dot on the filename) with file mode `0600`
+- **Windows:** stored at `%USERPROFILE%\.claude\.credentials.json`
 
 **Why this matters:** subscription tokens **inherit your tier's rate limits**. Pro is roughly "individual daily use," Max is "all-day heavy use," Team adds shared billing + per-seat. If you hit the weekly cap mid-task, you wait — the CLI tells you when the reset is.
 

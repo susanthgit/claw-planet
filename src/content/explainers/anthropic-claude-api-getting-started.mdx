@@ -21,10 +21,10 @@ A working "hello, Claude" request from your laptop, using either Python or TypeS
 
 ## Step 1 — Get an API key
 
-1. Sign in to [console.anthropic.com](https://console.anthropic.com).
-2. **Add a payment method** (Workspaces → Billing → Add payment method). You can't make requests without one. Anthropic gives small free credits for new accounts, but they expire.
-3. **Set a spend limit.** Workspaces → Settings → Spend Limits → pick a monthly cap. Do this BEFORE the next step. If a script goes wrong, this is the line between "annoyance" and "expensive Sunday."
-4. **Create a key.** Workspaces → API Keys → Create Key. Name it for the project (`claude-api-laptop-2026-05`). Copy the `sk-ant-...` value — you'll only see it once.
+1. Sign in to [platform.claude.com](https://platform.claude.com) (Anthropic's developer console — historically called `console.anthropic.com`, which still redirects).
+2. **Add a payment method** (Settings → Billing → Add payment method). You can't make requests without one. Anthropic gives small free credits for new accounts, but they expire.
+3. **Set a spend limit.** Settings → Limits → set a monthly cap. Do this BEFORE the next step. If a script goes wrong, this is the line between "annoyance" and "expensive Sunday."
+4. **Create a key.** Settings → API Keys → Create Key. Name it for the project (`claude-api-laptop-2026-05`). Copy the `sk-ant-...` value — you'll only see it once.
 
 Set it in your shell:
 
@@ -36,9 +36,9 @@ export ANTHROPIC_API_KEY=sk-ant-...
 [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-ant-...", "User")
 ```
 
-Restart your shell. Confirm: `echo $ANTHROPIC_API_KEY` (or `$env:ANTHROPIC_API_KEY` in PowerShell) — should print the key.
+Restart your shell. Confirm it's set without printing the secret — `test -n "$ANTHROPIC_API_KEY" && echo "set"` on macOS/Linux, or `if ($env:ANTHROPIC_API_KEY) { "set" }` in PowerShell. (Avoid `echo $ANTHROPIC_API_KEY`; that prints the live secret into your shell history and any screen-sharing window.)
 
-> ⚠️ **Never commit the key.** Add `.env*` and `*.secret` to `.gitignore`. If a key leaks, revoke it in Console immediately. Treat it like a database password.
+> ⚠️ **Never commit the key.** Add `.env*` and `*.secret` to `.gitignore`. If a key leaks, revoke it on platform.claude.com immediately. Treat it like a database password.
 
 ## Step 2 — Install an SDK
 
@@ -65,7 +65,7 @@ import anthropic
 client = anthropic.Anthropic()  # picks up ANTHROPIC_API_KEY from env
 
 message = client.messages.create(
-    model="claude-sonnet-4-5",
+    model="claude-sonnet-4-6",
     max_tokens=200,
     messages=[
         {"role": "user", "content": "Reply with exactly: hello from the API"}
@@ -85,7 +85,7 @@ import Anthropic from '@anthropic-ai/sdk';
 const client = new Anthropic();  // picks up ANTHROPIC_API_KEY from env
 
 const message = await client.messages.create({
-  model: 'claude-sonnet-4-5',
+  model: 'claude-sonnet-4-6',
   max_tokens: 200,
   messages: [
     { role: 'user', content: 'Reply with exactly: hello from the API' },
@@ -104,7 +104,7 @@ The `message` object has more than just text. The shape:
 ```json
 {
   "id": "msg_01ABC...",
-  "model": "claude-sonnet-4-5-...",
+  "model": "claude-sonnet-4-6-...",
   "role": "assistant",
   "stop_reason": "end_turn",
   "content": [
@@ -127,7 +127,7 @@ Worth understanding:
 
 ```python
 message = client.messages.create(
-    model="claude-sonnet-4-5",
+    model="claude-sonnet-4-6",
     max_tokens=200,
     system="You are a concise technical writer. No marketing language.",
     messages=[
@@ -142,7 +142,7 @@ The system prompt sets the assistant's persona / constraints for the whole conve
 
 ```python
 with client.messages.stream(
-    model="claude-sonnet-4-5",
+    model="claude-sonnet-4-6",
     max_tokens=500,
     messages=[{"role": "user", "content": "Explain RAG."}],
 ) as stream:
@@ -150,7 +150,7 @@ with client.messages.stream(
         print(text, end="", flush=True)
 ```
 
-Tokens appear as they're generated. For UIs, this transforms the experience: 800ms felt latency vs 6 seconds of waiting.
+Tokens appear as they're generated. For UIs, this dramatically improves perceived latency — readers see content start arriving immediately rather than staring at a spinner while the full response is composed.
 
 ## Step 7 — Cost guardrails
 

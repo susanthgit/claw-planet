@@ -1,40 +1,42 @@
 ---
-title: "Official Anthropic MCP servers"
+title: "Reference MCP servers"
 section: "MCP catalogue"
 sectionNumber: "MCP.2"
-description: "The curated set of MCP servers maintained by Anthropic + close partners — filesystem, github, git, postgres, sqlite, fetch, time, memory, sequential-thinking. What each one does, when to use, when not to."
+description: "The reference set of MCP servers at github.com/modelcontextprotocol/servers — what's actively maintained today (fetch · filesystem · git · memory · sequentialthinking · time · everything), what's been archived (github · postgres · sqlite · slack · gdrive · brave-search · puppeteer · redis), and the tool surface each one ships."
 status: "published"
 verificationState: "sourced"
-verificationNote: "Server list and behaviour from github.com/modelcontextprotocol/servers as of 14 May 2026. The reference repo evolves; check the current README for the up-to-date list before quoting this page."
+verificationNote: "Server list and tool names from github.com/modelcontextprotocol/servers + github.com/modelcontextprotocol/servers-archived as of 14 May 2026. The reference repo evolves — check the current READMEs before relying on specific tool names."
 lastReviewedAt: "2026-05-14"
 sources:
   - "https://github.com/modelcontextprotocol/servers"
+  - "https://github.com/modelcontextprotocol/servers-archived"
   - "https://modelcontextprotocol.io/examples"
-  - "https://github.com/anthropics"
+  - "https://github.com/github/github-mcp-server"
 vendor: "anthropic"
 product: "mcp-catalogue"
 ---
 
-## What "official" means here
+## What "reference" means here
 
-The `modelcontextprotocol/servers` GitHub repo is the **reference catalogue** — maintained by the Model Context Protocol working group (Anthropic-led, with contributions from other vendors). The servers in this repo are:
+The `modelcontextprotocol/servers` GitHub repo is the **reference catalogue** — example implementations maintained by the Model Context Protocol working group (Anthropic-led, with broad contributor base). These servers are:
 
-- **Reviewed** for protocol correctness
-- **Documented** with clear READMEs
-- **Maintained** by the core MCP team or trusted contributors
-- **Tested** as the canonical implementation of common tool patterns
+- **Protocol-correct** — they implement the MCP spec faithfully
+- **Documented** with READMEs
+- **Useful starting points** for understanding what an MCP server looks like
 
-They are NOT individually security-audited at the package-content level (the servers can do whatever their dependencies do). But they are the safest starting point in the catalogue.
+They are NOT individually security-audited at the package-content level (each server's behaviour is whatever its code + dependencies do). And "reference" doesn't mean "permanent" — over time, some servers move to vendor-owned repos (e.g. the GitHub MCP server now lives at `github/github-mcp-server`), and some are archived to a sister repo when active maintenance stops.
 
-You install them via npm/pip (depending on language) and point your host at them.
+The currently-active set is smaller than it once was. See the archived list further down.
 
-## The reference servers
+## Currently active reference servers
+
+These live in `modelcontextprotocol/servers/src/` and are actively maintained.
 
 ### filesystem
 
 **Package:** `@modelcontextprotocol/server-filesystem`
 
-**Tools:** `read_file`, `write_file`, `list_directory`, `create_directory`, `move_file`, `search_files`
+**Tools:** `read_text_file`, `read_media_file`, `read_multiple_files`, `write_file`, `edit_file`, `create_directory`, `list_directory`, `list_directory_with_sizes`, `move_file`, `search_files`, `directory_tree`, `get_file_info`, `list_allowed_directories`
 
 **When to use:** when you need Claude to read or write files outside the working directory. Common pattern: scope it to `~/Documents` or a specific project folder, NOT your entire home directory.
 
@@ -51,68 +53,25 @@ Each path after the package name is an allowed root. Claude can read/write withi
 
 **Don't:** point it at `/` or `~`. Either gives the agent full disk access. Scope to specific directories.
 
-### github
-
-**Package:** `@modelcontextprotocol/server-github`
-
-**Tools:** `search_repositories`, `search_code`, `search_issues`, `get_issue`, `create_issue`, `update_issue`, `list_pull_requests`, `get_pull_request`, `create_pull_request`, `merge_pull_request`, `create_branch`, ...
-
-**When to use:** when Claude needs to read or modify GitHub state across your repos. PR creation, issue triage, code search across many repos.
-
-**Config:**
-
-```json
-"github": {
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-github"],
-  "env": {
-    "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_..."
-  }
-}
-```
-
-**Token scope:** create a fine-grained PAT with only the perms you actually need. `repo` (full) is convenient but maximalist. `repo:read` + `issues:write` + `pull_requests:write` is more conservative.
-
-**Don't:** use a token tied to your main GitHub account with `admin:org`. If the agent goes wrong, the blast radius is huge.
-
 ### git
 
 **Package:** `@modelcontextprotocol/server-git`
 
-**Tools:** `git_status`, `git_diff`, `git_log`, `git_show`, `git_commit`, `git_branch`, `git_checkout`, ...
+**Tools:** `git_status`, `git_diff_unstaged`, `git_diff_staged`, `git_diff`, `git_commit`, `git_add`, `git_reset`, `git_log`, `git_create_branch`, `git_checkout`, `git_show`, `git_init`
 
 **When to use:** for deep git operations the basic shell tool can't easily do — complex log queries, structured diffs, programmatic commit creation. Most use cases work fine with the built-in shell tool; reach for this when you want safer, typed git operations.
 
-**Don't:** authorise destructive operations (force-push, branch deletion) without confirms. Set `toolApprovals` to `"ask"` for those.
-
-### postgres / sqlite
-
-**Package:** `@modelcontextprotocol/server-postgres` / `@modelcontextprotocol/server-sqlite`
-
-**Tools:** `query`, `list_schemas`, `list_tables`, `describe_table`
-
-**When to use:** ad-hoc DB exploration, schema introspection, query suggestions. Claude can ask "what's the schema?" then write a query, you approve, the server runs it.
-
-**Config:**
-
-```json
-"postgres": {
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://readonly_user:pass@localhost:5432/db"]
-}
-```
-
-**Use a read-only DB user.** Don't pass an admin connection. Limit Claude to SELECT.
+**Don't:** authorise destructive operations without confirms. Tighten the host's `permissions.deny` for any force-push / branch-deletion equivalents.
 
 ### fetch
 
 **Package:** `@modelcontextprotocol/server-fetch`
 
-**Tools:** `fetch` (HTTP GET/POST with custom headers, auth, body)
+**Tools:** `fetch` (HTTP fetch with content-type-aware extraction — converts HTML to readable Markdown)
 
-**When to use:** Claude can already do basic web fetches via the model's built-in browsing in some hosts; this server adds custom auth headers, internal endpoints, and structured response parsing.
+**When to use:** Claude can already do basic web fetches via the model's built-in browsing in some hosts; this server adds reliable HTML-to-Markdown conversion and lets you use it from hosts that don't have native fetch.
 
-**Don't:** point it at internal admin APIs without an allowlist. A drift-aware MCP server (one that re-reads its allowlist on every call) is safer than a static config.
+**Don't:** point it at internal admin APIs without an allowlist. The server has no built-in URL filter; that's the host's job to add via permissions.
 
 ### time
 
@@ -122,45 +81,61 @@ Each path after the package name is an allowed root. Claude can read/write withi
 
 **When to use:** any time you need timezone math. **Models are surprisingly bad at this without a tool** — "what time is 3pm NZST in PST?" trips them up regularly. Give them the tool, get reliable answers.
 
-**Why this matters:** small server, narrow use case, huge accuracy win on a category of question that models otherwise hallucinate.
+**Why this matters:** small server, narrow use case, sharp accuracy win on a category of question models otherwise hallucinate.
 
 ### memory
 
 **Package:** `@modelcontextprotocol/server-memory`
 
-**Tools:** `store`, `retrieve`, `delete`, `list` (typically backed by a local JSON file or a vector DB)
+**Tools:** `create_entities`, `create_relations`, `add_observations`, `delete_entities`, `delete_observations`, `delete_relations`, `read_graph`, `search_nodes`, `open_nodes`
 
-**When to use:** when you want Claude to remember things across sessions — facts about you, project conventions, recurring tasks. Caveat: this is **conversation memory**, not "Claude learning from you." It's a typed key-value store the model can read/write.
+The memory server stores a **knowledge graph** — entities (people, projects, concepts), relations between them, and observations attached to entities. Backed by a JSONL file on disk. Despite the name, it's not a generic key-value store; you tell Claude *"remember that X is an entity of type Y, related to Z, with observation W"* and it lays that into the graph.
 
-**Don't:** treat it as a secure secret store. Anything stored is plaintext-accessible to any future session.
+**When to use:** when you want Claude to remember structured facts across sessions — your colleagues, your projects, recurring entities you discuss.
 
-### sequential-thinking
+**Don't:** treat it as a secure secret store. Anything stored is plaintext-accessible to any future session and anyone with disk access.
+
+### sequentialthinking
 
 **Package:** `@modelcontextprotocol/server-sequential-thinking`
 
-**Tools:** `think_step_by_step` (returns intermediate reasoning steps; Claude can call this for structured planning)
+**Tool:** `sequentialthinking` (a single tool that takes a `thought` string + metadata and helps Claude lay out structured chains of reasoning)
 
 **When to use:** complex multi-step problems where you want the agent to lay out its plan before executing. Useful for code refactors, complex bug investigations, anything where "show me the plan first" pays off.
 
 **Don't:** use it for simple tasks. The protocol overhead isn't worth it for short responses.
 
-## Less common, still official
+### everything
 
-- **brave-search** — web search via Brave Search API (free tier available)
-- **puppeteer** / **playwright** — browser automation (open URL, click, screenshot)
-- **slack** — read channels, send messages, search history
-- **everart / dalle / sd** — image generation (calls out to image APIs)
-- **gdrive** — Google Drive access (files, folders, search)
-- **redis** — Redis key-value operations
+**Package:** `@modelcontextprotocol/server-everything`
 
-The full current list lives at [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers). New servers ship regularly; deprecated servers are moved to a `legacy/` folder.
+A demonstration server that exercises every protocol feature — tools, resources, prompts, sampling. Not for production use; it's the reference for "what an MCP server can do." Worth running once when learning the spec.
+
+## Archived reference servers
+
+These servers are no longer in active development in the main reference repo. They've moved to [github.com/modelcontextprotocol/servers-archived](https://github.com/modelcontextprotocol/servers-archived). Most are still functional and many people still use them; some (notably **github**) have official replacements maintained by the vendor:
+
+| Package | Status | Where to look now |
+|---|---|---|
+| `@modelcontextprotocol/server-github` | Archived | Official replacement at [github/github-mcp-server](https://github.com/github/github-mcp-server) — maintained by GitHub directly |
+| `@modelcontextprotocol/server-postgres` | Archived | Still functional · check `servers-archived` |
+| `@modelcontextprotocol/server-sqlite` | Archived | Still functional · check `servers-archived` |
+| `@modelcontextprotocol/server-slack` | Archived | Still functional · check `servers-archived` |
+| `@modelcontextprotocol/server-gdrive` | Archived | Still functional · check `servers-archived` |
+| `@modelcontextprotocol/server-brave-search` | Archived | Still functional · check `servers-archived` |
+| `@modelcontextprotocol/server-puppeteer` | Archived | Still functional · check `servers-archived` |
+| `@modelcontextprotocol/server-redis` | Archived | Still functional · check `servers-archived` |
+
+> ℹ️ **There is no official `@modelcontextprotocol/server-playwright`** — that was never published under the reference namespace. Several community-published playwright MCP servers exist; vet them like any other community server (see [§MCP.3](/anthropic/mcp-catalogue/community-servers/)).
+
+The archive doesn't mean "broken." It means "not getting active patches from the MCP working group." For production use, prefer the vendor-owned replacement (where one exists) or carefully assess maintenance signal on the archived version before adopting.
 
 ## How to pick which to install
 
 Start narrow. Two servers for a new project is usually plenty:
 
 - **`filesystem`** scoped to your project root + a docs folder
-- **`github`** with a token scoped to that project's repo
+- **`git`** (or the vendor-maintained `github-mcp-server` if you need GitHub state)
 
 Add more only when a specific workflow needs them. Each MCP server inflates the tool manifest the model sees → more input tokens → more cost per request. Every server you don't use is paying tax for nothing.
 
@@ -169,13 +144,13 @@ Add more only when a specific workflow needs them. Each MCP server inflates the 
 | Symptom | Cause | Fix |
 |---|---|---|
 | `filesystem` server can't read a file | Path isn't under an allowed root | Add the path to the `args` list |
-| `github` returns 401 / 403 | Token revoked or scope insufficient | Check token in GitHub → Settings → Developer settings |
+| `github-mcp-server` returns 401 / 403 | Token revoked or scope insufficient | Check token in GitHub → Settings → Developer settings |
 | `postgres` returns "permission denied" | DB user lacks SELECT on that schema | Grant access OR use a different user |
-| `memory` stops persisting between sessions | Backing file path not writable, OR using ephemeral storage | Check the server's README for storage config |
-| Many tools but model never calls them | Tool descriptions too vague | Edit the server source OR add a `CLAUDE.md` hint |
+| `memory` "forgets" between sessions | Backing JSONL path not writable | Check the server's README for storage config; pin a writable path |
+| Many tools but model never calls them | Tool descriptions too vague | Edit the server source OR add a hint in `CLAUDE.md` / system prompt |
 
 ## What to do next
 
-- [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) — beyond the official set, with trust gates
+- [§MCP.3 Community MCP servers](/anthropic/mcp-catalogue/community-servers/) — beyond the reference set, with trust gates
 - [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — when no existing server fits
 - [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — wiring servers specifically in Claude Code

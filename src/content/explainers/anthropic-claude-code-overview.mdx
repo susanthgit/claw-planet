@@ -47,9 +47,9 @@ The interesting bit isn't "AI writes code" (every editor has that now). The inte
 
 Three things that fall out of this design:
 
-- **It's your repo, on your machine.** Files are edited locally. Commits happen through your normal git workflow. The agent doesn't push, doesn't open PRs unless you ask, doesn't phone home with your code (the network call is to Anthropic's API for the model; that part is unavoidable).
+- **It's your repo, on your machine.** Files are edited locally. Commits happen through your normal git workflow. The agent doesn't push, doesn't open PRs unless you ask. **What does cross the wire:** the model call to Anthropic's API includes whatever code, file contents, and conversation context Claude needs to answer — that's how any LLM-backed tool works. The point isn't "your code never leaves your machine" (it sometimes will, as context for the model); the point is "your code lives in your local git workflow, not as state on someone else's product."
 - **Tools are pluggable via MCP.** The protocol exists exactly so you can teach Claude how to read your bug tracker, query your DB, or hit a private API — without Anthropic having to ship a specific integration for every tool that exists.
-- **You can run multiple agents at once.** The desktop app supports parallel sessions. The CLI supports `--print` (one-shot) mode that scripts can call. Aside-by-side investigation of two branches is a real workflow.
+- **You can run multiple agents at once.** The desktop app supports parallel sessions. The CLI supports `-p` (one-shot, non-interactive) mode that scripts can call. Side-by-side investigation of two branches is a real workflow.
 
 ## How it compares
 
@@ -88,7 +88,7 @@ These are the files you'll edit most as you tune the experience. See [§CC.4 Aut
 
 ## What to do next
 
-- [§CC.2 Install macOS](/anthropic/claude-code/install-macos/) — native install, Homebrew, daemon notes
+- [§CC.2 Install macOS](/anthropic/claude-code/install-macos/) — native install, Homebrew, npm fallback
 - [§CC.3 Install Windows](/anthropic/claude-code/install-windows/) — native install, WSL2, winget, Git for Windows
 - [§CC.4 Auth + API key](/anthropic/claude-code/auth/) — three ways to authenticate
 - [§CC.5 MCP integration](/anthropic/claude-code/mcp/) — wiring tools into Claude

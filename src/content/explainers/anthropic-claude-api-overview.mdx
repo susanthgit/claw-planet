@@ -43,7 +43,7 @@ curl https://api.anthropic.com/v1/messages \
   -H "anthropic-version: 2023-06-01" \
   -H "content-type: application/json" \
   -d '{
-    "model": "claude-sonnet-4-5",
+    "model": "claude-sonnet-4-6",
     "max_tokens": 1024,
     "messages": [
       {"role": "user", "content": "Explain MCP in three sentences."}
@@ -77,7 +77,7 @@ Mark portions of your prompt with `cache_control: {"type": "ephemeral"}`. Anthro
 
 ### Files API + Message batches
 
-For workflows where you want to upload a file once and reference it from many prompts (files), or queue thousands of requests for cheaper async processing (batches). Both lower the per-token cost vs naive synchronous calls.
+For workflows where you want to upload a file once and reference it from many prompts (Files API), or queue thousands of requests for cheaper async processing (Message batches). Message batches in particular run at roughly 50% of the live-call rate; Files reduces re-upload overhead and simplifies multi-shot workflows on the same input.
 
 ## What it costs
 
@@ -91,27 +91,27 @@ Pricing is per-million-input-tokens and per-million-output-tokens, varies by mod
 
 > ⚠️ **Pricing changes faster than this page.** Always check [anthropic.com/pricing](https://www.anthropic.com/pricing) before committing.
 
-Cache writes are cheaper than fresh input; cache reads are cheaper still. Batch processing is ~50% off non-batch. Bedrock + Vertex pricing is the cloud's own (typically a small premium over direct Anthropic).
+Cache reads cost roughly 10% of the base input price; cache writes cost roughly 1.25× the base input price (so the cache pays for itself once you've read from it more than once). Batch processing is ~50% off non-batch. Bedrock + Vertex pricing follows the cloud's own rate cards (typically a small premium over direct Anthropic).
 
 ## Where to call from
 
 | Place | What you need |
 |---|---|
-| Direct (api.anthropic.com) | API key from console.anthropic.com |
+| Direct (api.anthropic.com) | API key from [platform.claude.com](https://platform.claude.com) |
 | AWS Bedrock | AWS account · Claude models enabled in your region |
 | Google Vertex AI | GCP project · Claude in Vertex Model Garden · ADC auth |
-| Self-hosted (Enterprise) | Custom proxy — Anthropic Enterprise contracts only |
+| Enterprise contract | Custom arrangements — Anthropic Enterprise only |
 
 Most personal + small-team work goes direct. Enterprise pushes you toward Bedrock/Vertex for governance reasons.
 
 ## SDKs
 
-Two official:
+Anthropic ships **official SDKs** for Python, TypeScript/JavaScript, Java, Go, Ruby, C#/.NET, and PHP, plus an official CLI. All are listed at [docs.anthropic.com/en/api/client-sdks](https://docs.anthropic.com/en/api/client-sdks).
 
-- **Python:** `pip install anthropic`. Sync + async clients, streaming support, file uploads, message batches.
-- **TypeScript / JavaScript:** `npm install @anthropic-ai/sdk`. Same surface, Node and Deno compatible.
+- **Python:** `pip install anthropic`. Sync + async clients, streaming, file uploads, message batches.
+- **TypeScript / JavaScript:** `npm install @anthropic-ai/sdk`. Same surface, Node + Deno compatible.
 
-Community SDKs exist for Go, Rust, Ruby, Java, .NET — varying levels of maintenance. Check `github.com/anthropics` for the official ones; treat community ones like any other community library.
+For other languages (Rust, Elixir, etc.) there are community SDKs of varying maintenance levels — check `github.com/anthropics` for the official set first; if your language isn't there, vet community SDKs the same way you would any other package.
 
 ## Why this matters
 

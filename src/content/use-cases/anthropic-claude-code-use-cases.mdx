@@ -59,12 +59,12 @@ Output isn't final-quality, but it's a 70%-there draft you edit, not a blank pag
 
 ### 5. Scripted batch fixes
 
-Run Claude Code in `--print` mode (one-shot, non-interactive) from a script:
+Run Claude Code in non-interactive mode (`-p`, one-shot) from a script:
 
 ```bash
 for repo in repo-1 repo-2 repo-3; do
   cd $repo
-  claude --print "upgrade the eslint config to flat-config format and verify the build still passes" > ../$repo-changes.md
+  claude -p "upgrade the eslint config to flat-config format and verify the build still passes" > ../$repo-changes.md
   cd ..
 done
 ```

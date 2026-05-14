@@ -25,7 +25,7 @@ Claude ships in three tiers — same family, different cost/quality balance:
 | **Sonnet** | The default for production. Most coding, agentic work, complex Q&A. | "Pick this unless you have a reason not to." |
 | **Opus** | Hardest reasoning. Long planning, multi-step analysis, complex code refactors. | "Worth the cost when correctness matters." |
 
-You pick the tier in your API request (`model: "claude-sonnet-4-5"` etc.). Each tier ships in multiple **generations** (3.5, 4, 4.5...). Newer generations are usually better at everything but cost more — for a while.
+You pick the tier in your API request (`model: "claude-sonnet-4-6"` etc.). Each tier ships in multiple **generations** (3.5, 4, 4.5, 4.6, 4.7...). Newer generations are usually better at everything but cost more — for a while.
 
 ## What changes between generations
 
@@ -43,20 +43,25 @@ The old generation usually stays available for at least 6–12 months. Plan upgr
 
 | Model | Strengths | Context | Vision | Computer Use |
 |---|---|---|---|---|
-| **claude-opus-4-7** | Hardest reasoning · long horizon planning | 200K | Yes | Yes (beta) |
-| **claude-sonnet-4-5** | Default — production sweet spot | 200K | Yes | Yes (beta) |
-| **claude-haiku-4-5** | Fast + cheap · batch + classification | 200K | Yes | No |
-| **claude-opus-4-6** | Older Opus · still solid · cheaper | 200K | Yes | No |
-| **claude-sonnet-4** | Older Sonnet · stable · low cost | 200K | Yes | No |
-| **claude-haiku-3-5** | Oldest Haiku still supported · cheapest | 200K | No | No |
+| **claude-opus-4-7** | Hardest reasoning · long horizon planning | 1M | Yes | Yes (beta) |
+| **claude-sonnet-4-6** | Default — production sweet spot | 1M | Yes | Yes (beta) |
+| **claude-haiku-4-5** | Fast + cheap · batch + classification | 200K | Yes | Yes (beta) |
+| **claude-opus-4-6** | Older Opus · still solid · cheaper | 1M | Yes | Yes (beta) |
+| **claude-sonnet-4-5** | Previous Sonnet · still active · legacy | 1M | Yes | Yes (beta) |
+| **claude-opus-4-5** | Earlier Opus generation · still active | 1M | Yes | Yes (beta) |
 
-(Generation numbers drift; this is a snapshot.)
+**Recently retired (do not use on the direct Claude API):**
+
+- **claude-haiku-3-5** — retired on the API in February 2026. Still available on AWS Bedrock and Google Vertex AI.
+- **claude-sonnet-4** — deprecated April 2026, retiring June 2026. Migrate to `claude-sonnet-4-6` before retirement.
+
+(Generation numbers drift; check [docs.anthropic.com/en/docs/about-claude/models](https://docs.anthropic.com/en/docs/about-claude/models) for the current list.)
 
 ## How to pick
 
 ### Default = Sonnet
 
-If you don't have a strong reason otherwise, start on Sonnet. It handles 80% of tasks well at a mid price. Most production apps live here.
+If you don't have a strong reason otherwise, start on Sonnet (currently `claude-sonnet-4-6`). It's the safe default for most production work — fast enough, smart enough, mid-priced. Most apps live here unless cost, latency, or reasoning depth pushes you elsewhere.
 
 ### Reach for Opus when...
 
@@ -68,7 +73,7 @@ If you don't have a strong reason otherwise, start on Sonnet. It handles 80% of 
 ### Reach for Haiku when...
 
 - The task is **shallow** — labelling tickets, extracting names, picking from N choices
-- You're doing **bulk work** — 10,000 small classifications per night
+- You're doing **bulk work** — thousands of small classifications a night
 - Latency matters more than reasoning depth (Haiku is meaningfully faster)
 - You can **filter to Sonnet** for the cases Haiku flags as uncertain
 
@@ -83,28 +88,33 @@ Vendors publish benchmarks. They're a starting signal, not the truth. Real-world
 - **How well it follows format constraints** (does it actually return valid JSON when you asked?)
 - **How it handles ambiguity** (does it ask a clarifying question, or guess?)
 
-Bench against your own task. A 10-prompt suite that's representative of your real workload tells you more than every leaderboard.
+Build a small representative prompt suite for your real workload and compare on that. Leaderboards rank for general tasks; you care about your task.
 
 ## Context windows
 
-All current Claude tiers are at **200K tokens**. Some experimental builds reach 1M. Rule of thumb: 200K tokens ≈ 500 pages of text or about 50K lines of code (varies by language).
+`claude-opus-4-7` and `claude-sonnet-4-6` both ship with **1M-token** context windows by default. `claude-haiku-4-5` is **200K tokens**. Rule of thumb: 1M tokens is roughly 2,500 pages of plain text; 200K is roughly 500 pages.
 
-> ⚠️ **Long-context performance ≠ short-context performance.** A model can technically *read* 200K tokens but reason worse over the late content. If quality drops near the end of your prompt, try splitting the task — chunk the input, summarise, then ask the question over the summary.
+> ⚠️ **Long-context performance ≠ short-context performance.** A model can technically *read* 1M tokens but reasoning over the very late content tends to be weaker than over the front. If quality drops near the end of long prompts, try splitting the task — chunk the input, summarise, then ask the question over the summary.
 
 ## Vision
 
-Current Sonnet + Opus + recent Haiku tiers all accept images. Use cases:
+Current Sonnet, Opus, and Haiku tiers all accept images. Use cases:
 
 - OCR (read text from screenshots)
 - Chart analysis ("what does this graph say?")
 - UI debugging ("why does this layout look broken?")
 - Document understanding (PDFs as image arrays)
 
-Limits: ~20 images per message, ~5 MB per image, png/jpg/gif/webp. Charged at a per-image token cost on top of the text tokens.
+**Image limits (on the API):** up to 100 images per request on 200K-context models, up to 600 per request on the 1M-context models. Maximum pixel dimensions are 8000×8000 (or 2000×2000 if you're sending more than 20 in one request). Formats: PNG, JPEG, GIF, WebP. Charged at a per-image token cost on top of the text tokens. (Note: the **claude.ai** web UI limits image input to 20 per message — that's a UI cap, not the API cap.)
 
 ## Computer Use
 
-Sonnet 4.5 + Opus 4.7 currently expose the **Computer Use** beta — the agent can see screenshots, decide where to click, type, scroll. See [§CU.1 Computer Use overview](/anthropic/computer-use/overview/) for what works today.
+Computer Use is supported across several Claude 4.x models via two beta header versions:
+
+- **`computer-use-2025-11-24` (newer):** `claude-opus-4-7`, `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-opus-4-5`
+- **`computer-use-2025-01-24` (older):** `claude-sonnet-4-5`, `claude-haiku-4-5`, plus older Claude 4 + 3.7 models
+
+Pick the beta header that matches the model you're using. See [§CU.1 Computer Use overview](/anthropic/computer-use/overview/) for what works today.
 
 ## Model deprecation
 

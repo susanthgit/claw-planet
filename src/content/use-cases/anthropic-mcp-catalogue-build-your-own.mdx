@@ -18,7 +18,7 @@ product: "mcp-catalogue"
 
 ## What you'll have at the end
 
-An MCP server you wrote, exposing one tool (`get_weather` — the classic example), wired into Claude Code, returning real values when Claude asks. About 30 minutes for someone who's written a CLI before. The same shape extends to any tool / resource / prompt you want to expose.
+An MCP server you wrote, exposing one tool (`get_weather` — the classic example), wired into Claude Code, returning mock values when Claude asks. Plan for 30–60 minutes if you already know the language and have Claude Code set up. The same shape extends to any tool / resource / prompt you want to expose.
 
 ## When you'd write your own
 
@@ -147,12 +147,14 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-server.tool(
+server.registerTool(
   "get_weather",
-  "Get the current weather for a city.",
   {
-    city: z.string().describe("City name"),
-    unit: z.enum(["celsius", "fahrenheit"]).default("celsius"),
+    description: "Get the current weather for a city.",
+    inputSchema: {
+      city: z.string().describe("City name"),
+      unit: z.enum(["celsius", "fahrenheit"]).default("celsius"),
+    },
   },
   async ({ city, unit }) => {
     // Real code: call a weather API.
@@ -181,7 +183,15 @@ Compile with `tsx server.ts` or set up tsc to emit JS.
 
 ### Step 3 — Test + wire
 
-Same as Python — use the `mcp` CLI inspector (works against any language), then configure Claude Code:
+For TypeScript servers, use the standalone MCP Inspector (works against any MCP server regardless of language):
+
+```bash
+npx @modelcontextprotocol/inspector node /absolute/path/to/server.js
+```
+
+The Python tutorial above used `mcp dev` from the Python SDK — that's a Python-specific helper. The standalone Inspector is the cross-language equivalent and is what the official server READMEs use.
+
+Once it works in the Inspector, configure Claude Code:
 
 ```json
 "weather": {
@@ -194,7 +204,7 @@ Same as Python — use the `mcp` CLI inspector (works against any language), the
 
 ### Multiple tools
 
-Just add more `@mcp.tool()` decorated functions (Python) or `server.tool()` calls (TS). The host shows all of them; the model picks which to call.
+Just add more `@mcp.tool()` decorated functions (Python) or `server.registerTool(...)` calls (TS). The host shows all of them; the model picks which to call.
 
 ### Resources
 

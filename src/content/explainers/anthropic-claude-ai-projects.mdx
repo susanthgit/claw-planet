@@ -32,11 +32,13 @@ Best example: a Project called *"Writing my novel"* with instructions like *"You
 
 Other versions: *"Studying for SC-500,"* *"Tax planning 2026,"* *"This codebase refactor"* — anything you'll come back to over weeks.
 
-### 2. "Everything about this client / project / case"
+### 2. "A grounded reference on a domain you keep coming back to"
 
-Particularly good when there's a stable knowledge base. Drop all the customer docs, set instructions like *"This is for ACME client work. They use Azure, not AWS. Their billing rules are X."* Every chat inherits that grounding.
+> ⚠️ **Data-classification note (especially for Sush at Microsoft):** customer engagement detail, internal-classified material, and anything from WorkIQ / internal Teams / SharePoint does NOT go into Anthropic Projects. Use the public-source slice only — your own notes, public docs, things you'd be comfortable seeing in a public retention window.
 
-> ⚠️ **For Sush specifically:** customer engagement detail does NOT go in Anthropic Projects. WorkIQ + Microsoft-side surfaces handle that. Claude.ai is for personal work + public knowledge. Don't mix data classifications.
+Particularly good when there's a stable, **public-source** knowledge base. Drop the docs (style guide, public product spec, the textbook you're working through), set instructions like *"This is for studying SC-500. Cite the Microsoft Learn study guide section when relevant. Don't invent exam questions."* Every chat inherits that grounding.
+
+Avoid this pattern for: anything client-specific, anything internal to your employer, anything you wouldn't paste into a public document.
 
 ### 3. "My reference shelf"
 
@@ -74,12 +76,12 @@ Worth including in custom instructions:
 
 | Limit | Where it bites |
 |---|---|
-| **Project knowledge size** | Pro tier ~10× the per-message context · Team/Enterprise higher · check current limits in your account |
-| **Number of conversations per Project** | Soft limit — Projects with 500+ convos get slow to navigate |
-| **File types** | PDF, txt, md, code files, spreadsheets · NOT video, audio, executables |
-| **Per-file size** | Typically 30 MB · larger files require splitting |
+| **Project knowledge size** | Each tier has its own cap (Pro is generous for individuals; Team/Enterprise raises the ceiling). Anthropic doesn't publish exact byte/token figures — check the limits in your account settings as they change |
+| **Number of conversations per Project** | Projects with many conversations get slow to navigate; the UI starts feeling cramped well before any hard limit |
+| **File types** | Common docs (PDF, txt, md, source files, spreadsheets) work. Verify before relying on it — the supported list evolves |
+| **Per-file size** | Files larger than the per-file limit need splitting; the limit isn't published as a single number, check the upload dialogue for the cap |
 
-When you bump the knowledge limit, Claude prunes intelligently (drops files it thinks are less relevant to the current question). You can sometimes tell — Claude misses a detail that's in a file you uploaded. Fix: either trim less-used files, or paste the relevant bit directly in the conversation.
+When Claude can't fit all your Project knowledge into a single response's context, it selects what looks relevant to the current question. You'll sometimes notice — Claude misses a detail that's in a file you uploaded. The fix: either trim less-used files, paste the relevant bit directly into the conversation, or narrow the scope to a single document for that chat.
 
 ## When to use a Project vs a one-off chat
 

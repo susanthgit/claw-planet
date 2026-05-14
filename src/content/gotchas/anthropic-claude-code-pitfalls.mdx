@@ -49,7 +49,7 @@ Watch for:
 
 **API key path:** rate limits work differently — there are per-minute request caps but the bigger limit is your account's billing balance.
 
-> ⚠️ **Trick to extend a session past the cap:** switch the model mid-conversation (`/model sonnet`). Some budgets are model-specific, others aren't — check the Anthropic pricing page; the policy changes faster than this page can track.
+> ℹ️ **If you hit the cap, the safe move is to wait for the reset.** Some readers ask whether switching models mid-conversation (`/model sonnet`) extends the session — sometimes it does, sometimes the budget is shared across models; the policy changes regularly. Check the Anthropic pricing + usage page for current behaviour rather than relying on a "trick."
 
 ## 3. Context-window blowouts
 
@@ -120,7 +120,7 @@ Also: monitor `/cost` mid-session. If the number climbs faster than you expected
 
 Claude Code ships with per-tool approval gating (see [§CC.5 MCP integration](/anthropic/claude-code/mcp/) for the model). Two patterns bite people:
 
-- **Default-deny is too restrictive.** Every file edit prompts; you click through everything; security theatre + lost focus. Tune: allowlist common read-only tools.
+- **Default-deny is too restrictive.** Every file edit prompts; you click through everything; the cost-benefit goes upside-down because you stop reading the prompts. Tune: allowlist common safe read-only tools.
 - **Default-allow is too permissive.** You set `"default": "always"` to skip confirms, then Claude `rm -rf`s something. Don't.
 
 The middle path: `"default": "ask"` for most tools, `"always"` for safe-list (read_file, search, list), `"never"` for destructive (force-push, delete-database).

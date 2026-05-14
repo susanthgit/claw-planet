@@ -23,7 +23,7 @@ A `claude` binary you can run from PowerShell, CMD, or a WSL2 shell, signed in a
 
 ## Before you start
 
-- **Windows 10 22H2 or Windows 11** (x64 or ARM64).
+- **Windows 10 build 1809 or later, Windows 11, or Windows Server 2019+** (x64 or ARM64).
 - **A Claude subscription, API key, or Bedrock/Vertex access.**
 - **Git for Windows** — strongly recommended on native Windows so Claude Code can use the `Bash` tool. Without it, Claude falls back to PowerShell as the shell, which works for simple commands but breaks scripts written for bash. Download from [git-scm.com/downloads/win](https://git-scm.com/downloads/win). WSL2 setups don't need it (you've got bash already).
 
@@ -90,10 +90,11 @@ You'll be prompted to log in. Three auth paths — covered in [§CC.4 Auth + API
 
 | File / dir | Location (native Windows) | Location (WSL2) |
 |---|---|---|
-| Binary | `%LOCALAPPDATA%\Anthropic\ClaudeCode\claude.exe` (winget) | `~/.local/bin/claude` |
+| Binary | `%USERPROFILE%\.local\bin\claude.exe` | `~/.local/bin/claude` |
 | Personal config | `%USERPROFILE%\.claude\settings.json` | `~/.claude/settings.json` |
-| Credentials | `%USERPROFILE%\.claude\credentials.json` | `~/.claude/credentials.json` |
-| Project config | `<project>\CLAUDE.md` + `<project>\.claude\` | `<project>/CLAUDE.md` + `<project>/.claude/` |
+| OAuth + user-scope MCP | `%USERPROFILE%\.claude.json` | `~/.claude.json` |
+| Credentials | `%USERPROFILE%\.claude\.credentials.json` (note the leading dot on the filename) | `~/.claude/.credentials.json` (Linux uses the same path) |
+| Project config | `<project>\CLAUDE.md` + `<project>\.claude\` + `<project>\.mcp.json` | `<project>/CLAUDE.md` + `<project>/.claude/` + `<project>/.mcp.json` |
 
 The native-Windows and WSL2 installs maintain **separate** config directories. Settings, credentials, MCP server lists — none of it crosses between them. If you log in once in WSL and once on the Windows side, you're authenticating twice.
 

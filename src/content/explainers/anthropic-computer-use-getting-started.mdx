@@ -40,12 +40,16 @@ Read the README. It is the source of truth for the demo's current state; this pa
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-If you want to use Bedrock or Vertex instead:
+If you want to use Bedrock or Vertex instead, the demo accepts an `API_PROVIDER` env var:
 
 ```bash
-export CLAUDE_CODE_USE_BEDROCK=1   # or CLAUDE_CODE_USE_VERTEX=1
-# plus the relevant cloud auth
+# Bedrock
+docker run -e API_PROVIDER=bedrock -e AWS_PROFILE=$AWS_PROFILE ...
+# Vertex
+docker run -e API_PROVIDER=vertex -e CLOUD_ML_REGION=us-central1 -e ANTHROPIC_VERTEX_PROJECT_ID=... ...
 ```
+
+Check the quickstart README for the exact provider-specific environment variables to pass — they're documented per-provider and change with each release.
 
 ## Step 3 — Run the container
 

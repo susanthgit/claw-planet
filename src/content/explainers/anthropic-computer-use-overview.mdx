@@ -17,9 +17,9 @@ product: "computer-use"
 
 ## The thirty-second version
 
-Computer Use is **Claude controlling a computer** — taking screenshots, deciding where to click, what to type, when to scroll, until a task is done. You wire Claude up to a virtual machine (or a sandboxed real machine), Claude calls three tools (`screenshot`, `mouse_action`, `keyboard_action`), and your harness executes them against the OS.
+Computer Use is **Claude controlling a computer** — taking screenshots, deciding where to click, what to type, when to scroll, until a task is done. You wire Claude up to a virtual machine (or a sandboxed real machine); Claude uses an MCP-style tool named `computer` (with actions like `screenshot`, `left_click`, `type`, `key`, `mouse_move`, `scroll`), plus optional `bash` and `text_editor` tools; your harness executes the actions against the OS.
 
-**This is beta.** Sonnet 4.5 + Opus 4.7 currently support the tools. Capability is real for narrow use cases; failure modes are loud for most things. Don't put it in front of customers; do experiment with it for personal automation.
+**This is beta.** Many Claude 4.x models support Computer Use across two beta header versions — see [§API.3 Models](/anthropic/claude-api/models/) for the current model matrix. Capability is real for narrow use cases; failure modes are loud for most things. Don't put it in front of customers; do experiment with it for personal automation.
 
 ## The shape
 
@@ -30,7 +30,7 @@ Computer Use is **Claude controlling a computer** — taking screenshots, decidi
 │                         │
 │  ┌──────────────────┐   │       ┌──────────────────┐
 │  │  Claude API call │ ◄─┼────── │  Claude model    │
-│  └────────┬─────────┘   │       │  (Sonnet 4.5)    │
+│  └────────┬─────────┘   │       │  (Sonnet 4.6)    │
 │           │             │       └──────────────────┘
 │           │ "click here"
 │           ▼

@@ -102,13 +102,14 @@ Claude reads your repo's `README.md`, walks the auth-related files, and replies.
 | File | Purpose |
 |---|---|
 | `~/.local/bin/claude` | The binary itself (native install) |
-| `~/.claude/settings.json` | Personal config — default model, thinking budget, MCP server allowlist |
-| `~/.claude/credentials.json` | Stored login token (subscription path) — never commit this anywhere |
-| `~/.claude/sessions/` | Session history (transcripts of past conversations) |
+| `~/.claude/settings.json` | Personal config — model preferences, permissions, env vars |
+| `~/.claude.json` | OAuth session + user-scoped MCP server config (note: root-level, not inside `.claude/`) |
+| **macOS Keychain** | Stored login token (subscription path) — managed by the OS, not a file |
 | `<project>/CLAUDE.md` | Project-scoped instructions — Claude reads this on every session in this project |
-| `<project>/.claude/` | Project-scoped slash commands + subagent definitions + MCP pins |
+| `<project>/.claude/` | Project-scoped slash commands + subagent definitions |
+| `<project>/.mcp.json` | Project-scoped MCP server config (at the repo root, not inside `.claude/`) |
 
-The first two are private. Don't share `credentials.json`. Do version-control `CLAUDE.md` and `.claude/` — they're meant to be team-shared (without secrets).
+The OAuth token is private (macOS Keychain handles this for you). Do version-control `CLAUDE.md`, `.claude/`, and `.mcp.json` — they're meant to be team-shared (without secrets; load secrets from env vars).
 
 ## Upgrading later
 

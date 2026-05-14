@@ -1,14 +1,15 @@
 ---
-title: "Claude.ai Skills — custom callable tools across chats"
+title: "Claude.ai Skills — Markdown instruction packs Claude loads on demand"
 section: "Claude.ai"
 sectionNumber: "WEB.3"
-description: "Skills let you write custom tools that Claude can call from any conversation. What they are, how they're scoped, how to create one, and how they compare to MCP servers + Projects' custom instructions."
+description: "Skills are Markdown instruction folders (SKILL.md plus optional scripts and resources) that Claude reads dynamically to do specialised tasks better. Available on paid Claude.ai plans. What they are, how they're created, the Skills Directory, and how they differ from Projects and MCP."
 status: "published"
 verificationState: "sourced"
-verificationNote: "Compiled from claude.ai support docs + the Skills documentation as of 14 May 2026. The Skills feature is relatively new; behaviour evolves with each release."
+verificationNote: "Compiled from support.claude.com/en/articles/12512176 (what-are-skills) and 12580051 (teach-claude-using-skills) plus anthropic.com/news/skills as of 14 May 2026. Skills shipped in late 2025 and continue to evolve; verify against current support docs."
 lastReviewedAt: "2026-05-14"
 sources:
-  - "https://support.anthropic.com/en/articles/10038478-using-skills"
+  - "https://support.claude.com/en/articles/12512176-what-are-skills"
+  - "https://support.claude.com/en/articles/12580051-teach-claude-your-way-of-working-using-skills"
   - "https://www.anthropic.com/news/skills"
 vendor: "anthropic"
 product: "claude-ai"
@@ -16,73 +17,92 @@ product: "claude-ai"
 
 ## What a Skill is
 
-A **Skill** in Claude.ai is a custom callable capability you define once, and Claude can invoke from any conversation. Skills are:
+A **Skill** in Claude.ai is a **folder of Markdown instructions, scripts, and resources** that Claude loads dynamically when it's working on a task that fits. The folder contains at minimum a `SKILL.md` file describing what the Skill is for and how Claude should use it; it can optionally include scripts (executed via the Code Execution Tool when needed) and reference files.
 
-- **Personal** (your account) or **Workspace** (Team/Enterprise — shared across your org)
-- **Named** — Claude knows them by name; you can reference them in chat ("use my `repo-search` skill")
-- **Typed** — defined inputs and outputs
-- **Executed inside Claude.ai's environment** — not your local machine
+Key properties:
 
-Compare:
+- **Markdown-first, not "callable tools with typed parameters."** You're not defining function signatures; you're writing instructions Claude reads.
+- **Auto-invoked.** Claude scans the available Skills, decides which (if any) are relevant to the current task, and loads them on demand. You can also nudge it explicitly (*"use my repo-search skill"*) but the default pattern is automatic.
+- **Personal** (your account) or **organisation-provisioned** (Team / Enterprise admins push Skills to all users).
+- **Paid-plan only.** Skills are available on **Pro, Max, Team, and Enterprise** — not the Free tier.
+
+How Skills relate to other Claude.ai surfaces:
 
 | | **Skill** | **MCP server** | **Project custom instructions** |
 |---|---|---|---|
-| Where it runs | Claude.ai's sandbox | Your local machine (or a server you control) | Just text in the prompt |
-| Can call external APIs? | Limited · via Claude's web fetch | Yes, anything | No |
-| Available in | All your Claude.ai chats | Hosts that speak MCP (Claude Code · Cursor · etc.) | One Project |
-| Setup | Inside Claude.ai UI | Config file + local process | Project settings |
-| Best for | Personal callable shortcuts that work everywhere | Heavy integrations (filesystem, GitHub, DB) | Persona / voice / domain framing |
+| What it is | Markdown instruction folder (SKILL.md + optional scripts/resources) | Local-process tool server speaking the MCP protocol | Plain-text system prompt scoped to one Project |
+| Auto-invoked? | Yes — Claude picks Skills that fit the task | No — Claude calls explicit tools | N/A — always applied within the Project |
+| Code execution? | Optional — runs in Claude.ai's Code Execution Tool sandbox | Yes — runs as the MCP server process on your machine | None |
+| Available in | Pro/Max/Team/Enterprise (paid) | Any MCP-aware host (Claude Code, Claude.ai, others) | One Project |
+| Setup | Write SKILL.md + scripts, OR use the built-in skill-creator | Config in `~/.claude.json` + local process | Project settings |
+| Best for | Reusable workflows + domain knowledge applied across chats | Heavy integrations with external systems (DBs, GitHub, browsers) | Persona + voice + project context |
 
-If you want Claude to do something in **every chat you have on Claude.ai web/desktop/mobile**, a Skill is the right surface. If you want it specifically in your terminal coding workflow, an MCP server is the right surface. They're complementary.
+If you want Claude to follow a specific workflow across every chat (a reusable "do it this way" pattern), a Skill is the right tool. If you need Claude to call out to external systems with real-time data, an MCP server is the right tool. If you want a project-scoped persona, use Project instructions.
 
 ## A real example
 
-Suppose you regularly want Claude to **convert prose into a 5-bullet executive summary in a specific format**. You could:
-
-- Paste the format rules into every conversation (annoying)
-- Set it as a Project instruction (only works in that Project)
-- Build a Skill (works everywhere)
-
-The Skill:
+Suppose you want Claude to **convert prose into a 5-bullet executive summary in a specific format** whenever it's relevant. The Skill folder might look like:
 
 ```
-Name: exec-summary
-
-Description: Convert long-form text into a 5-bullet executive summary.
-Each bullet is one sentence, present tense, action-first.
-
-Inputs:
-  - text (string): the text to summarize
-
-Output:
-  - 5 bullet points, formatted with markdown dashes
+exec-summary/
+├── SKILL.md           # instructions: when to use, format rules, examples
+└── examples/
+    └── before-after.md  # optional reference material
 ```
 
-Now in any chat: *"use the exec-summary skill on this report:"* + paste the report. Claude calls the Skill, returns the formatted bullets.
+`SKILL.md` (excerpt):
 
-You can build Skills for:
+```markdown
+---
+name: exec-summary
+description: Convert long-form text into a 5-bullet executive summary. Use when the user asks for a TL;DR, an executive summary, or a quick brief on a long document.
+---
 
-- **Format converters** (prose → bullets, bullets → narrative, markdown → email)
-- **Domain transforms** (raw notes → meeting minutes, code → architecture description)
-- **Quick lookups** (your team's terminology, your style guide quotes)
-- **Multi-step prompts** (research → critique → revise, baked into one call)
+## Format rules
+
+- Always 5 bullets, no more, no fewer.
+- Each bullet: one sentence, present tense, action-first.
+- Lead each bullet with the verb. No "We are..." or "It is..."
+- Markdown dashes, no numbered lists, no nested bullets.
+
+## Examples
+
+[Include 1–2 before/after examples to anchor Claude's output...]
+```
+
+Now in any chat: paste a long report, and Claude will recognise the task fits the Skill, load the instructions, and produce bullets in the format you defined. You can also be explicit: *"use the exec-summary skill on this report."*
+
+Common Skill patterns:
+
+- **Format converters** (prose → bullets, bullets → narrative, raw notes → meeting minutes)
+- **Domain transforms** (code → architecture description, error log → root-cause hypothesis)
+- **Quick lookups** (your team's terminology, your style guide rules)
+- **Multi-step workflows** (research → critique → revise, baked into one Skill)
 - **Personal aliases** (`my-voice`, `my-format`, `my-checklist`)
 
 ## How to create one
 
-In Claude.ai → Sidebar → Skills → **Create Skill**:
+In Claude.ai → **Settings → Capabilities → Skills**. Three creation paths:
 
-1. **Name** — short, kebab-case (`exec-summary`, `repo-search`, `my-tldr`)
-2. **Description** — what it does, when Claude should use it
-3. **Instructions** — the actual prompt logic (this is where you spend the time)
-4. **Inputs** — typed parameters
-5. **Save** — Skill is available immediately in new chats
+1. **Use the built-in skill-creator.** Anthropic ships a Skill called `skill-creator`. Start a chat, mention what you want, and it asks about your workflow + generates the folder structure, `SKILL.md`, and any supporting files for you. Easiest path.
+2. **Write the Markdown yourself.** Create a folder with a `SKILL.md` at minimum. Upload via the Skills UI.
+3. **Have Claude write it in conversation.** Describe what you want; ask Claude to produce a `SKILL.md`; copy the output into the Skills UI.
 
 Worth investing in:
 
-- **Specific instructions.** Vague Skills produce vague output. Treat the instructions field like you'd treat a custom prompt — concrete examples, explicit format rules, "do not" guards.
-- **Tight input scope.** Don't take 10 optional params; take 1–2 required ones. Constraint is your friend.
-- **Naming.** Names should be predictable so you remember them. `tldr` not `summarize-document-version-2`.
+- **Specific descriptions in the frontmatter.** Vague Skills don't trigger when they should. Concrete examples of "use when X" anchor Claude's decisions.
+- **Explicit format rules + examples.** "Do" + "don't" guards stop the model from drifting.
+- **Don't over-Skill.** If a behaviour only matters in one Project, use Project instructions, not a Skill.
+
+## The Skills Directory
+
+Anthropic added a **Skills Directory** (also called Connectors at [claude.ai/connectors](https://claude.ai/connectors)) featuring partner-built Skills from Notion, Figma, Atlassian, and others. You can install these into your account from the directory without writing your own SKILL.md.
+
+This means three sources of Skills:
+
+- **Built-in** (skill-creator and a few utilities Anthropic ships)
+- **Partner Skills** from the Directory (vendor-maintained — Notion's, Figma's, etc.)
+- **Your own personal or organisation Skills**
 
 ## Where Skills bite
 
@@ -92,36 +112,40 @@ Once you have 30 Skills, you forget which one does what. Discipline: review your
 
 ### Discoverability
 
-Claude doesn't always auto-pick the right Skill. Sometimes you need to be explicit (*"use the exec-summary skill"*) rather than rely on Claude to recognise that's what you wanted.
+Claude doesn't always auto-pick the right Skill. Sometimes you need to be explicit (*"use the exec-summary skill"*) rather than rely on Claude to recognise that's what you wanted. Sharp Skill descriptions help; vague ones get ignored.
 
 ### Versioning
 
-When you edit a Skill, all future calls use the new version. Old chats still reference the old behaviour in transcript but don't re-execute. There's no rollback.
+When you edit a Skill, all future calls use the new version. Old chats still reference the old behaviour in transcript but don't re-execute. There's no built-in rollback.
 
-### Sharing
+### Code execution
 
-Personal Skills are personal. Workspace Skills (Team/Enterprise) are shareable but admin-controlled. There's no public Skill marketplace.
+If your Skill bundles scripts, those run in Claude.ai's **Code Execution Tool sandbox** — not arbitrarily on your computer. The sandbox is restricted, and not every plan tier has the Code Execution Tool turned on. Check support docs for which features are available on your tier.
+
+### Free tier
+
+Skills are **paid-plan only**. If a teammate on Free can't see your Skills shared via Workspace, that's why.
 
 ## When to NOT use a Skill
 
-- **You need filesystem / network / DB access** → MCP server instead
-- **The "Skill" is just a longer prompt** → Project custom instructions instead
-- **You're building a product feature** → API + your own backend instead
-- **You need execution in a specific environment** → Skills run in Claude's sandbox; if that's wrong for you, build elsewhere
+- **You need filesystem / network / DB access on your local machine** → MCP server instead
+- **The "Skill" is just a longer prompt with no reusability** → Project custom instructions instead
+- **You're building a product feature for end users** → API + your own backend instead
+- **You need code to execute on your computer (not Anthropic's sandbox)** → MCP server or Claude Code instead
 
 ## Common pitfalls
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Claude doesn't call my Skill even when relevant | Description vague; name doesn't match intent | Rewrite description with concrete trigger examples |
-| Skill output is inconsistent across chats | Instructions too open-ended | Add explicit format constraints + examples |
+| Claude doesn't auto-pick my Skill | Description vague; "when to use" trigger conditions missing | Rewrite frontmatter description with concrete triggers + examples |
+| Skill output is inconsistent across chats | SKILL.md instructions too open-ended | Add explicit format constraints + before/after examples |
+| Workspace Skill not visible to me | You're on Free, or admin hasn't provisioned it for your role | Verify your plan tier; ask admin |
 | Editing a Skill broke old workflows | Old chats reference the renamed Skill | Be careful renaming; create v2 alongside v1 if needed |
-| Skill calls feel slow | Skill instructions are huge; loading it costs tokens | Trim the instructions; remove unused branches |
-| Workspace Skill conflicts with personal Skill of same name | Duplicate names across scopes | Rename one (workspace takes priority on Team/Enterprise) |
+| Skill seems to load but its bundled script does nothing | Code Execution Tool not enabled on your plan tier | Check tier capabilities |
 
 ## What to do next
 
-- [§WEB.2 Projects feature](/anthropic/claude-ai/projects/) — the other paid-tier feature worth knowing
-- [§WEB.1 Claude.ai overview](/anthropic/claude-ai/overview/) — the wider surface
+- [§WEB.2 Projects feature](/anthropic/claude-ai/projects/) — the other paid-tier organising surface
+- [§WEB.1 Claude.ai overview](/anthropic/claude-ai/overview/) — wider surface + tier feature matrix
 - [§MCP.1 What is MCP](/anthropic/mcp-catalogue/what-is-mcp/) — the more powerful integration surface for terminal / IDE workflows
-- [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — when Skills aren't enough
+- [§MCP.4 Build your own MCP server](/anthropic/mcp-catalogue/build-your-own/) — when Skills can't reach the system you need
