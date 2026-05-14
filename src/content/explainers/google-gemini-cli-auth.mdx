@@ -143,6 +143,8 @@ gemini --skip-trust ...
 export GEMINI_CLI_TRUST_WORKSPACE=true
 ```
 
+> **Confusingly named:** `--skip-trust` does NOT remove or skip trust — it means *"trust this workspace for the session without prompting"* (it bypasses the interactive trust dialogue). Both options have the same effect; the env var is clearer in CI logs.
+
 The official **GitHub Action** (`google-github-actions/run-gemini-cli`) wraps all of this — drop it into a workflow file and supply your secret.
 
 ## Cloud-side environments — automatic auth

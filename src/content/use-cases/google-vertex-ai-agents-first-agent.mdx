@@ -177,7 +177,7 @@ app = AdkApp(agent=root_agent)
 
 # Deploy — creates a managed Agent Runtime instance
 remote_app = vertexai.agent_engines.create(
-    agent=app,
+    agent_engine=app,
     requirements=[
         "google-cloud-aiplatform[agent_engines,adk]",
         # pin specific versions in production

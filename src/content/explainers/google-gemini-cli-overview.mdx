@@ -24,7 +24,7 @@ Gemini CLI is **Google's terminal coding agent**. You install it via npm, run `g
 Three things to know:
 
 1. **Open source, TypeScript / Node-based, Apache-2.0.** The CLI binary itself is free. Built on Node.js 20+; runs on macOS 15+, Windows 11 24H2+, and Ubuntu 20.04+. Pre-installed in Cloud Shell and Cloud Workstations.
-2. **One of the most generous documented free tiers of any CLI coding agent.** Sign in with a personal Google account and you get **1,000 model requests per day** at no cost — no card required, no credit timer. (Compare with Claude Code's no free tier and Codex CLI's one-off $5 in API credits.)
+2. **A documented free tier that's unusually useful for tinkering.** Sign in with a personal Google account and you get **1,000 model requests per day** at no cost — no card required, no credit timer. (For comparison: Claude Code has no free tier, and Codex CLI offers a one-off $5 in API credits.)
 3. **Speaks MCP — as a client.** It connects to MCP servers (filesystems, GitHub, databases, browser automation, your own) over Stdio, SSE, and Streamable HTTP. There's no `gemini mcp-server` mode — Gemini CLI itself isn't exposed as a server other agents can call.
 
 ## A real example
@@ -65,7 +65,7 @@ Three things fall out of the design:
 | Default model | `gemini-2.5-pro` (stable channel) | not publicly stated | Claude Sonnet 4.5 | GPT-4o (via Copilot) |
 | Context window | 1M tokens | ~200K | 200K | 128K |
 | Free tier | **1,000 req/day** (personal Google account) | One-off $5 API credit | None | Limited (Copilot Free tier) |
-| Sandbox | Optional (5 backends, OFF by default) | Built-in (per-OS, ON by default) | None | None |
+| Sandbox | Optional (6 backends, OFF by default) | Built-in (per-OS, ON by default) | None | None |
 | MCP | Client (Stdio + SSE + HTTP, OAuth-aware) | Client | Client | Limited |
 | Subagents | No native primitive | Not confirmed for the CLI | Yes | No |
 | Project context file | `GEMINI.md` | `AGENTS.md` | `CLAUDE.md` | None |
@@ -94,12 +94,12 @@ The CLI binary is free (Apache-2.0). Usage consumes:
 
 - **Personal Google account (free):** 1,000 model requests / day. Spans Pro and Flash; CLI picks per task.
 - **Gemini API key (free, from AI Studio):** 250 requests / day, Flash model only. No Google Cloud project required.
-- **Google AI Pro subscription:** 1,500 req/day, around $20/month.
-- **Google AI Ultra subscription:** 2,000 req/day, around $100/month.
+- **Google AI Pro subscription:** 1,500 req/day. Around $19.99/month at the time of writing.
+- **Google AI Ultra subscription:** 2,000 req/day. Pricing is materially higher (around $249.99/month at the time of writing in some regions).
 - **Vertex AI:** standard per-token pricing through your Google Cloud billing account.
 - **Gemini Code Assist (Standard / Enterprise):** 1,500–2,000 req/day per user, billed via GCP.
 
-> **Verify before relying on these numbers.** The README's "60 requests/minute" claim isn't confirmed by Google's canonical quota page (which shows "2 requests/second" for general Gemini for Cloud). Per-day caps are on the [quota and pricing](https://www.geminicli.com/docs/resources/quota-and-pricing) page, but Google adjusts these regularly. The `/stats model` slash command shows your current session usage and applicable limits.
+> **Verify before relying on these numbers.** The README's "60 requests/minute" claim isn't confirmed by Google's canonical quota page (which shows "2 requests/second" for general Gemini for Cloud). Subscription prices change regularly — check [Google One pricing](https://one.google.com/about/plans) for current AI Pro and AI Ultra figures rather than depending on this page. Per-day caps are on the [quota and pricing](https://www.geminicli.com/docs/resources/quota-and-pricing) page. The `/stats model` slash command shows your current session usage and applicable limits.
 
 ## What to do next
 

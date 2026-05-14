@@ -27,7 +27,7 @@ These aren't show-stoppers — Gemini CLI is in active production use across Goo
 
 This is the single biggest difference vs [Codex CLI](/openai/codex-cli/overview/) (sandbox ON by default).
 
-When you `gemini` into a directory, the agent can read, write, and execute commands on your filesystem with the same permissions as your user account. Five sandbox backends are available — macOS Seatbelt, Docker, Podman, Linux gVisor, LXC — but you have to explicitly enable one:
+When you `gemini` into a directory, the agent can read, write, and execute commands on your filesystem with the same permissions as your user account. Six sandbox backends are available — macOS Seatbelt, Docker, Podman, Linux gVisor, LXC, and Windows Native — but you have to explicitly enable one:
 
 ```bash
 gemini -s                                 # quick: turn sandbox on
@@ -56,9 +56,9 @@ icacls "C:\path\to\project" /setintegritylevel Medium
 
 This is documented behaviour in the sandbox page, not a bug. Worth knowing before you `gemini -s` your way through a Windows session.
 
-### 3. The README says "Gemini 3" — stable says `gemini-2.5-pro`
+### 3. README marketing vs stable default
 
-The README's marketing line about "Powerful Gemini 3 models" reflects the **preview channel** (`gemini-3-pro-preview`, `gemini-3.1-pro-preview`, `gemini-3-flash-preview`). The **stable channel default is `gemini-2.5-pro`** (verified directly in `packages/core/src/config/models.ts`).
+The README's Gemini 3 marketing line refers to **preview-channel** access — `gemini-3-pro-preview`, `gemini-3.1-pro-preview`, `gemini-3-flash-preview`. The **stable channel default is `gemini-2.5-pro`** (verified directly in `packages/core/src/config/models.ts`).
 
 If you install via `npm install -g @google/gemini-cli` and assume Gemini 3 is the model running, you'll be surprised. Switch explicitly when you want it:
 
@@ -118,13 +118,7 @@ The "Modify with external editor" feature only supports five hardcoded editors: 
 
 ## Trusted Folders — the other security layer
 
-Gemini CLI ships a "Trusted Folders" feature that's also disabled by default and worth opting into:
-
-```json
-{ "security": { "folderTrust": { "enabled": true } } }
-```
-
-In an *untrusted* folder, the CLI:
+Gemini CLI ships a "Trusted Folders" feature that is **enabled by default**. In an *untrusted* folder, the CLI:
 
 - Ignores project settings (`.gemini/settings.json`)
 - Doesn't load `.env` files
@@ -133,7 +127,17 @@ In an *untrusted* folder, the CLI:
 - Disables auto-memory
 - Disables tool auto-accept
 
-This is the right posture for `cd`-ing into a stranger's repo before reviewing it. Combine with `--sandbox` for a defence-in-depth approach.
+Your current directory isn't automatically trusted — you'll be prompted to trust it on first run. This is the right posture: when you `cd` into a stranger's repo, the CLI applies caution by default.
+
+To **disable** the trust check entirely (every directory treated as trusted — useful in CI and trusted-server environments), set:
+
+```json
+{ "security": { "folderTrust": { "enabled": false } } }
+```
+
+…or set `GEMINI_CLI_TRUST_WORKSPACE=true` as an env var to trust the current session without modifying settings.
+
+Combine this with `--sandbox` for a defence-in-depth approach.
 
 ## Per-platform quirks summary
 

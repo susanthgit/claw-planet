@@ -62,7 +62,7 @@ The SDK *call shape* migration is one constructor line — but the operational m
 | **Audit logging** | ❌ | ✅ Cloud Audit Logs |
 | **A2A Protocol native integration** | ❌ | ✅ ADK native |
 | **MCP server registry** | ❌ | ✅ Agent Registry catalogues them |
-| **Tuned models from AI Studio** | ✅ | ❌ (must be retrained in Vertex) |
+| **Tuned models from AI Studio** | ✅ (legacy only — AI Studio fine-tuning was deprecated May 2025; no new models can be tuned this way) | ❌ (must be retrained in Vertex) |
 | **Ops maturity** | Lower — you manage scaling yourself | Higher — managed serverless runtime |
 | **Setup complexity** | Low (API key + pip install) | Medium (GCP project, IAM, ADC setup) |
 | **Free tier** | Generous, rate-limited | $300 GCP credit (new accounts); Agent Runtime: 50 vCPU-hr + 100 GiB-hr free / month |
@@ -86,7 +86,7 @@ The SDK *call shape* migration is one constructor line — but the operational m
 - You want the simplest possible setup (API key + pip install)
 - Cost predictability is paramount (token-only billing, no runtime overhead)
 - You're a solo developer / small team without GCP-side ops
-- You want the most generous free tier (Flash and Flash-Lite are free with rate limits)
+- You want a useful free tier for Flash / Flash-Lite experiments
 
 ## What's the same
 

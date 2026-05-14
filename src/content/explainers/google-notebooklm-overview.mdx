@@ -19,7 +19,7 @@ product: "notebooklm"
 
 ## The thirty-second version
 
-NotebookLM is **a hosted research notebook from Google** powered by Gemini. You upload sources (PDFs, Google Docs, web URLs, YouTube videos, audio files, etc.) and the assistant answers questions **grounded in those sources only**. If the answer isn't in the sources, NotebookLM declines to answer.
+NotebookLM is **a hosted research notebook from Google** powered by Gemini. You upload sources (PDFs, Google Docs, web URLs, YouTube videos, audio files, etc.) and the assistant answers questions **grounded in those sources only**. NotebookLM is designed to decline when the answer isn't supported by the uploaded sources; outputs still carry the standard "may contain inaccuracies" disclaimer.
 
 Three things to know:
 
@@ -45,17 +45,18 @@ The accepted source types as of mid-2026:
 
 ## Tier breakdown (mid-2026)
 
-| Tier | How you get it | Sources per notebook | Audio Overviews / day | Notebooks |
-|---|---|---|---|---|
-| **Standard** (Free) | Free Gmail / Google account | 50 | 3 | 100 |
-| **Plus** | Google AI Plus subscription | 100 | 6 | 200 |
-| **Pro** | Google AI Pro plan OR qualifying Workspace edition | 300 | 20 | 500 |
-| **Ultra** | Google AI Ultra plan OR AI Ultra Access add-on | 600 | 200 | 500 |
-| **Enterprise** | $9 USD / licence / month via Google Cloud | 5× Standard or more | 5× Standard or more | 5× Standard or more |
+| Tier | How you get it | Sources / notebook | Audio Overviews / day | Video Overviews / day | Chats / day | Notebooks |
+|---|---|---|---|---|---|---|
+| **Standard** (Free) | Free Gmail / Google account | 50 | 3 | 3 | 50 | 100 |
+| **Plus** | Google AI Plus subscription | 100 | 6 | 6 | 200 | 200 |
+| **Pro** | Google AI Pro plan OR qualifying Workspace edition | 300 | 20 | 20 (incl. 2 Cinematic) | 500 | 500 |
+| **Workspace Expanded** | AI Expanded Access add-on (sits between Pro and Ultra) | 400 | 40 | 40 (incl. 4 Cinematic) | 1,000 | 500 |
+| **Ultra** | Google AI Ultra plan OR AI Ultra Access add-on | 600 | 200 | 200 (incl. 20 Cinematic) | 5,000 | 500 |
+| **Enterprise** | $9 USD / licence / month via Google Cloud | 5× Standard or more | 5× Standard or more | 5× Standard or more | 5× or more | 5× or more |
 
-> **Marked "Subject to Change" in Google's docs.** Numbers above were verified mid-May 2026 and Google adjusts them quarterly.
+> **Marked "Subject to Change" in Google's docs.** Numbers above were verified mid-May 2026 and Google adjusts them quarterly. Watermark removal on Infographics and Slide Decks is **Ultra-only** (lower tiers watermark these outputs).
 
-For Workspace users, NotebookLM is now a **core service** (like Gmail and Calendar) for many qualifying paid Workspace editions, but the exact tier you receive depends on your plan. Higher Workspace editions (Business Plus, Business Standard, Enterprise Plus, Enterprise Standard) get Pro-level limits with enterprise-grade privacy. Lower paid editions (Business Starter, etc.) get Standard limits with the same enterprise-grade privacy. Some editions (Business Base, Essentials Starter, Workspace Individual, G Suite, Cloud Identity, Chrome / Android Enterprise) get NotebookLM as an additional service under standard Google ToS. There's also an Expanded Level Access tier (via the AI Expanded Access add-on) that sits between Pro and Ultra (400 sources / notebook). See [the Workspace mapping page](https://support.google.com/notebooklm/answer/16337734) for the current per-edition table.
+For Workspace users, NotebookLM is now a **core service** (like Gmail and Calendar) for many qualifying paid Workspace editions, but the exact tier you receive depends on your plan. Higher Workspace editions (Business Plus, Business Standard, Enterprise Plus, Enterprise Standard) get Pro-level limits with enterprise-grade privacy. Lower paid editions (Business Starter, etc.) get Standard limits with the same enterprise-grade privacy. Some editions (Business Base, Essentials Starter, Workspace Individual, G Suite, Cloud Identity, Chrome / Android Enterprise) get NotebookLM as an additional service under standard Google ToS. The **AI Expanded Access add-on** (Workspace Expanded) sits between Pro and Ultra. See [the Workspace mapping page](https://support.google.com/notebooklm/answer/16337734) for the current per-edition table.
 
 ## What's in the Studio panel
 
@@ -64,7 +65,7 @@ The right-hand "Studio" panel is where the agent generates artefacts from your n
 | Artefact | What it is |
 |---|---|
 | **Audio Overview** | Two AI hosts in podcast-style conversation. Four formats: **Deep Dive** (default), **The Brief** (one speaker, under 2 min), **The Critique** (constructive eval), **The Debate** (formal back-and-forth). 80+ output languages. Interactive Mode (English only) lets you join the conversation by voice. |
-| **Video Overview** | Three formats: Cinematic (Ultra-only, English-only, 18+), Explainer, Brief. About 10 visual styles (Classic, Whiteboard, Watercolor, Retro Print, Heritage, Paper-craft, Kawaii, Anime, plus Custom and Auto) for the non-Cinematic formats. 80+ output languages. |
+| **Video Overview** | Three formats: Cinematic (English-only, 18+; available from Pro upward — 2/day on Pro, 4/day on Workspace Expanded, 20/day on Ultra), Explainer, Brief. About 10 visual styles (Classic, Whiteboard, Watercolor, Retro Print, Heritage, Paper-craft, Kawaii, Anime, plus Custom and Auto) for the non-Cinematic formats. 80+ output languages. |
 | **Mind Map** | Interactive branching diagram of main topics + relationships. Zoom, expand/collapse, click a node to ask a question about it. **Not in the mobile app.** |
 | **Reports** | FAQ, Study Guide, Briefing Document, AI-suggested type. Export to Google Docs (data tables to Sheets). |
 | **Slide Decks** | Detailed Deck (full text) or Presenter Slides (visual + talking points). Export as PDF or PowerPoint. 18+. |
@@ -106,14 +107,14 @@ Three things to call out:
 NotebookLM is one of the most-praised consumer Google AI products in current sourced material. The repeated selling points across launch posts, case studies, and reviews are:
 
 1. **Audio Overviews** — even sceptics report finding the podcast format genuinely useful
-2. **Source grounding** — the "I won't make things up" promise feels real in practice for most users
+2. **Source grounding** — the docs and user-facing material consistently centre source grounding as the main trust feature; the product still warns that outputs may contain inaccuracies, so verify critical claims yourself
 3. **It just works on the free tier** — most personal research workflows never need a paid tier
 
 The trade-offs:
 
 - Notebook isolation is real workflow friction
 - Mobile app is described as an "early version" with feature gaps (no Mind Maps, Notes, Reports, or Data Tables on mobile)
-- Cinematic Video Overviews are paywalled hard (Ultra-only, English-only, 18+)
+- Cinematic Video Overviews are paywalled (English-only, 18+, available from Pro upward — 2/day on Pro, 20/day on Ultra)
 - The free tier "may use your data to improve products" if you give feedback — the Workspace / Enterprise tiers are stronger on this
 
 ## What's next

@@ -179,7 +179,19 @@ metadata = response.candidates[0].grounding_metadata
 # metadata.search_entry_point → HTML widget you must render per Google ToS
 ```
 
-> **Pricing:** **5,000 grounded prompts per month free** (shared across Gemini 3 models), then **$14 per 1,000 search queries**. A single prompt can issue multiple search queries — check `web_search_queries` to know how many were billed for that response.
+## Search grounding pricing differs by generation
+
+Worth its own line because it's billed differently from tokens, **and the rate is different for Gemini 3 vs Gemini 2.5**:
+
+**Gemini 3 models:**
+- **5,000 grounded prompts per month free** (shared across Gemini 3 models)
+- After that: **$14 per 1,000 search queries**
+
+**Gemini 2.5 models** (paid tier — the example above uses `gemini-2.5-flash`):
+- 1,500 requests/day free (shared between Flash and Flash-Lite RPD)
+- After that: **$35 per 1,000 grounded prompts**
+
+A single prompt can issue multiple search queries (the model decides how many). `groundingMetadata` on every response shows the queries used and the URLs cited.
 
 > **Render requirement:** the `search_entry_point` HTML widget must be displayed when you show grounded answers (Google's terms of service for grounded search). The SDK gives you the HTML; embed it.
 

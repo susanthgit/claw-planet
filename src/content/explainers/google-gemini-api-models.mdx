@@ -35,9 +35,9 @@ Three live generations, in order from newest to oldest:
 | Model | Context in / out | Status | Knowledge cutoff | Input pricing per 1M | Output pricing per 1M |
 |---|---|---|---|---|---|
 | `gemini-3.1-pro-preview` | 1M / 64K | Preview, no shutdown date | Jan 2025 | $2.00 (≤200K) / $4.00 (>200K) | $12 / $18 |
-| `gemini-3-flash-preview` | 1M / 64K | Preview, no shutdown date | Jan 2025 | $0.50 | $3.00 |
-| `gemini-3.1-flash-lite` | 1M / 64K | **Stable** since 7 May 2026 | Jan 2025 | $0.25 | $1.50 |
-| `gemini-3.1-flash-lite-preview` | 1M / 64K | Preview → shutdown 25 May 2026 | Jan 2025 | $0.25 | $1.50 |
+| `gemini-3-flash-preview` | 1M / 64K | Preview, no shutdown date | Jan 2025 | $0.50 (text/image/video) / $1.00 (audio) | $3.00 |
+| `gemini-3.1-flash-lite` | 1M / 64K | **Stable** since 7 May 2026 | Jan 2025 | $0.25 (text/image/video) / $0.50 (audio) | $1.50 |
+| `gemini-3.1-flash-lite-preview` | 1M / 64K | Preview → shutdown 25 May 2026 | Jan 2025 | $0.25 (text/image/video) / $0.50 (audio) | $1.50 |
 | `gemini-3-pro-image-preview` | 65K / 32K | Preview | Jan 2025 | Image pricing varies |
 | `gemini-3.1-flash-image-preview` | 128K / 32K | Preview | Jan 2025 | Image pricing varies |
 
@@ -59,13 +59,13 @@ All three support: **Batch API, Caching, Code Execution, File Search, Flex Infer
 
 For a stable baseline today, write against `gemini-2.5-flash`. For more capability with structured reasoning, switch to `gemini-2.5-pro`. Plan to migrate to Gemini 3 before October 2026.
 
-## Gemini 2.0 (deprecated — already off or going off)
+## Gemini 2.0 (deprecated)
 
-| Model | Shutdown date |
+| Model | Status |
 |---|---|
-| `gemini-2.0-flash` | **1 June 2026** (likely already offline by the time you read this) |
-| `gemini-2.0-flash-001` | 1 June 2026 |
-| `gemini-2.0-flash-lite` | 1 June 2026 |
+| `gemini-2.0-flash` | Image generation shut down; text/audio/video still appears on the pricing page as billable as of mid-2026. Verify before relying on it for new code — Google has been winding the 2.0 series down. |
+| `gemini-2.0-flash-001` | Same status as above |
+| `gemini-2.0-flash-lite` | Same status as above |
 
 If you have code on these, migrate now to `gemini-2.5-flash` (drop-in for most cases) or to `gemini-3.1-flash-lite` (stable Gemini 3, similar pricing, longer runway).
 
@@ -114,13 +114,17 @@ Not free (paid tier required):
 
 Higher tiers get higher RPM, TPM, and RPD across all models.
 
-## Search grounding pricing
+### 5. Search grounding pricing differs by generation
 
-Worth its own line because it's billed differently from tokens:
+Worth its own line because it's billed differently from tokens, and the rate **varies by model generation**:
 
+**Gemini 3 models:**
 - **5,000 grounded prompts per month free** (shared across Gemini 3 models)
 - After that: **$14 per 1,000 search queries**
-- Each prompt can trigger multiple search queries (the model decides how many to issue)
+
+**Gemini 2.5 models** (paid tier):
+- 1,500 requests/day free (shared between Flash and Flash-Lite RPD)
+- After that: **$35 per 1,000 grounded prompts** (different rate to Gemini 3)
 
 `groundingMetadata` on every response shows the queries used and the URLs cited.
 

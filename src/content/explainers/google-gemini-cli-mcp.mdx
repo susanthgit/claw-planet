@@ -17,7 +17,7 @@ product: "gemini-cli"
 
 ## What you need to know in one paragraph
 
-Gemini CLI is an **MCP client** — it can connect to MCP servers (filesystem, GitHub, Postgres, Figma, Playwright, your own) and call their tools as if they were native. It uses the official `@modelcontextprotocol/sdk` (currently version 1.23+) and supports three transports: Stdio (subprocess), SSE (HTTP streaming), and Streamable HTTP. There is **no `gemini mcp-server` mode** — Gemini CLI itself can't be exposed as an MCP server for other agents to call. Compare with Codex CLI, which has experimental server mode, and Claude Code, which is also client-only.
+Gemini CLI is an **MCP client** — it can connect to MCP servers (filesystem, GitHub, Postgres, Figma, Playwright, your own) and call their tools as if they were native. It uses the official `@modelcontextprotocol/sdk` (currently version 1.23+) and supports three transports: Stdio (subprocess), SSE (HTTP streaming), and Streamable HTTP. There is **no `gemini mcp-server` mode** — Gemini CLI itself can't be exposed as an MCP server for other agents to call. Compare with Codex CLI (whose MCP server mode is **unconfirmed** — see comparison table below) and Claude Code, which is also client-only.
 
 ## The three transports
 

@@ -34,7 +34,7 @@ The Gemini API is **Google's developer surface for the Gemini model family** —
 
 2. **Gemini 3 is the current generation in the docs** as of mid-2026 — every code example on `ai.google.dev` uses `gemini-3-flash-preview` as the example. Gemini 2.5 Pro / Flash / Flash-Lite are *still valid stable models*, but Google has scheduled their **shutdown for 16 October 2026**. For new code today: write against 2.5 Flash for "stable, free-tier, fast" or 2.5 Pro for "stable, paid-only, more capable"; treat Gemini 3 as the upgrade target.
 
-3. **There's a new Interactions API coming.** The quickstart says: *"new models beyond the core mainline family, along with new agentic capabilities and tools, will launch exclusively on the Interactions API."* The classic `generateContent` shape stays supported, but if you're building new agent tools today, look at Interactions API patterns first.
+3. **There's a new Interactions API coming.** Google says some new models and tool features will launch only on the Interactions API; the classic `generateContent` shape stays supported and remains the recommended path for production workloads (the Interactions API is in early experimental status as of mid-2026). If you're building a new agent today, it's worth reading the Interactions API patterns alongside `generateContent`.
 
 ## A real example
 
@@ -76,7 +76,7 @@ Three things that fall out of the design:
 
 - **The 1M context window is real.** All current top-tier models (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.1-pro-preview`) ship with 1,048,576-token input context. That's roughly 50,000 lines of code, eight medium novels, or 200 podcast transcripts in one prompt. Many-shot prompting (hundreds of examples), full-codebase Q&A, and multi-document reasoning all become viable without a separate retrieval layer.
 
-- **Search grounding has explicit pricing.** Unlike most LLM APIs where "search" is opaque, Gemini's Google Search grounding bills at **$14 per 1,000 search queries** (after **5,000 free prompts per month**, shared across Gemini 3 models). Every grounded answer can return `groundingMetadata` showing which queries were issued and which sources were cited. That's unusual transparency in this space.
+- **Search grounding has explicit pricing.** Unlike most LLM APIs where "search" is opaque, Gemini's Google Search grounding is billed per query — **$14 per 1,000 search queries on Gemini 3 models** (after 5,000 free prompts per month) and **$35 per 1,000 grounded prompts on Gemini 2.5 models** (after a daily RPD allowance). Every grounded answer can return `groundingMetadata` showing which queries were issued and which sources were cited.
 
 ## How it compares (quick)
 
