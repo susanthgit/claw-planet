@@ -2,7 +2,7 @@
 title: "Pitfalls and rough edges"
 section: "Codex CLI"
 sectionNumber: "CDX.5"
-description: "The 14 rough edges Codex CLI users hit in week one — sandbox failures inside Docker, WSL1 not supported, deprecated flags, untrusted project gotchas, fast-mode-vs-API-key, runaway costs, and corporate-network setup."
+description: "The rough edges Codex CLI users hit in week one — sandbox failures inside Docker, WSL1 not supported, deprecated flags, untrusted project gotchas, fast-mode-vs-API-key, runaway costs, and corporate-network setup."
 status: "published"
 verificationState: "sourced"
 verificationNote: "Compiled from developers.openai.com/codex/agent-approvals-security, /windows, /noninteractive, /config-basic, /pricing, and github.com/openai/codex issues as of 15 May 2026. Some items will change rapidly — Codex ships weekly."
@@ -125,7 +125,7 @@ The recommended Windows sandbox (`elevated` mode) needs admin permissions to cre
 
 Codex falls back to the `unelevated` sandbox (weaker isolation — restricted token + ACL-based filesystem + env-level network controls).
 
-**Watch for:** the fallback is silent. If you assumed elevated, you may be running with less isolation than expected. Check via `/sandbox status` in the TUI.
+**Watch for:** the fallback is silent. If you assumed elevated, you may be running with less isolation than expected. Check via `/status` in the TUI (shows workspace directories and active permissions).
 
 ## 10. Windows 10 is best-effort; older builds aren't recommended
 
@@ -178,7 +178,7 @@ When you delegate a long-running task to Codex Cloud (via `codex cloud` or the c
 
 1. **Check the changelog.** New issues often have a fix in the next release. [developers.openai.com/codex/changelog](https://developers.openai.com/codex/changelog) — Codex ships roughly weekly.
 2. **Check open GitHub issues.** [github.com/openai/codex/issues](https://github.com/openai/codex/issues) — search for keywords from your error.
-3. **Upgrade.** `npm install -g @openai/codex@latest` (recent versions also ship a `codex update` self-upgrade command — confirm with `codex --help`).
+3. **Upgrade.** `codex update` (built-in, stable since 0.128) or `npm install -g @openai/codex@latest`.
 4. **File an issue with a reproducer** if you can't find your problem.
 
 ## What to do next

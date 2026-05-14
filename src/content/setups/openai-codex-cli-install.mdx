@@ -2,7 +2,7 @@
 title: "Install Codex CLI"
 section: "Codex CLI"
 sectionNumber: "CDX.2"
-description: "Three install paths for Codex CLI — npm (cross-platform), Homebrew cask (macOS), or a direct binary download from GitHub Releases. Auth on first run, sanity-check, and where files land."
+description: "Four install paths for Codex CLI — npm (cross-platform), Homebrew cask (macOS), a direct binary download, or build from source. Auth on first run, sanity-check, and where files land."
 status: "published"
 verificationState: "sourced"
 verificationNote: "Commands come verbatim from github.com/openai/codex and developers.openai.com/codex/cli as of 15 May 2026. The Homebrew install is `brew install --cask codex` — note the `--cask` flag. Sush hasn't run this end-to-end yet."
@@ -53,9 +53,9 @@ npm install -g @openai/codex@0.130.0
 To upgrade later:
 
 ```bash
-npm install -g @openai/codex@latest
-# (recent versions also ship a `codex update` self-upgrade command —
-#  verify with `codex --help` on your install)
+codex update                          # built-in self-update (stable, since 0.128)
+# or:
+npm install -g @openai/codex@latest   # via npm
 ```
 
 ## Path 2 — Homebrew cask (macOS)

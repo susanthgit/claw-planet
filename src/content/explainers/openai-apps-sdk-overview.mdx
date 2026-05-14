@@ -125,9 +125,9 @@ The Apps SDK is OpenAI's bet on **conversations as the front end** — instead o
 | Code required | Yes | No | Optional | Yes |
 | Distribution | ChatGPT apps store + Codex plugins | GPT Store | Tied to a Custom GPT | Removed 2024 |
 | Auth | Yours (via MCP) | OpenAI handles | OAuth, API key | OAuth |
-| Tier required | Apps store review | Plus / Team / Enterprise | Plus / Team / Enterprise | n/a |
+| Tier required | Apps store review (no user tier) | ChatGPT (Free can use public GPTs; building requires Plus / Team / Enterprise) | ChatGPT (Free can use public GPTs that include Actions; building requires Plus / Team / Enterprise) | n/a |
 
-> **Sush's honest take (sourced, not yet tried):** the MCP standardisation is the most interesting bit. The same protocol that powers Claude's tool catalogue powers ChatGPT's apps. Cross-vendor portability isn't a marketing claim — it's literal. The trade-off: distribution still flows through OpenAI's review process.
+> **Sush's honest take (sourced, not yet tried):** the MCP standardisation is the most interesting bit. The same protocol that powers Claude's tool catalogue powers ChatGPT's apps. The cross-vendor portability is real at the protocol level — Apps SDK builds on the open MCP Apps standard — though today ChatGPT is the host with the most-complete bridge implementation, so portability claims should be tested case-by-case. The trade-off: distribution still flows through OpenAI's review process.
 
 ## What to do next
 

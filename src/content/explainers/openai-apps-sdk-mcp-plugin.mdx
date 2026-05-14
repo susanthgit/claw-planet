@@ -169,7 +169,7 @@ Sensitive details:
 ## Watch for
 
 - **The MCP Apps spec is young.** Specific JSON-RPC method names (`ui/notifications/tool-result`, `ui/message`, `ui/update-model-context`) are stable as of 15 May 2026, but check the current docs before depending on exact strings.
-- **`window.openai` is the ChatGPT extension surface.** Compatibility-layer for older Apps SDK APIs plus ChatGPT-only capabilities like `requestModal`, `requestCheckout`, `uploadFile`, `selectFiles`. Stick to the MCP Apps bridge for cross-host portability; use `window.openai` only for ChatGPT-only features.
+- **`window.openai` is the ChatGPT extension surface.** Compatibility-layer for older Apps SDK APIs plus ChatGPT-only capabilities like `requestModal`, `requestCheckout`, `uploadFile`, `selectFiles`, `getFileDownloadUrl`, `requestDisplayMode`, `requestClose`, `callTool`. Full reference at [developers.openai.com/apps-sdk/reference](https://developers.openai.com/apps-sdk/reference). Stick to the MCP Apps bridge for cross-host portability; use `window.openai` only for ChatGPT-only features.
 - **Examples repo is the fast path.** [`openai/openai-apps-sdk-examples`](https://github.com/openai/openai-apps-sdk-examples) has working apps. Read one before writing your own.
 
 ## What to do next

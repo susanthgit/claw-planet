@@ -174,7 +174,7 @@ Backend options:
 - `Session` — in-memory only. Good for tests.
 - Redis-backed — install with `pip install 'openai-agents[redis]'`.
 - SQLAlchemy-backed — works with Postgres, MySQL.
-- Implement `BaseSession` for anything else (S3, Firestore, etc.).
+- Implement `SessionABC` (the abstract base, exported from `agents` and from `agents.memory`) for anything else (S3, Firestore, etc.).
 
 ## Pattern 6 — MCP server as a tool
 

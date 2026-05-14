@@ -133,15 +133,23 @@ ChatGPT also reviews these lists during app submission. Domains you don't own �
 
 ## The `window.openai` extension surface
 
-For ChatGPT-only capabilities that aren't in the MCP Apps standard, the host injects a `window.openai` object. Current capabilities (verify against [the ChatGPT UI docs](https://developers.openai.com/apps-sdk/build/chatgpt-ui#understand-the-windowopenai-api) before depending):
+For ChatGPT-only capabilities that aren't in the MCP Apps standard, the host injects a `window.openai` object. The reference (linked below) lists 20+ capabilities; the most commonly-used groups are:
 
-| Capability | Purpose |
-|---|---|
-| `uploadFile` | Trigger a file upload from the widget |
-| `selectFiles` | Ask the user to pick files from their library |
-| `getFileDownloadUrl` | Get a temporary URL for a file the host holds |
-| `requestModal` | Open a host-owned modal (e.g. for a checkout flow) |
-| `requestCheckout` | Open Instant Checkout (when enabled for your app) |
+| Capability | Group | Purpose |
+|---|---|---|
+| `uploadFile` | File handling | Trigger a file upload from the widget |
+| `selectFiles` | File handling | Ask the user to pick files from their library |
+| `getFileDownloadUrl` | File handling | Get a temporary URL for a file the host holds |
+| `requestModal` | Host surfaces | Open a host-owned modal (e.g. for a checkout flow) |
+| `requestCheckout` | Host surfaces | Open Instant Checkout (when enabled for your app) |
+| `requestDisplayMode` | Host surfaces | Switch widget between inline / fullscreen / picture-in-picture |
+| `requestClose` | Host surfaces | Close the widget from inside the UI |
+| `callTool(name, args)` | Bridge alias | Compatibility wrapper over `tools/call` |
+| `sendFollowUpMessage(...)` | Bridge alias | Compatibility wrapper over `ui/message` |
+| `toolInput` · `toolOutput` | State | Direct accessors for the current tool I/O (aliases for `ui/notifications/tool-*`) |
+| `widgetState` · `setWidgetState(s)` | State | Persist widget state between renders |
+
+This is a representative subset — see the canonical reference at [developers.openai.com/apps-sdk/reference](https://developers.openai.com/apps-sdk/reference) for the complete list (`theme`, `locale`, `displayMode`, `openExternal`, `notifyIntrinsicHeight`, and others).
 
 Use `window.openai` when the capability is materially better in ChatGPT than going through the bridge. For everything else, stay on the standard bridge so your widget is portable to other MCP Apps hosts.
 

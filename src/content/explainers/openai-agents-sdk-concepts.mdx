@@ -18,7 +18,9 @@ vendor: "openai"
 product: "agents-sdk"
 ---
 
-## The nine primitives at a glance
+## The ten primitives at a glance
+
+The README counts nine because Handoffs and Agents-as-tools are listed as one combined item there; below they're split into two rows since they're used as distinct patterns. Total: ten:
 
 | # | Primitive | One-liner |
 |---|---|---|
@@ -31,8 +33,9 @@ product: "agents-sdk"
 | 7 | **Human in the loop** | Pause for human approval mid-run. |
 | 8 | **Sessions** | Automatic conversation memory. |
 | 9 | **Tracing** | Built-in spans for every run, tool call, handoff. |
+| 10 | **Realtime Agents** | Voice agents using `gpt-realtime-2` with full agent features. |
 
-The rest of this page walks through each with the minimum code to feel it.
+The rest of this page walks through each with the minimum code to feel it. (Realtime Agents is voice-specific and covered separately in the [realtime quickstart](https://openai.github.io/openai-agents-python/realtime/quickstart/) — this page focuses on the text-shaped primitives.)
 
 ## 1. Agent
 
@@ -151,7 +154,7 @@ Three flavours:
 
 - **MCP tools** — any [Model Context Protocol](https://modelcontextprotocol.io) server slots in directly. Filesystem, git, Slack, database — same wiring as Claude or other MCP-aware clients.
 
-- **OpenAI-hosted tools** — web search, file search, code interpreter, computer use. These run on OpenAI's side and don't need your infrastructure.
+- **OpenAI-hosted tools** — web search, file search, code interpreter, image generation. These run on OpenAI's side and don't need your infrastructure. (Note: `ComputerTool` and `ApplyPatchTool` are *local-runtime* tools — they're in the SDK, but they run in **your** environment with a `Computer` / `AsyncComputer` implementation you provide. See the [tools docs](https://openai.github.io/openai-agents-python/tools/) for the full split.)
 
 Function tools are typed (Python type hints become the JSON schema the model sees). The docstring becomes the description.
 
@@ -176,7 +179,21 @@ When `tripwire_triggered=True`, the SDK raises an exception that ends the run cl
 
 ## 7. Human in the loop
 
-The SDK ships built-in support for pausing a run, asking a human, and resuming. The full pattern is in the [docs](https://openai.github.io/openai-agents-python/human_in_the_loop/); the key shape is: a tool raises a pause, your app surfaces the question, you call `Runner.resume` with the human's answer.
+The SDK ships built-in support for pausing a run, asking a human, and resuming. The full pattern is in the [docs](https://openai.github.io/openai-agents-python/human_in_the_loop/); the shape:
+
+```python
+result = await Runner.run(agent, "Delete the temp files.")
+
+if result.interruptions:
+    state = result.to_state()                # capture resumable snapshot
+    for interruption in result.interruptions:
+        # Surface the question to a human; on their answer:
+        state.approve(interruption)          # or state.reject(interruption)
+    # Resume by passing the state back in (not a new string)
+    result = await Runner.run(agent, state)
+```
+
+The key idea: a run that needs approval returns with `result.interruptions` populated; you turn that into a `state` snapshot, mutate it (approve / reject), and feed it back to `Runner.run`.
 
 ## 8. Sessions
 

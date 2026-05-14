@@ -28,7 +28,7 @@ Three things to know at the start:
 
 ## What you get
 
-Per the official docs, the SDK ships nine core concepts (Handoffs and Agents-as-tools are listed as a single combined concept in the README, then expanded into a pair when you use them):
+Per the official README, the SDK organises its capabilities into ten concepts (the README counts nine because Handoffs and Agents-as-tools are listed as one combined item; we split them in the table below because they're used as two distinct patterns):
 
 | Concept | What it does |
 |---|---|
@@ -36,7 +36,7 @@ Per the official docs, the SDK ships nine core concepts (Handoffs and Agents-as-
 | **Sandbox Agents** | Agents preconfigured with a container/workspace — useful for long-horizon tasks that need a filesystem. New in v0.14.0. |
 | **Handoffs** | One agent transfers control to another (specialist takes over the rest of the turn). |
 | **Agents as tools** | Manager-pattern alternative — orchestrator stays in control and calls specialist agents as tools. |
-| **Tools** | Functions, MCP servers, or OpenAI-hosted tools (web search, code interpreter, computer use). |
+| **Tools** | Functions, MCP servers, or OpenAI-hosted tools (web search, file search, code interpreter, image generation). Plus local-runtime tools like `ComputerTool` that ship in the SDK but run on your side. |
 | **Guardrails** | Configurable safety checks for input and output validation. |
 | **Human in the loop** | Built-in pause-for-approval pattern across agent runs. |
 | **Sessions** | Automatic conversation history management across runs. |

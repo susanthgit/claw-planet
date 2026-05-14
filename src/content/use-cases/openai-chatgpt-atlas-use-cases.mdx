@@ -21,7 +21,7 @@ product: "chatgpt-atlas"
 
 You're reading a long technical article. Open the sidebar, ask "What's the catch this author is glossing over?" The assistant has the full page content; you don't have to copy/paste anything in.
 
-Same pattern for: comparing two products on different tabs, finding the recommendation in a long review, sanity-checking a claim.
+Same pattern for: comparing two products by switching between tabs one at a time (Atlas reads the current page, not multiple tabs at once — see use case 3 below for the multi-tab caveat), finding the recommendation in a long review, sanity-checking a claim.
 
 **Why this works:** every AI chat is constrained by what you type in. Atlas removes that constraint for content on the page — the assistant sees what you see. Open question: how much you trust OpenAI with that visibility, and across which tabs.
 
@@ -35,11 +35,11 @@ Cursor chat is the in-place rewrite feature [The Verge called out in its launch 
 
 ### 3. Asking about pages you visited earlier in the session
 
-Atlas's **browser memories** feature stores summarised facts from pages you've already visited (on OpenAI's servers, up to 30 days; cross-session and cross-device — not tab-scoped). That means you can ask the assistant about something you read on a different tab earlier in the day, even after you've closed it.
+Atlas's **browser memories** feature stores summarised facts from pages you've already visited on OpenAI's servers. Per [OpenAI's 2026 data-controls documentation](https://help.openai.com/en/articles/12574142): raw page content is deleted immediately after summarisation; privacy-filtered summaries are deleted within **7 days**. Memory is cross-session and cross-device — not tab-scoped. That means you can ask the assistant about something you read on a different tab earlier in the day, even after you've closed it.
 
 Note: Atlas reads **the current page** in real time — it doesn't synthesise across multiple open tabs simultaneously. (Perplexity Comet has a documented cross-tab scanning feature; Atlas's published behaviour is single-page-at-a-time with memory of past visits.)
 
-**Watch for:** the memory-based privacy concerns (covered in [§ATLAS.1](/openai/chatgpt-atlas/overview/)). Memory can be cleared or paused in Settings, but stored summaries persist on OpenAI's side for up to 30 days.
+**Watch for:** the memory-based privacy concerns (covered in [§ATLAS.1](/openai/chatgpt-atlas/overview/)). Memory can be cleared or paused in Settings, but stored summaries persist on OpenAI's side for up to 7 days per the current data-controls documentation.
 
 ### 4. Agent mode — repetitive form filling and multi-step web tasks
 
@@ -71,7 +71,7 @@ Useful for: long-form reading, transcripts, dense documentation. The summary is 
 ## A few honest things
 
 - **It's a 2025-launched product.** Bugs, missing features, churn. The browser is real; the polish is uneven.
-- **The free tier is genuinely useful.** Sidebar assistant + cursor chat + summaries cover most casual-use cases without paying anything beyond the time-to-install.
+- **The free tier covers a lot.** Sidebar assistant + cursor chat + summaries are all available without paying anything beyond the time-to-install.
 - **The paid features matter.** Agent mode is where Atlas earns a place in your workflow vs. a Chrome-with-an-extension setup. If you don't have a Plus subscription, Atlas is "Chrome with an OK sidebar."
 - **The superapp merger is coming.** OpenAI's March 2026 announcement that Atlas, ChatGPT desktop, and Codex will merge into one application means the standalone Atlas product is transitional. Don't build deep workflows around Atlas-specific surfaces yet.
 

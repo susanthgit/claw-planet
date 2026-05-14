@@ -168,9 +168,9 @@ codex --profile deep-review
 | Quick "what does this do?" question | `gpt-5.4-mini` | low |
 | Daily coding (writing, editing, debugging) | `gpt-5.5` | medium |
 | Multi-file refactor across the codebase | `gpt-5.5` | high |
-| Deep architectural / cross-cutting design | `gpt-5.5` | extra-high |
+| Deep architectural / cross-cutting design | `gpt-5.5` | xhigh |
 | Sub-agents in a parallel workflow | `gpt-5.4-mini` | low/medium |
-| Code review (interactive `/review`) | `gpt-5.3-codex` | (locked) |
+| Code review (interactive `/review`) | Current session model (or `review_model` if pinned) | uses session reasoning setting |
 | Cloud / GitHub PR review | `gpt-5.3-codex` | (locked) |
 | Real-time iteration / pair programming | `gpt-5.3-codex-spark` (if Pro) | (Spark is text-only) |
 | Quick CI checks | `gpt-5.4-mini` | low |

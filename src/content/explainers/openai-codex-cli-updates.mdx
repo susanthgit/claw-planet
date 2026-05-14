@@ -48,7 +48,7 @@ product: "codex-cli"
 ### 0.128.0 — 30 April 2026
 
 - **Persisted `/goal` workflows** — `create`, `pause`, `resume`, `clear` for long-running goals.
-- **`codex update` command** — recent Codex versions ship a built-in self-update command alternative to `npm i -g @openai/codex@latest`. Confirm with `codex --help` on your install before depending on it.
+- **`codex update` command** — Codex ships a built-in `codex update` self-update subcommand (alternative to `npm i -g @openai/codex@latest`). It's stable as of 0.128 per the CLI reference.
 - **Configurable TUI keymaps** — remap the terminal UI shortcuts.
 - **Expanded permission profiles** with built-in defaults:
   - `:read-only` — pure observation, no writes
@@ -108,7 +108,7 @@ npm install -g @openai/codex@0.131.0-alpha.16
 | `codex mcp-server` (Codex as MCP server) | Experimental |
 | Profiles | Experimental |
 | Subagents | Stabilising |
-| `codex update` | Available in recent versions (verify with `codex --help`) |
+| `codex update` | Stable (added in 0.128 per the CLI reference) |
 | `/goal` persistent workflows | Stabilising (added in 0.128) |
 | `/vim` modal editing | Stable (added in 0.129) |
 
