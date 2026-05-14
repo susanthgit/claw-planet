@@ -1,0 +1,91 @@
+---
+title: "Atlas use cases — what it's good for"
+section: "ChatGPT Atlas"
+sectionNumber: "ATLAS.2"
+description: "Concrete scenarios where ChatGPT Atlas earns its keep — research with the page in context, in-place text rewriting, agent-mode for repetitive form filling. Plus the use cases where you'd still use Chrome or Safari."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from openai.com/index/introducing-chatgpt-atlas and Wikipedia + press coverage as of 15 May 2026. Sush hasn't run Atlas yet — these are use cases the official launch material and reviews call out, not Sush's personal experience."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://openai.com/index/introducing-chatgpt-atlas/"
+  - "https://chatgpt.com/atlas"
+  - "https://en.wikipedia.org/wiki/ChatGPT_Atlas"
+vendor: "openai"
+product: "chatgpt-atlas"
+---
+
+## Five use cases the launch material emphasised
+
+### 1. Research with the page already in context
+
+You're reading a long technical article. Open the sidebar, ask "What's the catch this author is glossing over?" The assistant has the full page content; you don't have to copy/paste anything in.
+
+Same pattern for: comparing two products on different tabs, finding the recommendation in a long review, sanity-checking a claim.
+
+**Why this works:** every AI chat is constrained by what you type in. Atlas removes that constraint for content on the page — the assistant sees what you see. Open question: how much you trust OpenAI with that visibility, and across which tabs.
+
+### 2. Cursor chat — rewrite selected text in place
+
+Highlight a sentence in a Google Doc, a Gmail draft, or a content-editable web textarea. Ask ChatGPT to make it shorter / clearer / more formal / less defensive. Edit lands in place.
+
+Cursor chat is the in-place rewrite feature [The Verge called out in its launch coverage](https://www.theverge.com) as one of the most useful daily features.
+
+**Watch for:** corporate content systems (some Microsoft 365 web surfaces, internal CMSes) can have CSPs that block inline content-script injection in general. No Atlas-specific source documents this limitation, but it's a plausible class of issue worth testing before relying on cursor chat for work content. Free tier — but cross-check before assuming it works on your work apps.
+
+### 3. Asking about pages you visited earlier in the session
+
+Atlas's **browser memories** feature stores summarised facts from pages you've already visited (on OpenAI's servers, up to 30 days; cross-session and cross-device — not tab-scoped). That means you can ask the assistant about something you read on a different tab earlier in the day, even after you've closed it.
+
+Note: Atlas reads **the current page** in real time — it doesn't synthesise across multiple open tabs simultaneously. (Perplexity Comet has a documented cross-tab scanning feature; Atlas's published behaviour is single-page-at-a-time with memory of past visits.)
+
+**Watch for:** the memory-based privacy concerns (covered in [§ATLAS.1](/openai/chatgpt-atlas/overview/)). Memory can be cleared or paused in Settings, but stored summaries persist on OpenAI's side for up to 30 days.
+
+### 4. Agent mode — repetitive form filling and multi-step web tasks
+
+Paid feature (Plus / Pro / Business). The model takes control of the browser to perform tasks: book a flight, fill a multi-page form, navigate a site to extract a specific piece of information.
+
+Worth using for: error-prone repetitive web work where the steps are well-defined but tedious (timesheet submission, expense forms, data entry across sites).
+
+Not yet ready for: anything where a wrong click costs money or has security implications (banking, customer record edits, anything CRUD on production systems). The model is good but not infallible.
+
+> **Watch for:** the agent acts under your logged-in identity. Prompt injection from a malicious page can hijack what the agent does next. Treat agent mode like a moderately-trusted intern — supervise tasks involving credentials, money, or irreversible actions.
+
+### 5. Summaries that respect what's actually on the page
+
+Standard chatbot summaries can hallucinate facts that weren't in the source. Atlas's summaries are constrained to the page content the assistant actually saw. Still subject to interpretation errors, but a different failure mode.
+
+Useful for: long-form reading, transcripts, dense documentation. The summary is a starting point; click through to verify anything that matters.
+
+## Where you'd still use another browser
+
+| Scenario | Why |
+|---|---|
+| Privacy-sensitive browsing | Atlas sends page content to OpenAI for the assistant. Use a privacy-focused browser (Brave, Firefox-with-restrictive-extensions, Tor) for anything you wouldn't email to an AI provider. |
+| Sites that block AI scraping | Some sites (publishers, content platforms) have CSPs or terms that conflict with AI-assistant overlays. Browser warnings or feature gating may apply. |
+| Cross-device sync | Atlas's profile sync may not match Chrome/Safari's at the moment. If you live across 3+ machines, verify sync coverage. |
+| Heavy extension users | Chromium extension compatibility is generally good but corner cases exist. Test your critical extensions before switching daily-driver. |
+| Enterprise / SSO + IT policy | Corporate environments often have specific browser policies. Atlas may not pass the IT review yet. |
+| You don't want the AI overhead | If you just need a fast, familiar browser with no AI features, keep your current daily driver — Atlas's value is the AI features. |
+
+## A few honest things
+
+- **It's a 2025-launched product.** Bugs, missing features, churn. The browser is real; the polish is uneven.
+- **The free tier is genuinely useful.** Sidebar assistant + cursor chat + summaries cover most casual-use cases without paying anything beyond the time-to-install.
+- **The paid features matter.** Agent mode is where Atlas earns a place in your workflow vs. a Chrome-with-an-extension setup. If you don't have a Plus subscription, Atlas is "Chrome with an OK sidebar."
+- **The superapp merger is coming.** OpenAI's March 2026 announcement that Atlas, ChatGPT desktop, and Codex will merge into one application means the standalone Atlas product is transitional. Don't build deep workflows around Atlas-specific surfaces yet.
+
+## What to try first
+
+If you install Atlas, a quick first test:
+
+1. Open the sidebar on a Wikipedia article. Ask three questions about the page.
+2. Try cursor chat in a Google Doc — rewrite a paragraph.
+3. (If on Plus/Pro/Business) Try agent mode on a low-stakes form fill — something with no money or identity tied to the result.
+
+This is a short calibration session — not a deep evaluation. You'll know quickly whether it's worth a real switch.
+
+## What to do next
+
+- [§ATLAS.1 Atlas overview](/openai/chatgpt-atlas/overview/) — the orientation page
+- [chatgpt.com/atlas](https://chatgpt.com/atlas) — official download + announcement

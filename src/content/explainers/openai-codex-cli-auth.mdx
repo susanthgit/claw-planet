@@ -1,0 +1,217 @@
+---
+title: "Auth + API key — sign-in paths for Codex CLI"
+section: "Codex CLI"
+sectionNumber: "CDX.3"
+description: "Four ways to authenticate Codex CLI — ChatGPT OAuth (browser), device code (headless), API key, and Azure OpenAI / Amazon Bedrock providers. Plus credential storage modes, corporate CA setup, and what differs between ChatGPT-plan and API-key sign-in."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/codex/auth and developers.openai.com/codex/config-advanced as of 15 May 2026. Sush hasn't tested every path — the OAuth and API key paths are the well-trodden ones; device code and Bedrock are less commonly used."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/codex/auth"
+  - "https://developers.openai.com/codex/config-advanced"
+  - "https://developers.openai.com/codex/noninteractive"
+  - "https://developers.openai.com/codex/pricing"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## The four sign-in paths
+
+| Path | Command | Use when |
+|---|---|---|
+| **ChatGPT OAuth** (default) | `codex login` | You have a ChatGPT subscription (Plus / Pro / Business / Edu / Enterprise) and a browser. |
+| **Device code** | `codex login --device-auth` | Headless / SSH / remote dev environment without a browser. |
+| **API key** | `codex login --api-key sk-...` | Automation, CI/CD, or you prefer pay-per-token over a subscription. |
+| **Provider (Azure / Bedrock / OSS)** | Config-based | Enterprise / governance reasons require a specific backend. |
+
+## Path 1 — ChatGPT OAuth (default)
+
+```bash
+codex login
+```
+
+Opens a browser tab. Sign in to your ChatGPT account. The browser returns an access token to the CLI. Tokens refresh automatically while the CLI is in active use.
+
+This is the path that unlocks:
+
+- **Cloud tasks** — GitHub PR review, scheduled jobs, Slack integration. API-key users **cannot** use these.
+- **Fast mode** — speeds up responses (OpenAI's [speed docs](https://developers.openai.com/codex/speed) put it at roughly 1.5×) at higher credit cost. API-key users can't use this either.
+- **Day-one access to latest models** — new models often land for ChatGPT-subscription users first.
+
+If you have multiple ChatGPT accounts: open `chatgpt.com` first, make sure the right account is signed in, then run `codex login`. Otherwise the OAuth flow picks the wrong account.
+
+## Path 2 — Device code (headless)
+
+For remote dev environments / SSH sessions where you can't open a browser:
+
+```bash
+codex login --device-auth
+```
+
+You'll see a code and a URL. Open the URL on a machine with a browser, enter the code, approve. The CLI picks up the token automatically.
+
+**Prerequisite:** enable device-code login in your ChatGPT security settings first. If device code isn't enabled, Codex falls back to the standard browser-based login flow rather than failing — but you may want device-code specifically (e.g. on a headless SSH session) where the fallback won't help you.
+
+## Path 3 — API key
+
+For automation, CI, scripted use, or pay-per-token billing:
+
+```bash
+codex login --api-key sk-...
+```
+
+This stores the API key as your auth (subject to the credential storage mode — see below). Run `codex` after this and it uses the key.
+
+### In `codex exec` only — the `CODEX_API_KEY` env var
+
+```bash
+CODEX_API_KEY=sk-... codex exec --json "triage open bug reports"
+```
+
+`CODEX_API_KEY` works **only for `codex exec`**. Interactive `codex` sessions ignore it — you have to `codex login --api-key` first for those.
+
+For GitHub Actions / CI, the recommended pattern is:
+
+```yaml
+- name: Run Codex
+  env:
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  run: |
+    codex login --api-key "$OPENAI_API_KEY"
+    codex exec "review the diff between $BASE_SHA and HEAD"
+```
+
+(`OPENAI_API_KEY` as the secret name is conventional; the actual env var the CLI reads is `CODEX_API_KEY` in exec mode, or you pass through `codex login --api-key`.)
+
+### API-key path — what you give up
+
+| Feature | API key | ChatGPT subscription |
+|---|---|---|
+| Cloud tasks (GitHub PR review, Slack, scheduled jobs) | ❌ | ✅ |
+| Fast mode | ❌ | ✅ |
+| Day-one access to newest models | ❌ (often delayed) | ✅ |
+| Pay-per-token | ✅ | (subscription, plus optional credits) |
+| Predictable cost ceiling | ✅ (you control billing) | Subscription cap |
+| CI/CD-friendly | ✅ | Possible but more friction |
+
+## Path 4 — Provider backends (Azure / Bedrock / OSS)
+
+For enterprise governance or specific compliance reasons, you can point Codex at a non-OpenAI backend via `config.toml`.
+
+### Azure OpenAI
+
+```toml
+# ~/.codex/config.toml
+
+[model_providers.azure]
+name = "Azure"
+base_url = "https://YOUR_PROJECT_NAME.openai.azure.com/openai"
+env_key = "AZURE_OPENAI_API_KEY"
+query_params = { api-version = "2025-04-01-preview" }
+wire_api = "responses"
+request_max_retries = 4
+stream_max_retries = 10
+stream_idle_timeout_ms = 300000
+
+model_provider = "azure"
+model = "gpt-5.5"
+```
+
+Set `AZURE_OPENAI_API_KEY` in your shell env. Codex picks it up via `env_key`.
+
+### Amazon Bedrock
+
+```toml
+model_provider = "amazon-bedrock"
+model = "<bedrock-model-id>"
+
+[model_providers.amazon-bedrock.aws]
+profile = "default"
+region = "eu-central-1"
+```
+
+As of Codex 0.130.0, Bedrock auth can use AWS console-login credentials from AWS login profiles (not just static keys).
+
+### OSS providers (Ollama, LM Studio)
+
+```bash
+codex --oss   # use the configured OSS provider
+```
+
+Or via config:
+
+```toml
+oss_provider = "ollama"
+```
+
+Useful for fully local model development — bear in mind that local models will be much weaker than `gpt-5.5` at agentic coding tasks. Good for offline experimentation; not for production work.
+
+## Credential storage
+
+Codex stores credentials in one of three modes, controlled by `cli_auth_credentials_store` in `config.toml`:
+
+```toml
+# ~/.codex/config.toml
+cli_auth_credentials_store = "keyring"
+# file | keyring | auto
+```
+
+| Mode | Where credentials live |
+|---|---|
+| `file` (default on Linux) | `~/.codex/auth.json` — a plaintext-on-disk token file |
+| `keyring` | OS credential store — macOS Keychain, Windows Credential Manager, Linux Secret Service |
+| `auto` | OS keyring if available, fallback to `file` |
+
+For shared / multi-user machines, `keyring` is safer. For containers / CI, `file` is simpler.
+
+## MFA
+
+OpenAI requires MFA for email + password ChatGPT logins before granting access to Codex Cloud features. **Strongly recommended for any account** — Codex has direct access to your codebase, so a compromised account is a real risk.
+
+## Corporate networks — TLS proxy / private CA
+
+If your network does TLS interception with a corporate CA, you'll get cert errors at login. Set the CA bundle **before** `codex login`:
+
+```bash
+export CODEX_CA_CERTIFICATE=/path/to/corporate-root-ca.pem
+codex login
+```
+
+Or use the fallback `SSL_CERT_FILE` env var if `CODEX_CA_CERTIFICATE` is unset.
+
+## Environment variable reference
+
+| Variable | Purpose |
+|---|---|
+| `CODEX_API_KEY` | API key for `codex exec` runs only |
+| `CODEX_CA_CERTIFICATE` | PEM bundle for TLS proxy / corporate CA |
+| `SSL_CERT_FILE` | Fallback CA bundle |
+| `CODEX_HOME` | Override default `~/.codex` directory |
+| `AZURE_OPENAI_API_KEY` | When using the Azure provider (or whatever `env_key` you set) |
+| `RUST_LOG` | Logging verbosity (Rust standard) |
+
+## Logging out / switching accounts
+
+```bash
+codex logout
+codex login
+```
+
+This clears the cached credentials and forces a fresh sign-in. Useful when switching between a personal and a work ChatGPT account.
+
+## When it doesn't work
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Browser opens but Codex still asks to log in | Token didn't reach the CLI | Re-run `codex login`; check browser blocked localhost callback |
+| `Error: API key invalid` | Key expired, deleted, or scoped to wrong project | Regenerate at [platform.openai.com/api-keys](https://platform.openai.com/api-keys); update via `codex login --api-key` |
+| Sign-in says "Cloud tasks not available" | You're API-key auth; cloud tasks need ChatGPT subscription | Switch to OAuth: `codex logout` then `codex login` |
+| TLS / SSL cert errors | Corporate CA not loaded | `export CODEX_CA_CERTIFICATE=/path/to/ca.pem` and retry |
+| Azure 401 errors | `AZURE_OPENAI_API_KEY` not set or wrong | Verify the env var matches the `env_key` in your config |
+
+## What to do next
+
+- [§CDX.2 Install](/openai/codex-cli/install/) — if you skipped install setup
+- [§CDX.7 Models](/openai/codex-cli/models/) — which model to use after sign-in
+- [§CDX.6 MCP integration](/openai/codex-cli/mcp/) — wiring in MCP tools

@@ -1,0 +1,274 @@
+---
+/**
+ * /openai/[product]/ — product hub.
+ *
+ * Lists every entry tagged vendor:"openai" + product:<product> across the
+ * shared content collections. The 5 products are hard-coded so getStaticPaths
+ * always renders the 5 hubs even before all entries land.
+ *
+ * Entry filenames follow `openai-<product>-<slug>.mdx`; the short slug is
+ * extracted by stripping that prefix.
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// NOTE: Astro 5 runs getStaticPaths in a separate evaluation scope, so it
+// can't reach module-level const declarations from outside the function.
+// Inline the product key list.
+export async function getStaticPaths() {
+  const PRODUCT_KEYS = ['codex-cli', 'agents-sdk', 'apps-sdk', 'chatgpt-atlas', 'custom-gpts'];
+  return PRODUCT_KEYS.map(product => ({ params: { product } }));
+}
+
+const PRODUCT_META: Record<string, { title: string; code: string; lede: string; description: string }> = {
+  'codex-cli': {
+    title: 'Codex CLI',
+    code: 'CDX',
+    lede: `Codex CLI is OpenAI's terminal coding agent — open-source, Rust-based, runs locally on macOS, Linux, and Windows. It reads your repo, edits files, runs commands, and calls OpenAI's reasoning models (gpt-5-codex by default) with tool use. <strong>It's the closest analogue to Claude Code from the OpenAI side.</strong> Install via Homebrew, npm, or a direct binary download. MCP integration shipped in 2025. Every page below is <strong>sourced</strong> from <a href="https://github.com/openai/codex">github.com/openai/codex</a> and <a href="https://developers.openai.com/codex/cli/">developers.openai.com/codex/cli</a>. Sush hasn't standalone-installed it yet.`,
+    description: 'OpenAI Codex CLI — install, auth, MCP integration, use cases, pitfalls, models, updates. Sourced from github.com/openai/codex.',
+  },
+  'agents-sdk': {
+    title: 'Agents SDK',
+    code: 'ASDK',
+    lede: `The OpenAI Agents SDK is a lightweight framework for building multi-agent apps — Python and TypeScript flavours, both open-source on GitHub. Three primitives carry most of the weight: <strong>Agents</strong> (an LLM with instructions + tools), <strong>Handoffs</strong> (one agent transfers control to another), and <strong>Tools</strong> (typed functions the agent can call). Plus built-in <strong>tracing</strong> that visualises every step a run takes. The SDK replaces the older "Swarm" experiment and the higher-level pieces of the Assistants API (which OpenAI is sunsetting). All entries below are <strong>sourced</strong> from <a href="https://github.com/openai/openai-agents-python">github.com/openai/openai-agents-python</a> and <a href="https://github.com/openai/openai-agents-js">openai-agents-js</a>.`,
+    description: 'OpenAI Agents SDK — overview, core concepts, first agent walkthrough, common patterns, tracing. Sourced from the SDK repos and platform docs.',
+  },
+  'apps-sdk': {
+    title: 'Apps SDK',
+    code: 'APPS',
+    lede: `The Apps SDK lets you build <strong>apps inside ChatGPT</strong> — full-stack experiences (auth, custom UI, network access) that users interact with through a conversation. Under the hood: every app is an MCP server with extra metadata telling ChatGPT how to render rich UI. The widget surface uses a content type called <code>text/html+skybridge</code> — ChatGPT renders the HTML in a sandboxed iframe alongside the conversation. The Apps SDK is the modern replacement for the older ChatGPT Plugins system (deprecated 2024) and a different surface from Custom GPTs. Sourced from <a href="https://developers.openai.com/apps-sdk/">developers.openai.com/apps-sdk</a>.`,
+    description: 'OpenAI Apps SDK — what it is, MCP plugin for ChatGPT, widget rendering with text/html+skybridge. Sourced from developers.openai.com/apps-sdk.',
+  },
+  'chatgpt-atlas': {
+    title: 'ChatGPT Atlas',
+    code: 'ATLAS',
+    lede: `ChatGPT Atlas is OpenAI's web browser — built around an embedded ChatGPT that reads the page you're looking at. It launched 21 October 2025 (macOS first; Windows + iOS + Android in beta). Tab-level memory means ChatGPT remembers things it learned earlier in the session. <strong>Agent mode</strong> (Plus/Pro/Business) lets ChatGPT take actions in the browser on your behalf — clicking, filling forms, navigating. Honest take: it's interesting, the privacy story needs careful reading, and it's clearly an early product. Sourced from <a href="https://chatgpt.com/atlas">chatgpt.com/atlas</a> and <a href="https://openai.com/index/introducing-chatgpt-atlas/">openai.com/index/introducing-chatgpt-atlas</a>.`,
+    description: 'ChatGPT Atlas — overview and use cases. OpenAI\'s ChatGPT-embedded browser. Sourced from openai.com.',
+  },
+  'custom-gpts': {
+    title: 'Custom GPTs',
+    code: 'GPT',
+    lede: `Custom GPTs are no-code chat assistants you build inside ChatGPT — instructions, knowledge files, conversation starters, optional Actions (REST APIs the GPT can call). They live behind <strong>chat.openai.com/gpts</strong>; you build them in a visual editor at <strong>chatgpt.com/gpts/editor</strong>. The GPT Store is the marketplace; usage requires a paid ChatGPT account. <strong>Different from Apps SDK</strong> — Custom GPTs are no-code and ChatGPT-only; Apps SDK is code-first and ships as MCP servers. Sourced from <a href="https://help.openai.com/en/articles/8554407-gpts">help.openai.com</a>.`,
+    description: 'Custom GPTs — no-code chat assistants you build inside ChatGPT. Sourced from help.openai.com.',
+  },
+};
+
+const { product } = Astro.params;
+const meta = PRODUCT_META[product as string];
+
+const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+type Entry = { num: string; title: string; href: string; description: string; state: string; date: string };
+const entries: Entry[] = [];
+for (const col of collections) {
+  const all = await getCollection(col as any);
+  for (const e of all as any[]) {
+    if (e.data.vendor !== 'openai') continue;
+    if (e.data.product !== product) continue;
+    if (e.data.status !== 'published') continue;
+    const fullSlug = e.id.replace(/\.mdx?$/, '');
+    const shortSlug = fullSlug.replace(new RegExp(`^openai-${product}-`), '');
+    entries.push({
+      num: e.data.sectionNumber,
+      title: e.data.title,
+      href: `/openai/${product}/${shortSlug}/`,
+      description: e.data.description,
+      state: e.data.verificationState,
+      date: e.data.lastReviewedAt,
+    });
+  }
+}
+entries.sort((a, b) => a.num.localeCompare(b.num));
+
+const sourcedCount = entries.filter(e => e.state === 'sourced').length;
+const triedCount = entries.filter(e => e.state === 'tried' || e.state === 'verified').length;
+const plannedCount = entries.filter(e => e.state === 'planned' || e.state === 'disputed').length;
+---
+
+<BaseLayout
+  title={`${meta.title} · OpenAI — Claw`}
+  description={meta.description}
+  ogImage="/og/home.png"
+>
+  <section class="product-hub">
+    <div class="crumb">
+      <a href="/openai/">OpenAI</a>
+      <span>/</span>
+      <span class="num">{meta.code}</span>
+    </div>
+
+    <h1>{meta.title}</h1>
+    <p class="lede" set:html={meta.lede}></p>
+
+    <div class="counts">
+      <span class="count-pill count-sourced"><strong>{sourcedCount}</strong> sourced</span>
+      {triedCount > 0 && <span class="count-pill count-tried"><strong>{triedCount}</strong> tried</span>}
+      {plannedCount > 0 && <span class="count-pill count-planned"><strong>{plannedCount}</strong> planned</span>}
+    </div>
+
+    {entries.length === 0 ? (
+      <p class="empty">No entries yet. Batch B is mid-build — check back shortly.</p>
+    ) : (
+      <ul class="entries">
+        {entries.map(e => (
+          <li class="entry-row">
+            <a href={e.href}>
+              <div class="entry-line">
+                <span class="entry-num">{e.num}</span>
+                <span class="entry-title">{e.title}</span>
+                <span class={`entry-state state-${e.state}`}>{e.state}</span>
+              </div>
+              <p class="entry-desc">{e.description}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .product-hub { max-width: 760px; }
+
+  .crumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    letter-spacing: var(--ls-wide);
+  }
+  .crumb a { color: var(--ink-mute); text-decoration: none; }
+  .crumb a:hover { color: var(--claw); }
+  .crumb .num { color: var(--claw); font-weight: 600; }
+
+  .product-hub h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    max-width: 680px;
+    margin-bottom: 20px;
+  }
+  .lede :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .lede :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
+  .lede :global(strong) { color: var(--ink); font-weight: 700; }
+  .lede :global(code) {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  .counts {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .count-pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-wide);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    background: var(--canvas);
+    text-transform: uppercase;
+  }
+  .count-pill strong { font-weight: 700; }
+  .count-sourced { color: var(--amber); }
+  .count-tried { color: var(--olive); }
+  .count-planned { color: var(--claw); }
+
+  .empty {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    color: var(--ink-mid);
+    font-size: 14px;
+  }
+
+  .entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .entry-row {
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .entry-row a {
+    display: block;
+    padding: 16px 0;
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--dur-base) var(--ease);
+  }
+  .entry-row a:hover {
+    background: var(--paper-warm);
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .entry-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .entry-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    letter-spacing: var(--ls-wide);
+  }
+  .entry-title {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    flex: 1;
+  }
+  .entry-state {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: 600;
+    background: var(--canvas);
+  }
+  .state-sourced { color: var(--amber); }
+  .state-tried, .state-verified { color: var(--olive); }
+  .state-planned, .state-disputed { color: var(--claw); }
+  .entry-desc {
+    font-size: 13.5px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+    margin: 6px 0 0;
+  }
+
+  @media (max-width: 640px) {
+    .product-hub h1 { font-size: 26px; }
+    .lede { font-size: 15px; }
+  }
+</style>

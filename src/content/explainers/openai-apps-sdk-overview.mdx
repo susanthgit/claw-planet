@@ -1,0 +1,136 @@
+---
+title: "OpenAI Apps SDK, plainly"
+section: "Apps SDK"
+sectionNumber: "APPS.1"
+description: "Five-minute orientation to the OpenAI Apps SDK — what it is (a framework for building apps that run inside ChatGPT with rich UI), what it's not (Custom GPTs, GPT Actions, or the old plugins system), and how it uses MCP under the hood."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/apps-sdk and the openai-apps-sdk-examples repo as of 15 May 2026. Self-serve publishing is still gated; the surface is new. Sush hasn't shipped an app yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/apps-sdk/"
+  - "https://developers.openai.com/apps-sdk/build/mcp-server"
+  - "https://developers.openai.com/apps-sdk/build/custom-ux"
+  - "https://github.com/openai/openai-apps-sdk-examples"
+vendor: "openai"
+product: "apps-sdk"
+---
+
+## The thirty-second version
+
+The OpenAI Apps SDK lets you build **apps that run inside ChatGPT** — full-stack experiences with custom UI, auth, and network access that users interact with through a conversation. Under the hood: every app is an [MCP](https://modelcontextprotocol.io) server, plus a UI bundle that ChatGPT renders in a sandboxed iframe alongside the chat.
+
+Three things to know:
+
+1. **It's MCP-native.** Apps SDK was the early implementation of what's now the open **MCP Apps** standard. Build once, run across MCP-Apps-compatible hosts.
+2. **It's different from Custom GPTs and the old plugins.** Apps SDK is code-first, generates rich custom UI, and ships as MCP servers. [§GPT.1 Custom GPTs](/openai/custom-gpts/overview/) are no-code chat assistants. The original 2023 ChatGPT Plugins system was deprecated in 2024.
+3. **Distribution is gated today.** Public apps go through OpenAI submission review. Approved apps land in the ChatGPT apps store, and OpenAI also creates a plugin version for Codex distribution. Self-serve publishing is on the roadmap (as of 15 May 2026).
+
+## The three components of a ChatGPT App
+
+Per the official docs, every Apps SDK app has three parts:
+
+| Component | What it does |
+|---|---|
+| **MCP server** | Defines tools, enforces auth, returns structured data, points each tool to a UI bundle. |
+| **Widget / UI bundle** | Renders inside ChatGPT's iframe. Talks to the host via the MCP Apps bridge (JSON-RPC over `postMessage`). |
+| **The model** | Decides when to call your tools, narrates the experience using the structured data your server returns. |
+
+You build the first two. ChatGPT supplies the third and decides when your tools fire based on the metadata you provide.
+
+## The conversation loop
+
+```
+User prompt
+   ↓
+ChatGPT model ──► tools/call ──► Your MCP server ──► Tool response
+   │                                                    (structuredContent + _meta + content)
+   │                                                       │
+   └────── narrates ◄──── widget iframe ◄──────────────────┘
+                       (HTML template + MCP Apps bridge)
+```
+
+1. User asks something.
+2. ChatGPT model decides one of your tools fits, calls it via `tools/call`.
+3. Your server runs the handler, returns `structuredContent` (data the model + widget can read), `_meta` (UI metadata, CSP, domain hints), and `content` (the model-narrated summary).
+4. ChatGPT loads the HTML template linked in the tool descriptor (served as `text/html;profile=mcp-app`) and delivers tool inputs/results to the iframe over the MCP Apps bridge.
+5. Widget renders. Model reads `structuredContent` and narrates.
+
+The widget can also call tools itself (`tools/call`), post follow-up messages (`ui/message`), and update context the model sees (`ui/update-model-context`).
+
+## A real example — a Kanban app
+
+You build:
+
+- An MCP server (Node/Python) with one tool `kanban-board` that returns the columns + tasks for a workspace.
+- A widget (React + Vite) bundled as `web/dist/kanban.{js,css}` that renders a draggable Kanban board.
+
+The server registers the widget as an MCP resource:
+
+```typescript
+import {
+  registerAppResource,
+  RESOURCE_MIME_TYPE,  // = "text/html;profile=mcp-app"
+} from "@modelcontextprotocol/ext-apps/server";
+
+registerAppResource(server, "kanban-widget", "ui://widget/kanban-board.html", {}, async () => ({
+  contents: [{
+    uri: "ui://widget/kanban-board.html",
+    mimeType: RESOURCE_MIME_TYPE,
+    text: `<div id="kanban-root"></div><style>${CSS}</style><script type="module">${JS}</script>`,
+    _meta: {
+      ui: {
+        prefersBorder: true,
+        domain: "https://kanban.example.com",
+        csp: {
+          connectDomains: ["https://api.kanban.example.com"],
+          resourceDomains: ["https://*.oaistatic.com"],
+        },
+      },
+    },
+  }],
+}));
+```
+
+Then the tool itself:
+
+```typescript
+registerAppTool(server, "kanban-board", {
+  title: "Show Kanban Board",
+  inputSchema: { workspace: z.string() },
+  outputSchema: { columns: z.array(/* ... */) },
+  _meta: { ui: { resourceUri: "ui://widget/kanban-board.html" } },
+}, async ({ workspace }) => {
+  const columns = await fetchKanban(workspace);
+  return { structuredContent: { columns } };
+});
+```
+
+A user asks ChatGPT "Show my Kanban." The model decides `kanban-board` fits, calls the tool with `{ workspace: "..." }`. Your server returns the columns; ChatGPT renders the widget inline, and the model narrates ("Here's your board — 3 columns, 7 tasks").
+
+## Why this matters
+
+The Apps SDK is OpenAI's bet on **conversations as the front end** — instead of users opening a separate web app, the app appears inside their chat. Three implications:
+
+- **Distribution is OpenAI-owned.** Your app lives in the ChatGPT apps store. Discovery, auth, and trust live with OpenAI. Good for reach; bad for control.
+- **The UX surface is constrained.** Widgets render in a sandboxed iframe with a CSP. You declare `connectDomains`, `resourceDomains`, optional `frameDomains`. Browsers without these guarantees aren't supported.
+- **MCP is the wire format.** If you've already built an MCP server (for Claude, for Cursor, for VS Code), most of the work is reusable. You add `text/html;profile=mcp-app` resources and tool `_meta.ui` hints.
+
+## How it compares
+
+| | **Apps SDK** | **Custom GPTs** | **GPT Actions** | **Original Plugins (deprecated)** |
+|---|---|---|---|---|
+| Shape | MCP server + widget | No-code editor | OpenAPI spec | OpenAPI spec |
+| UI | Rich, custom HTML/JS | Chat-only | Chat-only | Chat-only |
+| Code required | Yes | No | Optional | Yes |
+| Distribution | ChatGPT apps store + Codex plugins | GPT Store | Tied to a Custom GPT | Removed 2024 |
+| Auth | Yours (via MCP) | OpenAI handles | OAuth, API key | OAuth |
+| Tier required | Apps store review | Plus / Team / Enterprise | Plus / Team / Enterprise | n/a |
+
+> **Sush's honest take (sourced, not yet tried):** the MCP standardisation is the most interesting bit. The same protocol that powers Claude's tool catalogue powers ChatGPT's apps. Cross-vendor portability isn't a marketing claim — it's literal. The trade-off: distribution still flows through OpenAI's review process.
+
+## What to do next
+
+- [§APPS.2 MCP plugin for ChatGPT](/openai/apps-sdk/mcp-plugin/) — how an MCP server becomes a ChatGPT-callable plugin
+- [§APPS.3 Widget rendering with `text/html;profile=mcp-app`](/openai/apps-sdk/widget-rendering/) — the iframe contract, CSP rules, JSON-RPC bridge
+- [Examples repo](https://github.com/openai/openai-apps-sdk-examples) — start from a working app

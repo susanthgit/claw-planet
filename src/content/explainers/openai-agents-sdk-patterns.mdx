@@ -1,0 +1,194 @@
+---
+title: "Common patterns — handoffs, agents-as-tools, structured outputs"
+section: "Agents SDK"
+sectionNumber: "ASDK.4"
+description: "Six patterns that come up over and over building on the Agents SDK — multi-agent handoffs, the manager pattern (agents-as-tools), structured outputs with Pydantic, parallel runs, sessions, and MCP. Code in Python."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Patterns compiled from openai.github.io/openai-agents-python and the SDK's examples directory as of 15 May 2026. Sush hasn't shipped any of these in production yet — read as a starting point, not a verified recipe."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://openai.github.io/openai-agents-python/handoffs/"
+  - "https://openai.github.io/openai-agents-python/multi_agent/"
+  - "https://openai.github.io/openai-agents-python/tools/"
+  - "https://github.com/openai/openai-agents-python/tree/main/examples"
+vendor: "openai"
+product: "agents-sdk"
+---
+
+## Pattern 1 — Handoff between specialists
+
+Sush hasn't shipped these patterns in production yet — they're drawn from the SDK's own docs and examples. Treat them as the first shortlist to try, not a verified recipe set. Six patterns follow; you'll usually combine 2–3 of them in a real app.
+
+The triage agent decides who's best for the question; that specialist takes over and produces the final answer.
+
+```python
+import asyncio
+from agents import Agent, Runner
+
+math_tutor = Agent(
+    name="Math Tutor",
+    instructions="Answer math questions with worked steps.",
+)
+history_tutor = Agent(
+    name="History Tutor",
+    instructions="Answer history questions clearly and concisely.",
+)
+
+triage = Agent(
+    name="Triage",
+    instructions=(
+        "Route the user to the right tutor. "
+        "Hand off to Math Tutor for arithmetic / algebra / geometry; "
+        "hand off to History Tutor for anything historical."
+    ),
+    handoffs=[math_tutor, history_tutor],
+)
+
+async def main():
+    result = await Runner.run(triage, "Who was Genghis Khan?")
+    print(result.final_output)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+The trace will show two spans: the triage run, then the history tutor run. `result.final_output` is the history tutor's answer.
+
+**Use this when:** the specialist should own the response. The triage doesn't need to weigh, combine, or revise the specialist's output.
+
+## Pattern 2 — Agents as tools (manager pattern)
+
+The orchestrator stays in control. Specialists are called as tools, and the orchestrator decides what to do with their outputs.
+
+```python
+researcher = Agent(
+    name="Researcher",
+    instructions="Find 3-5 verified facts about the topic. Cite sources.",
+)
+writer = Agent(
+    name="Writer",
+    instructions="Draft a single paragraph from the supplied facts.",
+)
+
+orchestrator = Agent(
+    name="Article Manager",
+    instructions=(
+        "1. Use the research tool to gather facts about the topic. "
+        "2. Use the write tool, passing the facts, to produce the paragraph. "
+        "3. Return the paragraph as the final answer."
+    ),
+    tools=[
+        researcher.as_tool(
+            tool_name="research",
+            tool_description="Find facts about a topic.",
+        ),
+        writer.as_tool(
+            tool_name="write",
+            tool_description="Draft a paragraph from supplied facts.",
+        ),
+    ],
+)
+
+result = await Runner.run(orchestrator, "The history of the printing press")
+```
+
+**Use this when:** the manager owns the response. You want to revise, combine, or quality-check the specialists' outputs.
+
+> **Handoff vs agents-as-tools.** Rule of thumb — if the specialist *owns* the answer, handoff. If the manager owns the answer, tool.
+
+## Pattern 3 — Structured outputs with Pydantic
+
+When you need a typed object back, not free text. Pass an `output_type` and the SDK enforces it via the model's structured-output mode.
+
+```python
+from pydantic import BaseModel
+from agents import Agent, Runner
+
+class WeatherReport(BaseModel):
+    city: str
+    temp_celsius: float
+    condition: str
+    advice: str
+
+agent = Agent(
+    name="Weather Agent",
+    instructions="Produce a structured weather report.",
+    output_type=WeatherReport,
+)
+
+result = await Runner.run(agent, "What's the weather in Auckland?")
+report: WeatherReport = result.final_output_as(WeatherReport)
+print(report.advice)  # typed access
+```
+
+The model returns JSON matching the schema; the SDK parses it into your Pydantic model. If the model output doesn't validate, the SDK retries (configurable).
+
+**Use this when:** you need to put the agent's output into a database, an API response, or a typed downstream call.
+
+## Pattern 4 — Parallel runs with `asyncio.gather`
+
+`Runner.run` is async. Run multiple agents in parallel and collect the results.
+
+```python
+import asyncio
+from agents import Agent, Runner
+
+summariser = Agent(name="Summariser", instructions="Summarise in one sentence.")
+
+async def main():
+    docs = ["Doc 1 text...", "Doc 2 text...", "Doc 3 text..."]
+    tasks = [Runner.run(summariser, doc) for doc in docs]
+    results = await asyncio.gather(*tasks)
+    for r in results:
+        print(r.final_output)
+
+asyncio.run(main())
+```
+
+You pay for the parallel calls (one model call per doc) but the wall time is the slowest call, not the sum.
+
+**Watch for:** rate limits if you parallelise too aggressively. The OpenAI tier you're on caps requests per minute and tokens per minute.
+
+## Pattern 5 — Sessions for conversation memory
+
+Sessions persist conversation history across `Runner.run` calls. The SDK loads the prior history into context automatically.
+
+```python
+from agents import Agent, Runner, SQLiteSession
+
+agent = Agent(name="Assistant", instructions="...")
+session = SQLiteSession("user-123-conversation")
+
+# Turn 1
+r1 = await Runner.run(agent, "Hello, my name is Sush.", session=session)
+
+# Turn 2 — same session, the agent remembers
+r2 = await Runner.run(agent, "What's my name?", session=session)
+print(r2.final_output)  # "Your name is Sush."
+```
+
+Backend options:
+
+- `SQLiteSession` — file-backed, single-process. Good for dev + small apps.
+- `Session` — in-memory only. Good for tests.
+- Redis-backed — install with `pip install 'openai-agents[redis]'`.
+- SQLAlchemy-backed — works with Postgres, MySQL.
+- Implement `BaseSession` for anything else (S3, Firestore, etc.).
+
+## Pattern 6 — MCP server as a tool
+
+Any [MCP server](https://modelcontextprotocol.io/) plugs in as a tool source. The SDK provides MCP client adapters; the same servers Claude or Cursor connect to work here.
+
+The exact wiring is documented at [openai.github.io/openai-agents-python/mcp](https://openai.github.io/openai-agents-python/mcp/) — read the current docs before copying, since the MCP adapter API has evolved through 2025.
+
+## What to watch for
+
+- **The SDK is young.** v0.x → 1.x happened during 2025-26. Some patterns changed between minor versions. Check the version you installed and the docs for that version.
+- **OpenAI-hosted tools are fastest.** Web search, code interpreter, file search — running on OpenAI's side avoids the round-trip latency of your own tool implementation.
+- **Tracing costs you nothing extra.** Use it. The dashboard view alone justifies the SDK over raw API calls for multi-step work.
+
+## What to do next
+
+- [§ASDK.5 Tracing](/openai/agents-sdk/tracing/) — what gets recorded, how to view it
+- [§ASDK.3 Your first agent](/openai/agents-sdk/first-agent/) — if you skipped the walkthrough

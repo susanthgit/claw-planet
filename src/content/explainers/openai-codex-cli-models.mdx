@@ -1,0 +1,195 @@
+---
+title: "Models — picking the right one for the task"
+section: "Codex CLI"
+sectionNumber: "CDX.7"
+description: "The current OpenAI models available to Codex CLI — GPT-5.5 (recommended), GPT-5.4, GPT-5.4-mini, GPT-5.3-Codex (cloud), GPT-5.3-Codex-Spark (preview). How to switch mid-session, how to set reasoning effort, and what fast mode actually does."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/codex/models and developers.openai.com/codex/speed as of 15 May 2026. Model lineups change fast — verify the current list at developers.openai.com/codex/models before relying on this page."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/codex/models"
+  - "https://developers.openai.com/codex/speed"
+  - "https://developers.openai.com/codex/config-basic"
+  - "https://developers.openai.com/codex/config-advanced"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## The current model lineup
+
+As of 15 May 2026:
+
+| Model | CLI flag | What it's for | Availability |
+|---|---|---|---|
+| `gpt-5.5` | `codex -m gpt-5.5` | Current default — OpenAI's docs say "start here when it appears in your model picker." | ChatGPT + API |
+| `gpt-5.4` | `codex -m gpt-5.4` | The fallback default. Integrates GPT-5.3-Codex coding ability. | ChatGPT + API |
+| `gpt-5.4-mini` | `codex -m gpt-5.4-mini` | Smaller, faster. OpenAI positions it for routine tasks and subagents. | ChatGPT + API |
+| `gpt-5.3-codex` | `codex -m gpt-5.3-codex` | The coding-tuned model. Powers cloud tasks; common choice for `/review`. | ChatGPT (API delayed) |
+| `gpt-5.3-codex-spark` | `codex -m gpt-5.3-codex-spark` | Near-instant research preview. Text-only. Runs on Cerebras hardware. | ChatGPT Pro only |
+| `gpt-5.2` | `codex -m gpt-5.2` | Previous general-purpose model. Likely to be deprecated soon. | ChatGPT + API |
+
+> **The default.** If you don't set `model` in your config, Codex picks `gpt-5.5` when available, falling back to `gpt-5.4`. The docs explicitly say "start with `gpt-5.5` when it appears in your model picker."
+
+## How to change models
+
+### Option A — persistent (config.toml)
+
+```toml
+# ~/.codex/config.toml
+model = "gpt-5.5"
+```
+
+This sets the model for every session unless overridden.
+
+### Option B — per-run CLI flag
+
+```bash
+codex -m gpt-5.5
+# or the long form:
+codex --model gpt-5.5
+```
+
+Use this when you want one session on a different model from your default.
+
+### Option C — mid-session slash command
+
+```
+/model
+```
+
+Opens a picker inside the TUI. Pick the model from the list; it applies to the rest of the session.
+
+### Option D — per `codex exec` run
+
+```bash
+codex exec -m gpt-5.4-mini "list the toml files"
+```
+
+## Reasoning effort
+
+Reasoning-heavy models (`gpt-5.5`, `gpt-5.4`, `gpt-5.3-codex`) support a reasoning-effort dial. **There is no `--effort` CLI flag** — set it via config:
+
+```toml
+model_reasoning_effort = "high"   # the docs show "high" as the example value;
+                                  # check the config reference for the full enum
+```
+
+Or override per-run:
+
+```bash
+codex --config model_reasoning_effort='"high"' "your task"
+```
+
+When to use each:
+
+| Setting | When |
+|---|---|
+| Lower (e.g. `low`) | Fast, well-scoped tasks — answering a question, listing files, simple edits |
+| Default (typically medium for most models) | Most coding work |
+| Higher (e.g. `high`) | Complex multi-file refactors, debugging unfamiliar code |
+
+> Higher reasoning effort consumes more of your per-window allowance. Plus-tier users on the highest setting can drain a 5-hour cap fast. Verify the exact valid values + behaviour in the [config-basic docs](https://developers.openai.com/codex/config-basic) before pinning a specific value in production config.
+
+## Fast mode
+
+Fast mode trades higher credit cost for faster responses. Per OpenAI's [speed docs](https://developers.openai.com/codex/speed), responses come back roughly 1.5× faster at a noticeably higher credit cost (multipliers vary by model — check the speed docs for the current numbers). **Available only to ChatGPT subscription users** — API-key users get standard API pricing and can't toggle fast mode.
+
+```
+/fast on        # enable for this session
+/fast off       # disable
+/fast status    # check current state
+```
+
+Persistent config:
+
+```toml
+service_tier = "fast"
+
+[features]
+fast_mode = true
+```
+
+Credit-cost multipliers vary by model — bigger models cost more in fast mode. Check the [pricing](https://developers.openai.com/codex/pricing) and [speed](https://developers.openai.com/codex/speed) pages for current numbers before pinning. Worth it for interactive sessions where you want minimal wait. Not worth it for scheduled / batch jobs.
+
+## Cloud task model is locked; `/review` defaults to current session
+
+When you delegate to Codex Cloud (long-running tasks, GitHub PR review, scheduled jobs), the cloud **always uses `gpt-5.3-codex`**. You can't change the cloud model from the CLI.
+
+The local `/review` command behaves differently — it uses the **current session model** by default. To pin a specific model for `/review`, set `review_model` in `config.toml`:
+
+```toml
+review_model = "gpt-5.3-codex"
+```
+
+`gpt-5.3-codex` is OpenAI's coding-tuned model and a common choice for reviews; the cloud uses it for the same reason. Whether it stays the cloud default through future Codex releases is worth tracking.
+
+## Context window
+
+Codex models have a default context window; you can override:
+
+```toml
+# ~/.codex/config.toml
+model_context_window = 128000
+```
+
+The exact per-model context limit isn't published as a hard number in the primary docs — the config override exists, but verify against current pricing/models docs before assuming a specific size.
+
+When you hit the context window mid-session, Codex's behaviour depends on your `compact` setting (the conversation gets summarised and continues). Watch for *"context truncated"* notices in the TUI.
+
+## Profiles — bundling settings together
+
+For repeated workflows where you want a specific model + reasoning effort + sandbox combo, profiles let you define a named bundle:
+
+```toml
+# ~/.codex/config.toml
+
+[profiles.deep-review]
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+
+[profiles.quick]
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
+```
+
+Activate per run:
+
+```bash
+codex --profile deep-review
+```
+
+> Profiles are labeled **experimental**. The syntax may change. They're **not supported in the IDE extension** (VS Code / Cursor / Windsurf) — only the CLI.
+
+## Which model to use when
+
+| Task | Model | Reasoning |
+|---|---|---|
+| Quick "what does this do?" question | `gpt-5.4-mini` | low |
+| Daily coding (writing, editing, debugging) | `gpt-5.5` | medium |
+| Multi-file refactor across the codebase | `gpt-5.5` | high |
+| Deep architectural / cross-cutting design | `gpt-5.5` | extra-high |
+| Sub-agents in a parallel workflow | `gpt-5.4-mini` | low/medium |
+| Code review (interactive `/review`) | `gpt-5.3-codex` | (locked) |
+| Cloud / GitHub PR review | `gpt-5.3-codex` | (locked) |
+| Real-time iteration / pair programming | `gpt-5.3-codex-spark` (if Pro) | (Spark is text-only) |
+| Quick CI checks | `gpt-5.4-mini` | low |
+
+## Pricing snapshot (changes fast)
+
+OpenAI's [pricing page](https://developers.openai.com/codex/pricing) has the current model rates. As of 15 May 2026 the page shows credit-per-1M-token rates for GPT-5.5, GPT-5.4, GPT-5.4-mini, and GPT-5.3-Codex, in declining price order. Exact numbers shift through the year as OpenAI migrates billing models.
+
+**Always verify pricing at [developers.openai.com/codex/pricing](https://developers.openai.com/codex/pricing).** OpenAI is migrating from credits-per-message to per-token pricing during 2026 — any specific numbers in a doc like this one will go stale fast.
+
+## Watch for
+
+- **Model names change frequently.** Pin a model name in config (`model = "gpt-5.5"`) and that model can get retired without warning. Review config quarterly.
+- **`gpt-5.3-codex-spark` is a preview.** Pro-only, text-only, research-preview labelling. Treat as experimental; could graduate to GA or be discontinued.
+- **`gpt-5.2` is on the way out.** Listed as "previous general-purpose model." Likely deprecated soon — migrate config that pins it.
+- **Day-one access via ChatGPT.** New models often land for ChatGPT users first. API tier access can lag. If you need bleeding-edge models, prefer ChatGPT auth.
+
+## What to do next
+
+- [§CDX.8 Updates feed](/openai/codex-cli/updates/) — release history, model launches
+- [§CDX.4 Use cases](/openai/codex-cli/use-cases/) — workflows where each model fits
+- [§CDX.5 Pitfalls](/openai/codex-cli/pitfalls/) — including the model-name-churn one

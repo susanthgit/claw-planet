@@ -1,0 +1,188 @@
+---
+title: "Pitfalls and rough edges"
+section: "Codex CLI"
+sectionNumber: "CDX.5"
+description: "The 14 rough edges Codex CLI users hit in week one — sandbox failures inside Docker, WSL1 not supported, deprecated flags, untrusted project gotchas, fast-mode-vs-API-key, runaway costs, and corporate-network setup."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/codex/agent-approvals-security, /windows, /noninteractive, /config-basic, /pricing, and github.com/openai/codex issues as of 15 May 2026. Some items will change rapidly — Codex ships weekly."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/codex/agent-approvals-security"
+  - "https://developers.openai.com/codex/windows"
+  - "https://developers.openai.com/codex/noninteractive"
+  - "https://developers.openai.com/codex/config-basic"
+  - "https://developers.openai.com/codex/changelog"
+  - "https://github.com/openai/codex/issues"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## The category map
+
+Most things that go wrong with Codex CLI in week one fall into one of these buckets:
+
+1. **Sandbox + permission surprises** — bwrap fails inside Docker, Windows elevated sandbox blocked by enterprise policy
+2. **Platform support gaps** — WSL1, old Windows 10 builds, WSL2 mounted paths
+3. **Deprecated / removed flags** — `--full-auto`, Chat Completions API
+4. **Auth gotchas** — `CODEX_API_KEY` scope, untrusted project config, corporate CA setup
+5. **Cost surprises** — subagents multiply tokens, fast mode costs more per call, Pro promo expiring
+6. **Workflow gotchas** — git-repo requirement, project-config silent skip, model availability
+
+## 1. WSL1 is not supported (dropped at 0.115)
+
+If you're on WSL1, Codex won't run. The Linux sandbox moved to `bwrap` in version 0.115, which requires WSL2.
+
+**Fix:** migrate to WSL2.
+
+```powershell
+wsl --set-version <distro> 2
+```
+
+Verify with `wsl -l -v` — version column should say `2`.
+
+## 2. Linux sandbox fails inside restrictive Docker containers
+
+If you're running Codex inside a Docker container (e.g. as part of a CI job), the sandbox may fail because the container blocks the namespace, setuid `bwrap`, or `seccomp` operations Codex needs.
+
+Symptoms: errors mentioning `bwrap: setting up namespace failed` or `seccomp` permission denied.
+
+**Workarounds:**
+
+- Inside the container: `codex exec --sandbox danger-full-access "..."`. **You lose sandbox protection.** Acceptable only if the container itself is your isolation boundary.
+- Use a Dev Container approach where the host runs Codex and the container is the target environment.
+
+## 3. `--full-auto` flag is deprecated
+
+The `codex exec --full-auto` flag still works but prints a warning. It's slated for removal.
+
+**Replacement:** use the explicit `--sandbox workspace-write` flag (or whichever sandbox + approval mode you actually want):
+
+```bash
+# Old (deprecated)
+codex exec --full-auto "task"
+
+# New (explicit)
+codex exec --sandbox workspace-write --ask-for-approval never "task"
+```
+
+## 4. Chat Completions API path is deprecated
+
+If your `config.toml` (or a provider config) sets `wire_api = "chat"`, the docs warn that support will be removed in future releases.
+
+**Fix:** use `wire_api = "responses"`. This is the default for all current OpenAI / Azure provider configs.
+
+## 5. `CODEX_API_KEY` only works for `codex exec`
+
+You'd expect setting `CODEX_API_KEY` in your shell to authenticate interactive `codex` sessions. It doesn't — the env var is **only** read by `codex exec`.
+
+**Fix:** for interactive sessions, run `codex login --api-key $CODEX_API_KEY` once. The cached credential then carries.
+
+## 6. Untrusted projects silently skip project-scoped `.codex/` config
+
+If you don't explicitly trust a project, Codex skips its `.codex/config.toml`, hooks, and rules. Useful for protection (untrusted projects can't override your settings) — but surprising if you just cloned a repo, set up project config, and nothing's loading.
+
+**Fix:** trust the project from the CLI when prompted, or via:
+
+```bash
+codex
+> /trust
+```
+
+## 7. `codex exec` requires a git repo by default
+
+The `exec` command refuses to run outside a git repository — preventing destructive changes in arbitrary directories.
+
+**Override:** add `--skip-git-repo-check`:
+
+```bash
+codex exec --skip-git-repo-check "task in a non-git directory"
+```
+
+Use with care. Outside a git repo there's no undo path.
+
+## 8. Corporate TLS proxy / private CA — set env var **before** login
+
+Sign-in fails with cert errors? Your corporate network is intercepting TLS with its own CA. Set the CA bundle **before** running `codex login`:
+
+```bash
+export CODEX_CA_CERTIFICATE=/path/to/corporate-root-ca.pem
+codex login
+```
+
+If you run `codex login` first and only set the env var after, the cached error blocks subsequent attempts until you `codex logout`.
+
+`SSL_CERT_FILE` is a fallback if `CODEX_CA_CERTIFICATE` isn't set.
+
+## 9. Windows elevated sandbox can fail on enterprise machines
+
+The recommended Windows sandbox (`elevated` mode) needs admin permissions to create dedicated low-privilege sandbox users and Windows firewall rules. On enterprise-managed machines, IT policy often blocks these:
+
+- UAC declined
+- Local user / group creation blocked
+- Firewall rule changes blocked
+- Logon-rights assignment blocked
+
+Codex falls back to the `unelevated` sandbox (weaker isolation — restricted token + ACL-based filesystem + env-level network controls).
+
+**Watch for:** the fallback is silent. If you assumed elevated, you may be running with less isolation than expected. Check via `/sandbox status` in the TUI.
+
+## 10. Windows 10 is best-effort; older builds aren't recommended
+
+Codex CLI runs on Windows 11 natively. Windows 10 1809+ works "best effort" — common issues:
+
+- Missing ConPTY components → broken TUI rendering
+- Enterprise policies that conflict with the sandbox
+- Older PowerShell behaviour
+
+**Recommendation:** Windows 11, or use WSL2 on any Windows version.
+
+## 11. Subagents multiply token consumption
+
+The subagent workflow (`/subagent` in the TUI, or programmatic) spins up parallel Codex agents that each do their own model + tool calls. Wall time improves; token cost goes up — sometimes a lot.
+
+**Watch for:** runaway cost in long autonomous sessions. Check `/cost` (or `/usage` depending on your version) periodically.
+
+## 12. Profiles are experimental and not in the IDE extension
+
+`profiles` in `config.toml` let you swap whole config blocks (e.g. `--profile deep-review` for a `gpt-5.5` + high-reasoning setup). They work in the CLI but:
+
+- They're labeled **experimental** — the syntax may change.
+- They're **not supported in the IDE extension** (VS Code / Cursor / Windsurf). The extension reads the base config only.
+
+If your team relies on profiles, keep that documentation explicit.
+
+## 13. Fast mode is ChatGPT-subscription only
+
+The `/fast on` toggle (and the `service_tier = "fast"` config) speeds responses up (the [speed docs](https://developers.openai.com/codex/speed) put it at roughly 1.5×) and costs more credits per call. Multipliers vary by model — bigger models cost more in fast mode. Crucially: it's **only available with ChatGPT login**. API-key users get standard API pricing and can't toggle fast mode.
+
+## 14. Rate limits drain faster than you expect at high reasoning
+
+Codex's reasoning-effort setting (`model_reasoning_effort = "high"`) consumes more of your per-window allowance than lower settings. Plus-tier users can hit the 5-hour cap surprisingly fast when running high-reasoning sessions.
+
+**Watch for in-session usage warnings** — the CLI surfaces notices as you approach the per-window cap. Don't kick off a giant refactor when you're close to the limit. Either switch to a lower-effort setting or wait for the window to reset.
+
+## Two more gotchas worth knowing
+
+### Model name churn
+
+OpenAI's model names have changed several times in 2025-26 (gpt-4.1 → gpt-5 → gpt-5.2 → gpt-5.3 → gpt-5.4 → gpt-5.5). Pinning a model name in `config.toml` (e.g. `model = "gpt-5.2"`) is fine — but when that model is retired, your config will fail silently or fall back to a default you didn't choose.
+
+**Recommendation:** review `model` in your config quarterly, or whenever you see slow responses (often a sign the default fell back to a smaller model).
+
+### Cloud-task model is locked
+
+When you delegate a long-running task to Codex Cloud (via `codex cloud` or the cloud-task slash command), the cloud always uses `gpt-5.3-codex`. You can't change this. Local CLI sessions can use any model you have access to.
+
+## What to do when something breaks
+
+1. **Check the changelog.** New issues often have a fix in the next release. [developers.openai.com/codex/changelog](https://developers.openai.com/codex/changelog) — Codex ships roughly weekly.
+2. **Check open GitHub issues.** [github.com/openai/codex/issues](https://github.com/openai/codex/issues) — search for keywords from your error.
+3. **Upgrade.** `npm install -g @openai/codex@latest` (recent versions also ship a `codex update` self-upgrade command — confirm with `codex --help`).
+4. **File an issue with a reproducer** if you can't find your problem.
+
+## What to do next
+
+- [§CDX.4 Use cases](/openai/codex-cli/use-cases/) — what to actually try
+- [§CDX.7 Models](/openai/codex-cli/models/) — picking the right model
+- [§CDX.8 Updates feed](/openai/codex-cli/updates/) — what's shipping

@@ -1,0 +1,185 @@
+---
+title: "Install Codex CLI"
+section: "Codex CLI"
+sectionNumber: "CDX.2"
+description: "Three install paths for Codex CLI — npm (cross-platform), Homebrew cask (macOS), or a direct binary download from GitHub Releases. Auth on first run, sanity-check, and where files land."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Commands come verbatim from github.com/openai/codex and developers.openai.com/codex/cli as of 15 May 2026. The Homebrew install is `brew install --cask codex` — note the `--cask` flag. Sush hasn't run this end-to-end yet."
+lastReviewedAt: "2026-05-15"
+environment: "laptop"
+os: "macOS 12+, Linux (Ubuntu 20.04+/Debian 10+), Windows 11, WSL2"
+estimatedTimeMinutes: 10
+sources:
+  - "https://github.com/openai/codex"
+  - "https://developers.openai.com/codex/cli"
+  - "https://github.com/openai/codex/blob/main/docs/install.md"
+  - "https://developers.openai.com/codex/windows"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## What you'll have at the end
+
+A `codex` binary on your PATH, signed in to your ChatGPT account (or pointed at an API key / Azure OpenAI / Amazon Bedrock), ready to run in any project directory. Most of the steps below are short — the docs label this a quick install, though actual time depends on whether you already have Node / Homebrew / a ChatGPT session set up.
+
+## Before you start
+
+- **A supported OS.** macOS 12+, Linux (Ubuntu 20.04+ / Debian 10+), native Windows 11 (PowerShell), or WSL2. **WSL1 is not supported** (dropped in version 0.115). Windows 10 1809+ is "best effort" — works for most things, may miss the right console components.
+- **4 GB RAM minimum, 8 GB recommended.** Larger codebases benefit from more.
+- **A ChatGPT subscription (Plus / Pro / Business / Edu / Enterprise) or an OpenAI API key.** The CLI works with either.
+- **Optional:** git 2.23+ for the PR helpers; winget on Windows; Node.js if installing via npm.
+
+## Path 1 — npm (recommended, cross-platform)
+
+The fastest path on any platform with Node.js available:
+
+```bash
+npm install -g @openai/codex
+```
+
+Verify:
+
+```bash
+codex --version
+```
+
+To pin a specific version (useful in monorepos where you want a deterministic build):
+
+```bash
+npm install -g @openai/codex@0.130.0
+```
+
+To upgrade later:
+
+```bash
+npm install -g @openai/codex@latest
+# (recent versions also ship a `codex update` self-upgrade command —
+#  verify with `codex --help` on your install)
+```
+
+## Path 2 — Homebrew cask (macOS)
+
+```bash
+brew install --cask codex
+```
+
+**Note the `--cask` flag.** Plain `brew install codex` will not work — Codex is distributed as a cask, not a formula.
+
+Upgrade with `brew upgrade --cask codex`.
+
+## Path 3 — Direct binary download
+
+Useful when you don't have npm or Homebrew, want a specific version pinned, or are scripting installation:
+
+1. Visit [github.com/openai/codex/releases/latest](https://github.com/openai/codex/releases/latest).
+2. Download the archive for your platform:
+   - macOS Apple Silicon: `codex-aarch64-apple-darwin.tar.gz`
+   - macOS Intel: `codex-x86_64-apple-darwin.tar.gz`
+   - Linux x86_64: `codex-x86_64-unknown-linux-musl.tar.gz`
+   - Linux arm64: `codex-aarch64-unknown-linux-musl.tar.gz`
+3. Extract; rename the binary inside to `codex`; move to `/usr/local/bin` (or anywhere on PATH).
+
+Each release also ships a **DotSlash** file (a single executable named `codex`) — useful for committing a pinned version into a repo so every team member runs the same binary.
+
+## Path 4 — Build from source
+
+If you want to read or modify the Rust code (Apache-2.0):
+
+```bash
+git clone https://github.com/openai/codex.git
+cd codex/codex-rs
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"
+cargo install --locked just
+cargo build
+```
+
+The build is non-trivial — the npm install or Homebrew cask is significantly faster for most users.
+
+## Platform notes
+
+### Windows native (PowerShell)
+
+Codex runs natively in PowerShell with a built-in Windows sandbox (two flavours — `elevated` and `unelevated`). The elevated sandbox uses dedicated low-privilege sandbox users, filesystem permissions, and WFP firewall rules — it's the recommended mode but requires admin setup.
+
+If you're in an enterprise environment where UAC or local user/group creation is blocked, you'll fall back to the unelevated sandbox (weaker isolation, restricted token + ACL-based filesystem).
+
+For setup details: [developers.openai.com/codex/windows](https://developers.openai.com/codex/windows).
+
+### WSL2
+
+WSL2 is fully supported and uses the Linux sandbox implementation. **Performance tip:** keep your repos under `~/code/` (the WSL2 native filesystem) rather than `/mnt/c/...` (the Windows mount). File I/O across the mount is significantly slower.
+
+### Linux — bwrap / seccomp
+
+The Linux sandbox uses `bwrap` (Bubblewrap) + `seccomp`. Since version 0.129.0, a standalone `bwrap` binary is bundled in the npm and DotSlash packages — so you don't need system `bwrap` installed.
+
+**Docker / containers:** if you're running Codex inside Docker, the sandbox may fail because the container blocks the namespace, setuid `bwrap`, or `seccomp` operations Codex needs. The workaround is either `--sandbox danger-full-access` inside the container (loses sandbox protection) or use the Dev Containers approach.
+
+## First run
+
+Open a terminal in any project directory:
+
+```bash
+cd ~/projects/your-repo
+codex
+```
+
+The first time you run Codex, it prompts you to sign in. You have three choices:
+
+- **ChatGPT OAuth** (default, recommended) — opens a browser, you sign in to your ChatGPT account, and the browser returns an access token. Tokens refresh automatically during use.
+- **Device code** (`codex login --device-auth`) — for headless / SSH sessions where you can't open a browser. You need to enable device-code login in ChatGPT security settings first.
+- **API key** (`codex login --api-key sk-...`) — for automation. CI/CD scripts can also pass the key via `CODEX_API_KEY` env var, but only for `codex exec` (not interactive mode).
+
+See [§CDX.3 Auth + API key](/openai/codex-cli/auth/) for full auth setup.
+
+## Sanity-check
+
+A quick smoke test that doesn't burn many tokens:
+
+```bash
+cd ~/projects/some-small-repo
+codex
+> what does this repo do? read the README and summarise in 3 bullets.
+```
+
+Codex should read `README.md` and respond. If you get an error about auth, the sign-in didn't complete — retry `codex login`.
+
+For non-interactive (CI-style) test:
+
+```bash
+codex exec "list the .toml files in this directory"
+```
+
+The `exec` command runs Codex non-interactively, prints the result, and exits.
+
+## Where things live
+
+| Path | What it holds |
+|---|---|
+| `~/.codex/config.toml` | Your personal config (default model, MCP servers, profiles, sandbox prefs) |
+| `~/.codex/auth.json` | Auth cache (if you chose `file` credential storage) |
+| `~/.codex/sessions/` | Persisted conversation threads |
+| `~/.codex/log/codex-tui.log` | TUI log file |
+| `.codex/config.toml` | Project-scoped config (only loads when the project is trusted) |
+| `/etc/codex/config.toml` | Unix system-wide config (enterprise-managed) |
+
+`CODEX_HOME` env var overrides the default `~/.codex` location.
+
+## When it doesn't work
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `command not found: codex` | npm install didn't add to PATH | Ensure `npm prefix -g` directory is on PATH; reopen terminal |
+| `error: Linux sandbox failed` | Running inside restrictive Docker, or missing `bwrap` perms | Re-run with `--sandbox danger-full-access` (loses sandbox) or use Dev Containers |
+| Browser login redirects to error | Multiple ChatGPT accounts; wrong one signed in to browser | Open `chatgpt.com` → sign out → sign in to the right account → retry `codex login` |
+| "WSL1 not supported" | You're on WSL1 | Migrate to WSL2 (`wsl --set-version <distro> 2`) |
+| `CODEX_API_KEY` ignored in interactive | The env var only works in `codex exec` | Use `codex login --api-key $CODEX_API_KEY` instead for interactive |
+| TLS / cert errors behind corporate proxy | Custom root CA not loaded | `export CODEX_CA_CERTIFICATE=/path/to/corporate-ca.pem` **before** `codex login` |
+
+## What to do next
+
+- [§CDX.3 Auth + API key](/openai/codex-cli/auth/) — full auth setup (OAuth, device code, API key, Azure / Bedrock)
+- [§CDX.4 Use cases](/openai/codex-cli/use-cases/) — what to actually try first
+- [§CDX.6 MCP integration](/openai/codex-cli/mcp/) — wiring in tools beyond the built-in ones

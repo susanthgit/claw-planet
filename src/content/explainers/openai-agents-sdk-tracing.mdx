@@ -1,0 +1,153 @@
+---
+title: "Tracing — what gets recorded and how to view it"
+section: "Agents SDK"
+sectionNumber: "ASDK.5"
+description: "Tracing is on by default in the OpenAI Agents SDK — every run, model call, tool call, handoff, and guardrail check shows up as a span. This page covers what the SDK records, how to view it in the OpenAI dashboard, and how to export to external observability tools."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from openai.github.io/openai-agents-python/tracing as of 15 May 2026. Sush has read the docs but hasn't viewed his own traces yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://openai.github.io/openai-agents-python/tracing/"
+  - "https://platform.openai.com/traces"
+  - "https://github.com/openai/openai-agents-python"
+vendor: "openai"
+product: "agents-sdk"
+---
+
+## Tracing in one paragraph
+
+The Agents SDK records every operation as a **span**. A `Runner.run` call generates a **trace** — a tree of spans showing the agent run, every model call, every tool call, every handoff, every guardrail check. Traces export to the [OpenAI dashboard](https://platform.openai.com/traces) by default. You can also route them to external observability tools (Langfuse, Logfire, Arize Phoenix, your own OTel collector). Tracing is **on by default**; the docs describe it as low-overhead.
+
+## What gets recorded
+
+The SDK creates spans for these operations automatically:
+
+| Span | What's captured |
+|---|---|
+| **Agent run** | Agent name, instructions, total duration, final output |
+| **Model call** | Model name, input messages, output messages, token usage, latency |
+| **Tool call** | Tool name, input args, output, duration, exception (if any) |
+| **Handoff** | Source agent → target agent, reason text |
+| **Guardrail** | Input or output guardrail name, tripwire status, output info |
+| **Custom span** | Anything you wrap with `custom_span()` |
+
+The span tree mirrors the actual execution. A triage handoff to a math tutor that called one tool produces three top-level spans plus nested children — easy to read in the dashboard.
+
+## Viewing traces in the OpenAI dashboard
+
+1. Open [platform.openai.com/traces](https://platform.openai.com/traces).
+2. Select the project your API key belongs to (project switcher at the top).
+3. Recent traces appear in a list. Click one to see the span tree.
+4. Each span shows inputs, outputs, latency, and (for model calls) token counts.
+
+If you don't see your traces:
+
+- **Tracing might be disabled.** Check `RunConfig(tracing_disabled=False)` and `OPENAI_AGENTS_DISABLE_TRACING` env var.
+- **Sampling might be on.** Default sample rate is 1.0 (every run). If you set `trace_sample_rate` lower, fewer runs land in the dashboard.
+- **Wrong project.** API keys are scoped to projects; switch in the dashboard.
+
+## A worked example trace
+
+For the triage → history tutor handoff from [§ASDK.4 Patterns](/openai/agents-sdk/patterns/), the trace would look like (illustrative shape, not measured numbers):
+
+```
+trace_id: abc123...
+├─ agent_run: Triage          (model_call below)
+│  └─ model_call               (input + output tokens · latency)
+├─ handoff: Triage → History Tutor
+└─ agent_run: History Tutor    (model_call below)
+   └─ model_call               (input + output tokens · latency)
+```
+
+You see exactly where the time went — useful when an agent feels slow. Real timing and token counts depend on your model, your prompt, and your tier.
+
+## Disabling or sampling tracing
+
+For tests or sensitive runs where you don't want trace data leaving your machine:
+
+```python
+from agents.run import RunConfig
+
+result = await Runner.run(
+    agent,
+    "Test input",
+    run_config=RunConfig(tracing_disabled=True),
+)
+```
+
+Or globally via env var:
+
+```bash
+export OPENAI_AGENTS_DISABLE_TRACING=1
+```
+
+To sample (only record N% of runs):
+
+```python
+RunConfig(trace_sample_rate=0.1)  # 10% of runs
+```
+
+## Exporting to external tools
+
+Tracing is OpenTelemetry-compatible. You can route spans to your own collector or to third-party observability platforms.
+
+**Built-in integrations** (verify current list before depending on it — the docs page lists 25+ integrations including Weights & Biases, MLflow, Datadog, AgentOps, LangSmith, Opik, PostHog, Galileo, Portkey AI, and others):
+
+- [Langfuse](https://langfuse.com) — open-source LLM observability
+- [Logfire](https://pydantic.dev/logfire) — Pydantic's observability product
+- [Arize Phoenix](https://arize.com/docs/phoenix) — open-source ML/LLM tracing
+- [Braintrust](https://www.braintrust.dev) — eval + tracing
+- Any OTel-compatible backend via the `OpenTelemetryExporter`
+
+See [the tracing docs](https://openai.github.io/openai-agents-python/tracing/) for the full integrations list.
+
+The setup pattern (current as of 15 May 2026 — confirm with [the docs](https://openai.github.io/openai-agents-python/tracing/)):
+
+```python
+from agents.tracing import add_trace_processor
+from langfuse_openai_agents import LangfuseTracingProcessor
+
+# add_trace_processor adds an additional processor WITHOUT replacing the default
+add_trace_processor(LangfuseTracingProcessor(...))
+```
+
+> **`add_trace_processor` vs `set_trace_processors`.** `add_trace_processor()` adds your processor while keeping the default OpenAI dashboard processor active. `set_trace_processors([...])` *replaces* all processors — useful if you want to fully control where traces go, but you have to manually re-include the OpenAI processor if you still want the dashboard.
+
+## Adding custom spans
+
+Wrap your own code in a custom span to make it visible in the trace tree:
+
+```python
+from agents import custom_span
+
+async def my_business_logic():
+    async with custom_span("vector_search"):
+        results = await vector_db.search(...)
+    async with custom_span("ranking"):
+        ranked = await rerank(results)
+    return ranked
+```
+
+Spans nest naturally — if `my_business_logic` is called from within a tool, the `vector_search` and `ranking` spans appear as children of the tool span.
+
+> **Note:** `agent_span()` is a *different* function — it's specifically for wrapping agent run steps (with fields for `name`, `handoffs`, `tools`, `output_type`). For your own business-logic spans, use `custom_span()`.
+
+## Why this matters
+
+Three reasons tracing is the SDK's underrated feature:
+
+1. **Debugging multi-agent flows is hopeless without it.** "The triage went to the wrong tutor" — without a trace, you're guessing. With a trace, you see the triage agent's exact reasoning and can fix the instructions.
+2. **Cost attribution is automatic.** Every model call has token counts; sum them per agent run, per session, per user. Build your own cost dashboards from trace exports.
+3. **Latency hotspots are obvious.** That one slow tool call is the bottleneck — the trace tree shows it visually.
+
+## Watch for
+
+- **Sensitive data in traces.** Inputs and outputs are captured verbatim by default. If you're handling PHI/PII, configure span filtering or disable tracing on sensitive runs.
+- **Trace retention varies.** OpenAI dashboard retains traces for a period (verify current value); external collectors are under your control.
+- **Cost.** Tracing to the OpenAI dashboard is free (as of 15 May 2026). External providers charge per span or per GB.
+
+## What to do next
+
+- Run any of the [examples](https://github.com/openai/openai-agents-python/tree/main/examples) and open the trace in the dashboard.
+- [§ASDK.4 Patterns](/openai/agents-sdk/patterns/) — see the trace shape for each pattern.

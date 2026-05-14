@@ -50,17 +50,19 @@ async function loadChildren(name: string, baseHref: string, vendor: string = 'op
     });
 }
 
-async function loadAnthropicProductChildren(productKey: string, productHref: string) {
+// Generic vendor-product loader (Batch B onwards). Strips `<vendor>-<product>-`
+// prefix from the file id to get the short URL slug.
+async function loadVendorProductChildren(vendor: string, productKey: string, productHref: string) {
   const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
   const out: any[] = [];
   for (const col of collections) {
     const entries = await getCollection(col as any);
     for (const e of entries as any[]) {
-      if (e.data.vendor !== 'anthropic') continue;
+      if (e.data.vendor !== vendor) continue;
       if (e.data.product !== productKey) continue;
       if (e.data.status !== 'published') continue;
       const fullSlug = e.id.replace(/\.mdx?$/, '');
-      const shortSlug = fullSlug.replace(new RegExp(`^anthropic-${productKey}-`), '');
+      const shortSlug = fullSlug.replace(new RegExp(`^${vendor}-${productKey}-`), '');
       const b = badge(e.data.verificationState);
       out.push({
         num: e.data.sectionNumber,
@@ -98,11 +100,11 @@ if (activeVendor === 'openclaw') {
     { num: '§10', title: 'FAQ',         count: coverage.sections.faq.current,       slug: '/openclaw/faq/' },
   ];
 } else if (activeVendor === 'anthropic') {
-  const claudeCodeKids = await loadAnthropicProductChildren('claude-code', '/anthropic/claude-code/');
-  const claudeApiKids = await loadAnthropicProductChildren('claude-api', '/anthropic/claude-api/');
-  const mcpKids = await loadAnthropicProductChildren('mcp-catalogue', '/anthropic/mcp-catalogue/');
-  const claudeAiKids = await loadAnthropicProductChildren('claude-ai', '/anthropic/claude-ai/');
-  const computerUseKids = await loadAnthropicProductChildren('computer-use', '/anthropic/computer-use/');
+  const claudeCodeKids = await loadVendorProductChildren('anthropic', 'claude-code', '/anthropic/claude-code/');
+  const claudeApiKids = await loadVendorProductChildren('anthropic', 'claude-api', '/anthropic/claude-api/');
+  const mcpKids = await loadVendorProductChildren('anthropic', 'mcp-catalogue', '/anthropic/mcp-catalogue/');
+  const claudeAiKids = await loadVendorProductChildren('anthropic', 'claude-ai', '/anthropic/claude-ai/');
+  const computerUseKids = await loadVendorProductChildren('anthropic', 'computer-use', '/anthropic/computer-use/');
 
   sections = [
     { num: 'AN',  title: 'Hub',           count: undefined,             slug: '/anthropic/' },
@@ -111,6 +113,23 @@ if (activeVendor === 'openclaw') {
     { num: 'MCP', title: 'MCP catalogue', count: mcpKids.length,        slug: '/anthropic/mcp-catalogue/', children: mcpKids },
     { num: 'WEB', title: 'Claude.ai',     count: claudeAiKids.length,   slug: '/anthropic/claude-ai/',    children: claudeAiKids },
     { num: 'CU',  title: 'Computer Use',  count: computerUseKids.length, slug: '/anthropic/computer-use/', children: computerUseKids },
+  ];
+} else if (activeVendor === 'openai') {
+  // OpenAI — Batch B (14-15 May 2026). 5 products: Codex CLI, Agents SDK,
+  // Apps SDK, ChatGPT Atlas, Custom GPTs.
+  const codexKids = await loadVendorProductChildren('openai', 'codex-cli', '/openai/codex-cli/');
+  const agentsKids = await loadVendorProductChildren('openai', 'agents-sdk', '/openai/agents-sdk/');
+  const appsKids = await loadVendorProductChildren('openai', 'apps-sdk', '/openai/apps-sdk/');
+  const atlasKids = await loadVendorProductChildren('openai', 'chatgpt-atlas', '/openai/chatgpt-atlas/');
+  const gptsKids = await loadVendorProductChildren('openai', 'custom-gpts', '/openai/custom-gpts/');
+
+  sections = [
+    { num: 'OAI',   title: 'Hub',           count: undefined,         slug: '/openai/' },
+    { num: 'CDX',   title: 'Codex CLI',     count: codexKids.length,  slug: '/openai/codex-cli/',     children: codexKids },
+    { num: 'ASDK',  title: 'Agents SDK',    count: agentsKids.length, slug: '/openai/agents-sdk/',    children: agentsKids },
+    { num: 'APPS',  title: 'Apps SDK',      count: appsKids.length,   slug: '/openai/apps-sdk/',      children: appsKids },
+    { num: 'ATLAS', title: 'ChatGPT Atlas', count: atlasKids.length,  slug: '/openai/chatgpt-atlas/', children: atlasKids },
+    { num: 'GPT',   title: 'Custom GPTs',   count: gptsKids.length,   slug: '/openai/custom-gpts/',   children: gptsKids },
   ];
 } else {
   sections = [

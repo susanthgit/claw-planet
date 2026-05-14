@@ -1,0 +1,206 @@
+---
+title: "Core concepts — agents, handoffs, tools, guardrails"
+section: "Agents SDK"
+sectionNumber: "ASDK.2"
+description: "The nine primitives the OpenAI Agents SDK ships — agents, sandbox agents, handoffs, agents-as-tools, tools, guardrails, human-in-the-loop, sessions, tracing — explained with the minimum code to feel each one."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from openai.github.io/openai-agents-python docs as of 15 May 2026. Sush has read the docs but hasn't built a multi-agent app yet."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://openai.github.io/openai-agents-python/agents/"
+  - "https://openai.github.io/openai-agents-python/handoffs/"
+  - "https://openai.github.io/openai-agents-python/tools/"
+  - "https://openai.github.io/openai-agents-python/guardrails/"
+  - "https://openai.github.io/openai-agents-python/sessions/"
+  - "https://openai.github.io/openai-agents-python/tracing/"
+vendor: "openai"
+product: "agents-sdk"
+---
+
+## The nine primitives at a glance
+
+| # | Primitive | One-liner |
+|---|---|---|
+| 1 | **Agent** | An LLM with instructions + (optional) tools, guardrails, and handoffs. |
+| 2 | **Sandbox Agent** | An agent that has a container/workspace it can read and edit. New in v0.14.0. |
+| 3 | **Handoff** | Specialist agent takes over the rest of the turn. |
+| 4 | **Agents as tools** | Manager keeps control; specialists are called as tools. |
+| 5 | **Tools** | Functions, MCP servers, or hosted tools the agent can call. |
+| 6 | **Guardrails** | Input + output validation hooks. |
+| 7 | **Human in the loop** | Pause for human approval mid-run. |
+| 8 | **Sessions** | Automatic conversation memory. |
+| 9 | **Tracing** | Built-in spans for every run, tool call, handoff. |
+
+The rest of this page walks through each with the minimum code to feel it.
+
+## 1. Agent
+
+An `Agent` is the building block. Three required-ish fields: `name`, `instructions`, and optionally a `model`.
+
+```python
+from agents import Agent
+
+agent = Agent(
+    name="History Tutor",
+    instructions="You answer history questions clearly and concisely.",
+)
+```
+
+Run it via the `Runner`:
+
+```python
+from agents import Runner
+
+result = await Runner.run(agent, "When did the Roman Empire fall?")
+print(result.final_output)
+```
+
+`result.final_output` is the final text the agent produced. `result.to_input_list()` is the conversation as a list you can feed back in for another turn.
+
+## 2. Sandbox Agent
+
+A `SandboxAgent` is an `Agent` that has access to a configurable container/workspace — a filesystem the agent can read, write, and run commands against. Useful for long-horizon tasks (multi-file edits, file inspection, applying patches).
+
+Sandbox Agents were added in v0.14.0. You declare a `Manifest` (what's in the workspace at start) and a `SandboxRunConfig` (which sandbox client to use — local Unix, Docker, remote).
+
+```python
+from agents import Runner
+from agents.run import RunConfig
+from agents.sandbox import Manifest, SandboxAgent, SandboxRunConfig
+from agents.sandbox.entries import GitRepo
+from agents.sandbox.sandboxes import UnixLocalSandboxClient
+
+agent = SandboxAgent(
+    name="Workspace Assistant",
+    instructions="Inspect the sandbox workspace before answering.",
+    default_manifest=Manifest(
+        entries={"repo": GitRepo(repo="openai/openai-agents-python", ref="main")},
+    ),
+)
+
+result = Runner.run_sync(
+    agent,
+    "Inspect the repo README and summarise what this project does.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(client=UnixLocalSandboxClient())),
+)
+print(result.final_output)
+```
+
+This is the SDK's answer to "I need an agent that touches files." Different shape from a plain `Agent` — different `Runner` config, different tools available.
+
+## 3. Handoff
+
+A handoff lets a specialist take over the rest of the turn. The triage agent decides who's best for the question; that agent inherits the conversation and produces the final answer.
+
+```python
+math_tutor = Agent(name="Math Tutor", instructions="...")
+history_tutor = Agent(name="History Tutor", instructions="...")
+
+triage = Agent(
+    name="Triage",
+    instructions="Route the user to the right tutor.",
+    handoffs=[math_tutor, history_tutor],
+)
+
+result = await Runner.run(triage, "Solve x^2 + 5x + 6 = 0")
+```
+
+The triage agent runs, decides math, hands off, and the math tutor produces `result.final_output`. The trace shows both steps.
+
+**Use handoffs when:** the specialist should own the conversation from that point. The triage doesn't need to weigh the specialist's output.
+
+## 4. Agents as tools
+
+A manager-pattern alternative — the orchestrator stays in control and calls specialists as tools. The orchestrator gets each specialist's output back and decides what to do with it.
+
+```python
+from agents import Agent
+
+researcher = Agent(name="Researcher", instructions="Find facts.")
+writer = Agent(name="Writer", instructions="Write a paragraph.")
+
+orchestrator = Agent(
+    name="Manager",
+    instructions="Research the topic, then ask the writer to draft.",
+    tools=[
+        researcher.as_tool(tool_name="research", tool_description="Find facts."),
+        writer.as_tool(tool_name="write", tool_description="Draft a paragraph."),
+    ],
+)
+```
+
+**Use agents-as-tools when:** the orchestrator should weigh, combine, or revise the specialists' outputs.
+
+> Handoffs vs agents-as-tools is the most-asked question on the SDK. Rule of thumb — if the specialist owns the answer, handoff; if the manager owns the answer, tool.
+
+## 5. Tools
+
+Three flavours:
+
+- **Function tools** — your own Python/TS functions, exposed via `@function_tool`:
+
+  ```python
+  from agents import function_tool
+
+  @function_tool
+  def get_weather(city: str) -> str:
+      """Get current weather for a city."""
+      return f"{city}: 18°C, partly cloudy"
+  ```
+
+- **MCP tools** — any [Model Context Protocol](https://modelcontextprotocol.io) server slots in directly. Filesystem, git, Slack, database — same wiring as Claude or other MCP-aware clients.
+
+- **OpenAI-hosted tools** — web search, file search, code interpreter, computer use. These run on OpenAI's side and don't need your infrastructure.
+
+Function tools are typed (Python type hints become the JSON schema the model sees). The docstring becomes the description.
+
+## 6. Guardrails
+
+Guardrails are pre- and post-validation hooks. Reject input that's out of scope, sanitise output, or fail the run if something dangerous appears.
+
+```python
+from agents import GuardrailFunctionOutput, input_guardrail, RunContextWrapper
+
+@input_guardrail
+async def topic_check(ctx: RunContextWrapper, agent: Agent, user_input: str):
+    if "homework" not in user_input.lower():
+        return GuardrailFunctionOutput(
+            output_info="Off-topic input rejected",
+            tripwire_triggered=True,
+        )
+    return GuardrailFunctionOutput(output_info=None, tripwire_triggered=False)
+```
+
+When `tripwire_triggered=True`, the SDK raises an exception that ends the run cleanly.
+
+## 7. Human in the loop
+
+The SDK ships built-in support for pausing a run, asking a human, and resuming. The full pattern is in the [docs](https://openai.github.io/openai-agents-python/human_in_the_loop/); the key shape is: a tool raises a pause, your app surfaces the question, you call `Runner.resume` with the human's answer.
+
+## 8. Sessions
+
+Sessions persist conversation history across `Runner.run` calls so you don't pass it around manually.
+
+```python
+from agents import SQLiteSession
+
+session = SQLiteSession("user-123-conversation")
+result = await Runner.run(agent, "Hello", session=session)
+# ... later, same session ...
+result2 = await Runner.run(agent, "What did I just say?", session=session)
+```
+
+Other backends: `Session` (in-memory), Redis (optional install: `pip install 'openai-agents[redis]'`), SQLAlchemy. Or implement your own backend.
+
+## 9. Tracing
+
+Every `Runner.run` call generates a trace — a tree of spans showing the agent run, every model call, every tool call, every handoff, every guardrail check. Traces export to the OpenAI dashboard by default; you can also point them at Langfuse, Logfire, or your own OpenTelemetry collector.
+
+You don't enable tracing — it's on by default. You disable it with `RunConfig(tracing_disabled=True)` if you need to.
+
+## What to do next
+
+- [§ASDK.3 Your first agent](/openai/agents-sdk/first-agent/) — the full walkthrough
+- [§ASDK.4 Common patterns](/openai/agents-sdk/patterns/) — multi-agent shapes you'll reuse
+- [§ASDK.5 Tracing](/openai/agents-sdk/tracing/) — what gets recorded, how to view it

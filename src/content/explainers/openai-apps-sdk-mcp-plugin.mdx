@@ -1,0 +1,178 @@
+---
+title: "MCP plugin for ChatGPT — the server side"
+section: "Apps SDK"
+sectionNumber: "APPS.2"
+description: "How to wire an MCP server so ChatGPT can discover and call it as a tool — registering UI templates, describing tools, returning structuredContent. Code primarily in TypeScript (the Python and TypeScript MCP SDKs share the same shape; this page uses the TypeScript scaffolding throughout)."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/apps-sdk/build/mcp-server as of 15 May 2026. The Apps SDK MCP surface is young; specific API names may evolve. Verify against current docs before relying on exact strings."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/apps-sdk/build/mcp-server"
+  - "https://github.com/modelcontextprotocol/python-sdk"
+  - "https://github.com/modelcontextprotocol/typescript-sdk"
+  - "https://github.com/openai/openai-apps-sdk-examples"
+vendor: "openai"
+product: "apps-sdk"
+---
+
+## What you'll have at the end
+
+An MCP server that ChatGPT can call, exposing one or more tools, each with structured output and a registered UI bundle. The widget side is covered in [§APPS.3 Widget rendering](/openai/apps-sdk/widget-rendering/) — this page is the server side.
+
+## Install the MCP SDK
+
+```bash
+# TypeScript / Node
+npm install @modelcontextprotocol/sdk @modelcontextprotocol/ext-apps zod
+
+# Python
+pip install mcp
+```
+
+The base [Model Context Protocol SDK](https://github.com/modelcontextprotocol) handles the JSON-RPC framing and transport. The `@modelcontextprotocol/ext-apps` extension (TS) adds ChatGPT-Apps-specific helpers (`registerAppResource`, `registerAppTool`). For Python, the same patterns are available through FastMCP / FastAPI scaffolding.
+
+## Step 1 — register a UI template
+
+Each widget is exposed as an MCP **resource** with the MCP Apps UI MIME type:
+
+```typescript
+import {
+  registerAppResource,
+  RESOURCE_MIME_TYPE,  // "text/html;profile=mcp-app"
+} from "@modelcontextprotocol/ext-apps/server";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { readFileSync } from "node:fs";
+
+const server = new McpServer({ name: "kanban-server", version: "1.0.0" });
+
+const HTML_JS = readFileSync("web/dist/kanban.js", "utf8");
+const CSS = readFileSync("web/dist/kanban.css", "utf8");
+
+registerAppResource(
+  server,
+  "kanban-widget",                       // resource name (your label)
+  "ui://widget/kanban-board.html",       // resource URI (cache key)
+  {},                                    // metadata
+  async () => ({
+    contents: [{
+      uri: "ui://widget/kanban-board.html",
+      mimeType: RESOURCE_MIME_TYPE,
+      text: `
+<div id="kanban-root"></div>
+<style>${CSS}</style>
+<script type="module">${HTML_JS}</script>
+      `.trim(),
+      _meta: {
+        ui: {
+          prefersBorder: true,
+          domain: "https://yourapp.example.com",
+          csp: {
+            connectDomains: ["https://api.yourapp.example.com"],
+            resourceDomains: ["https://*.oaistatic.com"],
+            frameDomains: [],  // empty = no subframes allowed
+          },
+        },
+      },
+    }],
+  })
+);
+```
+
+Things worth knowing:
+
+- **`text/html;profile=mcp-app`** is the MIME type ChatGPT looks for. Use the `RESOURCE_MIME_TYPE` constant — don't hardcode the string.
+- **The URI is your cache key.** ChatGPT caches the bundle by URI. When you ship a breaking widget change, bump the URI (e.g. `kanban-board-v2.html`) so cached copies don't stick around.
+- **`_meta.ui.csp`** declares the network + iframe surface your widget needs. ChatGPT enforces it. Without `frameDomains`, subframes are blocked. Apps that allow subframes face stricter directory review.
+- **`prefersBorder`** is a UI hint telling ChatGPT to render a border around your widget.
+
+## Step 2 — describe a tool
+
+Tools are what the model decides to call. Each tool has a schema, metadata, and a handler.
+
+```typescript
+import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import { z } from "zod";
+
+registerAppTool(
+  server,
+  "kanban-board",                        // tool name (what the model sees)
+  {
+    title: "Show Kanban Board",          // human-readable title
+    inputSchema: { workspace: z.string() },
+    outputSchema: {
+      columns: z.array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          tasks: z.array(z.object({
+            id: z.string(),
+            title: z.string(),
+            status: z.string(),
+          })),
+        })
+      ),
+    },
+    _meta: {
+      ui: { resourceUri: "ui://widget/kanban-board.html" },
+      // ChatGPT extension (optional):
+      // "openai/toolInvocation/invoking": "Preparing the board…",
+      // "openai/toolInvocation/invoked": "Board ready.",
+    },
+  },
+  async ({ workspace }) => {
+    const columns = await fetchKanban(workspace);
+    return {
+      structuredContent: { columns },
+      content: [{ type: "text", text: `Showing Kanban for ${workspace}.` }],
+    };
+  }
+);
+```
+
+Things to do well:
+
+- **Names + descriptions matter.** The model decides whether to call your tool by reading the name, title, and (if you set it) `description`. Treat copy as part of the UX.
+- **Output schema is for both model + widget.** The model reads `structuredContent` to narrate. The widget renders from the same data. Keep it tight — model-visible context counts against the conversation window.
+- **Idempotency.** The model may retry tool calls. Design handlers so a repeat call with the same args is safe.
+- **Visibility.** `_meta.ui.visibility` controls whether the tool is callable by the model, the UI, or both. Default is both.
+
+## Step 3 — connect to ChatGPT
+
+For development, run your MCP server locally and point ChatGPT at it via a dev tunnel. The current setup steps are documented at [developers.openai.com/apps-sdk/build/setup](https://developers.openai.com/apps-sdk/build/setup) — read those for the latest auth + tunnel approach (the developer-mode plumbing changes more than the SDK surface does).
+
+For production, submit your app through the OpenAI review process. Approved apps land in the ChatGPT apps store; OpenAI also generates a plugin version for Codex distribution.
+
+## Decoupled pattern — separate data tools from render tools
+
+A pattern the docs recommend strongly: don't attach a widget template to every tool. Split into two kinds of tools:
+
+- **Data tools** — fetch / compute / mutate, return only `structuredContent`. No widget template.
+- **Render tools** — take final, model-validated data and return the widget template.
+
+The model calls the data tool first, looks at the result, decides what to render, then calls the render tool with the prepared data. The widget renders **once**, with final context.
+
+Why this matters: if every tool ships a widget, ChatGPT re-renders your iframe on every call. The decoupled pattern lets the model apply its reasoning to your data before triggering a render — and the user sees one stable widget at the end, not a flicker of three.
+
+Mark only the render tool with `_meta.ui.resourceUri` (and the optional `_meta["openai/outputTemplate"]` alias for ChatGPT-specific compatibility).
+
+## Auth + secrets
+
+Apps SDK apps usually need user-scoped auth (OAuth, API keys). The MCP spec covers auth flows; the Apps SDK + ChatGPT supply the user-consent UX. Implement OAuth on your MCP server using your existing identity provider. ChatGPT walks the user through the consent screen the first time your app is invoked.
+
+Sensitive details:
+
+- **Never embed long-lived secrets in widget HTML.** The widget runs in the user's browser; anything embedded is visible.
+- **Use short-lived tokens.** Issue per-session tokens after OAuth completes; refresh from the server side.
+- **Domain pinning matters.** `_meta.ui.domain` and `_meta.ui.csp.connectDomains` are inspected during app review. Don't claim domains you don't own.
+
+## Watch for
+
+- **The MCP Apps spec is young.** Specific JSON-RPC method names (`ui/notifications/tool-result`, `ui/message`, `ui/update-model-context`) are stable as of 15 May 2026, but check the current docs before depending on exact strings.
+- **`window.openai` is the ChatGPT extension surface.** Compatibility-layer for older Apps SDK APIs plus ChatGPT-only capabilities like `requestModal`, `requestCheckout`, `uploadFile`, `selectFiles`. Stick to the MCP Apps bridge for cross-host portability; use `window.openai` only for ChatGPT-only features.
+- **Examples repo is the fast path.** [`openai/openai-apps-sdk-examples`](https://github.com/openai/openai-apps-sdk-examples) has working apps. Read one before writing your own.
+
+## What to do next
+
+- [§APPS.3 Widget rendering](/openai/apps-sdk/widget-rendering/) — the iframe contract, CSP rules, JSON-RPC bridge
+- [§APPS.1 Apps SDK overview](/openai/apps-sdk/overview/) — refresher on the three components

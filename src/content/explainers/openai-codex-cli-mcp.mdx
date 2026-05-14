@@ -1,0 +1,183 @@
+---
+title: "MCP integration — wiring tools into Codex"
+section: "Codex CLI"
+sectionNumber: "CDX.6"
+description: "How Codex CLI uses Model Context Protocol — adding MCP servers (Context7, Figma, Playwright, your own), supported transports (STDIO + Streamable HTTP), built-in MCPs (OpenAI Docs, Memories), and running Codex itself as an MCP server."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/codex/mcp as of 15 May 2026. The `codex mcp` CLI commands are still labeled experimental — exact subcommand names may evolve. Config-based MCP is the stable usage pattern."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/codex/mcp"
+  - "https://developers.openai.com/codex/cli/reference"
+  - "https://developers.openai.com/codex/changelog"
+  - "https://modelcontextprotocol.io"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## What MCP gives you
+
+The Model Context Protocol is an open standard for connecting agents to external tools and data. In Codex CLI, MCP servers expose things like:
+
+- A filesystem you can read and write
+- A git repo (separate from the working directory)
+- Your figma designs
+- A browser you can drive (Playwright, Chrome DevTools)
+- Your team's Sentry / GitHub / Slack
+- A document search backend
+
+When you add an MCP server to Codex, the agent gets its tools as new options — same shape as built-in tools, callable in the same conversation.
+
+## Supported transports
+
+| Transport | Support |
+|---|---|
+| **STDIO** (local process) | ✅ Fully supported |
+| **Streamable HTTP** (remote URL) | ✅ Fully supported (with bearer token or OAuth) |
+
+> The docs use "Streamable HTTP" — not SSE. (In the MCP protocol spec, the older "HTTP+SSE" transport and the newer "Streamable HTTP" transport are architecturally distinct; Codex implements Streamable HTTP. If older guides mention "MCP over SSE", that's a different transport that Codex does not support.)
+
+## Adding an MCP server via the CLI
+
+```bash
+# STDIO server
+codex mcp add <server-name> -- <stdio-command>
+
+# Example — Context7 (documentation context server)
+codex mcp add context7 -- npx -y @upstash/context7-mcp
+
+# STDIO with env vars
+codex mcp add my-db --env DB_URL=postgres://... -- node ./mcp-db-server.js
+```
+
+`codex mcp` subcommands are labeled **experimental** in the CLI reference — exact flags may change between releases. The `add`, `list`, `remove`, and `login` subcommands are the main ones today.
+
+## Adding an MCP server via `config.toml`
+
+The config-based path is more flexible (custom timeouts, tool allowlists, OAuth) and is the stable usage pattern.
+
+### STDIO server
+
+```toml
+# ~/.codex/config.toml
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+env_vars = ["LOCAL_TOKEN"]            # pass through from your shell
+
+[mcp_servers.context7.env]            # set values inline
+MY_ENV_VAR = "MY_ENV_VALUE"
+```
+
+### HTTP / Streamable HTTP server
+
+```toml
+[mcp_servers.figma]
+url = "https://mcp.figma.com/mcp"
+bearer_token_env_var = "FIGMA_OAUTH_TOKEN"
+http_headers = { "X-Figma-Region" = "us-east-1" }
+```
+
+### Common optional keys
+
+```toml
+[mcp_servers.example]
+command = "..."
+args = []
+
+# Timing
+startup_timeout_sec = 10              # default
+tool_timeout_sec = 60                 # default
+
+# Lifecycle
+enabled = true                        # set false to disable without deleting
+required = true                       # fail Codex startup if this server can't initialize
+
+# Tool gating
+enabled_tools = ["search", "fetch"]   # allowlist (only these are exposed)
+disabled_tools = ["delete"]           # denylist (applied after allowlist)
+```
+
+## OAuth for HTTP MCP servers
+
+For servers that require user-scoped OAuth (Figma, GitHub, Sentry, Notion, etc.), use the built-in OAuth flow:
+
+```bash
+codex mcp login figma
+```
+
+Opens a browser to complete OAuth; the resulting token is cached and refreshed automatically. Configure the callback port and URL in `config.toml`:
+
+```toml
+mcp_oauth_callback_port = 5555
+mcp_oauth_callback_url = "https://devbox.example.internal/callback"
+```
+
+The callback URL matters when your dev environment isn't on `localhost` — e.g. SSH tunnels or remote dev boxes.
+
+## Built-in MCP servers
+
+As of Codex 0.130.0, two MCP servers ship as "first-class runtime servers" — they start automatically without explicit config:
+
+| Server | What it does | Enable via |
+|---|---|---|
+| **OpenAI Docs MCP** | Search and read OpenAI developer docs from inside Codex | On by default |
+| **Memories MCP** | Built-in memory store the agent can read/write | `[features] memories = true` in config |
+
+Useful third-party servers documented in OpenAI's examples (verify package names before depending):
+
+- **Context7** (`@upstash/context7-mcp`) — documentation context for popular libraries
+- **Figma** (local + remote) — designs in your Codex conversations
+- **Playwright** — browser automation for Codex
+- **Chrome DevTools MCP** — inspect a running browser
+- **Sentry MCP** — issue triage from inside Codex
+- **GitHub MCP** — issues, PRs, repos
+
+## In-session MCP management
+
+While Codex is running, `/mcp` in the TUI shows the active MCP servers — their connection status, exposed tools, and any startup errors.
+
+```
+/mcp
+```
+
+Useful for debugging "the agent can't find my tool" — usually it's a startup failure that's been logged but not surfaced.
+
+## Running Codex itself as an MCP server
+
+You can flip the relationship: Codex acts as an MCP server, exposing its agentic capabilities to *other* MCP clients (Claude, Cursor, custom agents).
+
+```bash
+codex mcp-server
+```
+
+Runs Codex over stdio as an MCP server. **Labeled experimental.** Useful for:
+
+- Embedding Codex as a sub-agent inside another agent
+- Building meta-workflows where one agent orchestrates Codex
+- Cross-vendor experiments (Claude calling Codex via MCP)
+
+The available tools are documented in the MCP server's `list_tools` response — read it directly with an MCP inspector before depending on specifics.
+
+## Watch for
+
+- **MCP startup adds latency.** Every server you add slows session startup. Use `enabled = false` to keep configured-but-paused servers around without paying the startup cost.
+- **`required = true` is your friend in CI.** If your CI depends on a particular MCP server being healthy, `required = true` ensures Codex fails fast if the server can't initialize — rather than running degraded.
+- **Tool gating works.** When you wire in a big server (e.g. GitHub MCP with 30 tools), use `enabled_tools` to expose only the few you actually use. Reduces context size and reduces the chance the agent picks the wrong tool.
+- **MCP tool outputs can be very large.** Before 0.129.0, large outputs could blow up the conversation. The fix in 0.129.0 truncates large MCP tool outputs in conversation rollouts. Make sure you're on 0.129+ if you use heavy MCP servers.
+
+## Cross-vendor MCP
+
+The same MCP server can usually be reused across Claude Code, Cursor, VS Code's GitHub Copilot, and other MCP-aware clients — that cross-vendor portability is the protocol's main value.
+
+> The Apps SDK case is a bit different. ChatGPT Apps reuse the MCP tool protocol, but they also need extra widget metadata (resource registration with `text/html;profile=mcp-app`, `_meta.ui.*` hints) for the UI side. A plain MCP tool server reuses the tool contract; the UI/widget side is Apps-SDK-specific. See [§APPS.2 MCP plugin for ChatGPT](/openai/apps-sdk/mcp-plugin/).
+
+If you've already built MCP servers for Claude, they slot into Codex with no changes. The auth model is the same; the tool surface is the same.
+
+## What to do next
+
+- [§CDX.5 Pitfalls](/openai/codex-cli/pitfalls/) — including some MCP-specific gotchas
+- [§CDX.4 Use cases](/openai/codex-cli/use-cases/) — workflows that combine Codex + MCP servers
+- [Anthropic MCP catalogue](/anthropic/mcp-catalogue/what-is-mcp/) — the protocol's deeper explainer (same protocol, different vendor's docs)

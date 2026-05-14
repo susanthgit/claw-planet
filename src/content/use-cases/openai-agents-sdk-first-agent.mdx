@@ -1,0 +1,172 @@
+---
+title: "Your first agent — from pip install to running"
+section: "Agents SDK"
+sectionNumber: "ASDK.3"
+description: "Step-by-step walkthrough from a clean Python environment to a working OpenAI Agents SDK app — install, API key, first agent, add a tool, run it. About 15 minutes."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Commands come verbatim from openai.github.io/openai-agents-python/quickstart as of 15 May 2026. Sush hasn't run this end-to-end yet — page flips to tried with the OpenAI dashboard trace screenshot when he does."
+lastReviewedAt: "2026-05-15"
+estimatedTimeMinutes: 15
+sources:
+  - "https://openai.github.io/openai-agents-python/quickstart/"
+  - "https://github.com/openai/openai-agents-python"
+  - "https://platform.openai.com/docs/quickstart"
+vendor: "openai"
+product: "agents-sdk"
+---
+
+## What you'll have at the end
+
+A working `agent.py` script that runs a "history tutor" agent — with a custom function tool — and prints the final answer. The official quickstart suggests it's a short walkthrough; actual time depends on whether you already have Python 3.10+, a working venv, and an API key.
+
+This page is sourced from the official quickstart at [openai.github.io/openai-agents-python/quickstart](https://openai.github.io/openai-agents-python/quickstart/), not yet tried by Sush.
+
+## Before you start
+
+- **Python 3.10 or newer.** Check with `python --version`. If you're on 3.9 or older, install a newer Python first (use [pyenv](https://github.com/pyenv/pyenv) or a system installer).
+- **An OpenAI API key.** Create one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys) if you don't have one — you'll need a credit balance for paid models, but most onboarding offers come with free credits.
+- A terminal. macOS / Linux / WSL2 / Windows PowerShell all work.
+
+## 1. Project + virtual environment
+
+```bash
+mkdir my_agents
+cd my_agents
+python -m venv .venv
+```
+
+Activate it:
+
+- **macOS / Linux:** `source .venv/bin/activate`
+- **Windows PowerShell:** `.venv\Scripts\Activate.ps1`
+- **Windows cmd:** `.venv\Scripts\activate.bat`
+
+Your prompt should now show `(.venv)`.
+
+## 2. Install the SDK
+
+```bash
+pip install openai-agents
+```
+
+If you're using `uv` (faster, recommended if you have it):
+
+```bash
+uv init
+uv add openai-agents
+```
+
+Optional extras (only if you need them):
+
+- **Voice / Realtime agents:** `pip install 'openai-agents[voice]'`
+- **Redis sessions:** `pip install 'openai-agents[redis]'`
+
+## 3. Set the API key
+
+```bash
+# macOS / Linux
+export OPENAI_API_KEY="sk-..."
+
+# Windows PowerShell
+$env:OPENAI_API_KEY = "sk-..."
+
+# Windows cmd
+set "OPENAI_API_KEY=sk-..."
+```
+
+This sets the key for the current shell session only. For a permanent setting, add the export to your shell profile (`~/.bashrc`, `~/.zshrc`, `$PROFILE` for PowerShell).
+
+> **Security note:** never commit `sk-...` keys to a repo. Use a `.env` file (with `python-dotenv`) or your OS keychain in real projects.
+
+## 4. Your first agent
+
+Create `agent.py`:
+
+```python
+import asyncio
+from agents import Agent, Runner
+
+agent = Agent(
+    name="History Tutor",
+    instructions="You answer history questions clearly and concisely.",
+)
+
+async def main():
+    result = await Runner.run(agent, "When did the Roman Empire fall?")
+    print(result.final_output)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+Run it:
+
+```bash
+python agent.py
+```
+
+According to the quickstart, you should see an answer about the Roman Empire and the script exits. Behind the scenes, the SDK calls the OpenAI Responses API, parses the answer, and returns a `RunResult` with `final_output` set.
+
+If it errors with `OPENAI_API_KEY not set`, your env var didn't carry through — re-export it in the same shell.
+
+## 5. Add a tool
+
+Tools are functions the agent can call. Decorate any function with `@function_tool` and pass it in:
+
+```python
+import asyncio
+from agents import Agent, Runner, function_tool
+
+@function_tool
+def history_fun_fact() -> str:
+    """Return a short history fact."""
+    return "Sharks are older than trees."
+
+agent = Agent(
+    name="History Tutor",
+    instructions="Answer history questions clearly. Use history_fun_fact when it helps.",
+    tools=[history_fun_fact],
+)
+
+async def main():
+    result = await Runner.run(
+        agent,
+        "Tell me something surprising about ancient life on Earth.",
+    )
+    print(result.final_output)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+Run again. The agent decides whether to call `history_fun_fact` based on the question. If it does, the function runs locally, returns "Sharks are older than trees.", and the agent works that into the final answer.
+
+Three things worth noticing:
+
+- **The docstring becomes the tool description.** The model sees `"Return a short history fact."` and uses it to decide when to call the tool. Write good docstrings.
+- **Type hints become the JSON schema.** A function `def get_weather(city: str, units: str = "metric") -> str:` is exposed to the model with two parameters and the right types. The model knows what to send.
+- **You don't manually parse the model's tool call.** The SDK does the JSON parsing, calls your function, and feeds the result back into the conversation.
+
+## 6. Look at the trace
+
+Open the [OpenAI dashboard](https://platform.openai.com/) and navigate to the **Traces** section. Your run should appear there — a tree showing the agent run, the model call, the tool call (if it happened), and the final response. Each span has timings, inputs, and outputs.
+
+Tracing is on by default. To disable: pass `RunConfig(tracing_disabled=True)` to `Runner.run`.
+
+## What to do next
+
+- **Add a second agent and a handoff** — see [§ASDK.4 Patterns](/openai/agents-sdk/patterns/).
+- **Connect an MCP server** as a tool — filesystem, git, Slack. Same `tools=[...]` slot.
+- **Persist conversation history** with a `Session` so the agent remembers the last few turns.
+- **Try a Sandbox Agent** if your agent needs to touch files. See [the docs](https://openai.github.io/openai-agents-python/sandbox_agents).
+
+## When it doesn't work
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `ModuleNotFoundError: No module named 'agents'` | venv not activated, or installed in the wrong env | Re-activate venv; `pip install openai-agents` again |
+| `AuthenticationError` | API key not set or wrong | `echo $OPENAI_API_KEY` (or `$env:OPENAI_API_KEY` on PowerShell) — re-export |
+| `RateLimitError` | Hit your tier's rate limit or no credits | Check usage at [platform.openai.com/usage](https://platform.openai.com/usage) |
+| Tool not called | Your description / instructions didn't make it obvious when to use it | Improve the docstring; mention the tool in the agent's instructions |
+| No trace in dashboard | Tracing disabled, or trace was sampled out, or you're looking at the wrong project | Confirm `tracing_disabled=False`; check the project selector at top of dashboard |

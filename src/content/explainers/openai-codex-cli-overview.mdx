@@ -1,0 +1,108 @@
+---
+title: "Codex CLI, plainly"
+section: "Codex CLI"
+sectionNumber: "CDX.1"
+description: "Five-minute orientation to Codex CLI — OpenAI's terminal coding agent. Open-source, Rust-based, runs locally. What it does, where it runs, what it costs, and where it fits vs Claude Code, Aider, and GitHub Copilot CLI."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from github.com/openai/codex and developers.openai.com/codex as of 15 May 2026. Sush hasn't standalone-installed it — he uses Claude through GitHub Copilot CLI today. Page flips to tried with a session log when he runs Codex CLI."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://github.com/openai/codex"
+  - "https://developers.openai.com/codex/cli"
+  - "https://developers.openai.com/codex/cli/features"
+  - "https://developers.openai.com/codex/pricing"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## The thirty-second version
+
+Codex CLI is **OpenAI's terminal coding agent**. You install it via npm, run `codex` inside any project directory, and the agent reads your code, edits files, runs commands, and calls OpenAI's reasoning models with tool use. It's the closest analogue to Claude Code from the OpenAI side.
+
+Three things to know:
+
+1. **Open source, Rust-based, Apache-2.0.** The CLI binary itself is free. Usage consumes your ChatGPT subscription quota (Plus / Pro / Business / Edu / Enterprise) or OpenAI API credits.
+2. **Cross-platform.** macOS, Linux, native Windows 11, WSL2. WSL1 is not supported (dropped in version 0.115).
+3. **Speaks MCP.** Both as a client (it can call MCP servers — filesystems, Figma, GitHub, browser automation, etc.) and as a server (`codex mcp-server`, experimental — Codex itself can be called by other agents).
+
+## A real example
+
+You're staring at a Next.js project that's failing to build. Open a terminal, `cd` into the project, type:
+
+```bash
+codex
+```
+
+Then ask in plain English: *"the build is failing — figure out why."*
+
+What happens:
+
+1. Codex reads the error from `npm run build`.
+2. It opens `next.config.mjs`, sees an experimental flag that's been removed.
+3. It checks `package.json` to see what version of Next.js you're on (15.3 — the flag landed in 14.2).
+4. It edits the config file, removes the flag, runs `npm run build` again.
+5. Build passes. Codex tells you what it did.
+
+Default approval mode (`on-request`) asks you to approve commands that leave the workspace or use the network. Reading files and editing files in `workspace-write` mode happens without prompting.
+
+## Why this matters
+
+The interesting bit isn't "AI writes code" — every editor has that now. The interesting bit is **the loop tightens**: the agent reads, decides, runs, reads-the-result, decides-again, without you copying snippets back and forth.
+
+Three things that fall out of the design:
+
+- **It's your repo, on your machine.** Files are edited locally. Commits happen through your normal git workflow. The agent doesn't push or open PRs unless you ask. What *does* cross the wire: model calls include whatever code, file contents, and conversation context the model needs to answer — same as any LLM-backed tool.
+- **Sandboxed by default.** Codex runs commands inside a platform sandbox (Apple Seatbelt on macOS, `bwrap` + `seccomp` on Linux, Windows native sandbox on Windows 11). Network is off by default. You can relax this with `--sandbox workspace-write` (the default for git repos) or `--sandbox danger-full-access` (your call).
+- **Subagents and parallel work.** The `/codex/subagents` feature lets you spin up multiple agents to tackle a complex task in parallel. Token cost scales accordingly.
+
+## How it compares
+
+| | **Codex CLI** | **Claude Code** | **GitHub Copilot CLI** | **Cursor / Windsurf** |
+|---|---|---|---|---|
+| Shape | Terminal CLI + IDE ext + desktop app + cloud (`chatgpt.com/codex`) | Terminal CLI + IDE ext + desktop + web | Terminal CLI + IDE ext | IDE-first (forked VS Code) |
+| Vendor | OpenAI | Anthropic | GitHub / Microsoft | Independent (Anysphere / Codeium) |
+| Language | Rust (open source · Apache-2.0) | Not open source | Not open source | Not open source |
+| Default model | `gpt-5.5` (mid 2026) | Claude Sonnet 4.5 (mid 2026) | Multi-vendor (Claude · GPT · Gemini) | Multi-vendor |
+| Sandbox | Yes — built-in, per-OS | Some sandboxing | No formal sandbox | Editor-scoped |
+| MCP | Native (client + server) | Native (client) | Supported | Supported (Cursor) |
+| Pricing | ChatGPT subscription OR API tier (per-token) | Claude subscription OR API tier | Copilot subscription | Cursor subscription |
+| Subagents | Yes | Yes (via spawn / multi-agent) | Limited | No native primitive |
+
+> **Sush's honest take (sourced, not yet tried):** Codex CLI being Rust + Apache-2.0 + open-source matters. You can read the sandboxing code. You can pin a specific version into your repo via DotSlash. You can fork it. Compared to Claude Code's closed shell, Codex's openness is a real advantage if that openness matters to you. The trade-off — one model family (OpenAI), and the cloud + cloud-task features are tied to a ChatGPT subscription.
+
+## The other Codex surfaces
+
+Codex CLI is one of several "Codex" surfaces from OpenAI:
+
+| Surface | Where it lives | Typical use |
+|---|---|---|
+| **Codex CLI** | Your terminal | Interactive coding sessions, scripted automation |
+| **Codex Cloud** | `chatgpt.com/codex` | Long-horizon tasks, GitHub review bot, Slack assistant |
+| **Codex IDE extension** | VS Code, Cursor, Windsurf | In-editor agent, shares config + auth with CLI |
+| **Codex desktop app** | Windows + macOS | Managing multiple parallel agents over longer periods |
+
+The CLI and IDE extension share `~/.codex/config.toml` and the credential cache — sign in once, the IDE picks up your auth.
+
+> **Watch for:** in March 2026, OpenAI announced that Atlas, the ChatGPT desktop app, and Codex would be merged into a single unified desktop "superapp." The standalone Codex desktop app is on that path. The CLI itself remains a separate, stable surface.
+
+## What it costs
+
+The CLI binary is free (Apache-2.0). Usage consumes:
+
+- **Your ChatGPT subscription quota** (Plus, Pro, Business, Edu, Enterprise) — per-plan rate limits in time windows. Numbers change; check the pricing page.
+- **OpenAI API credits** (if you signed in with an API key) — standard per-token pricing.
+
+Cloud tasks (GitHub PR review, scheduled jobs) and Fast mode are **ChatGPT-subscription only**. API-key users can't use those.
+
+> **Verify pricing at [developers.openai.com/codex/pricing](https://developers.openai.com/codex/pricing).** OpenAI is migrating from credits-per-message to token-based rates during 2026 — the numbers in this page will go stale fast.
+
+## What to do next
+
+- [§CDX.2 Install](/openai/codex-cli/install/) — three install paths (npm, Homebrew cask, direct binary), platform notes for macOS / Linux / Windows / WSL2
+- [§CDX.3 Auth + API key](/openai/codex-cli/auth/) — ChatGPT OAuth, API key, Azure / Bedrock / OSS providers, MFA, corporate CA / TLS proxy
+- [§CDX.6 MCP integration](/openai/codex-cli/mcp/) — adding MCP servers (Context7, Figma, Playwright, your own)
+- [§CDX.7 Models](/openai/codex-cli/models/) — GPT-5.5, GPT-5.4, GPT-5.3-Codex; switching mid-session; reasoning effort
+- [§CDX.4 Use cases](/openai/codex-cli/use-cases/) — what the docs say Codex is good at
+- [§CDX.5 Pitfalls](/openai/codex-cli/pitfalls/) — rough edges, deprecated flags, sandbox quirks
+- [§CDX.8 Updates feed](/openai/codex-cli/updates/) — release pattern, recent changes

@@ -1,0 +1,79 @@
+---
+title: "ChatGPT Atlas, plainly"
+section: "ChatGPT Atlas"
+sectionNumber: "ATLAS.1"
+description: "Five-minute orientation to ChatGPT Atlas — OpenAI's web browser. What it is, what platforms it runs on, what's free vs paid, and the privacy implications worth thinking about."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from openai.com/index/introducing-chatgpt-atlas, chatgpt.com/atlas, and Wikipedia (citing The Verge / AP / Reuters) as of 15 May 2026. The product is in flux — the March 2026 superapp announcement may merge Atlas into the unified ChatGPT desktop app."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://openai.com/index/introducing-chatgpt-atlas/"
+  - "https://chatgpt.com/atlas"
+  - "https://en.wikipedia.org/wiki/ChatGPT_Atlas"
+vendor: "openai"
+product: "chatgpt-atlas"
+---
+
+## The thirty-second version
+
+**ChatGPT Atlas is OpenAI's web browser.** Built on Chromium (Blink engine), launched 21 October 2025, macOS-first. It integrates ChatGPT directly into the browsing interface — a sidebar assistant that can summarise the current page, compare products, rewrite selected text, and (on paid tiers) take actions on websites for you in **Agent mode**.
+
+Three things to know:
+
+1. **macOS at launch; other platforms following.** Windows, iOS, and Android were announced as "coming soon" at the October 2025 launch. Verify current platform availability before assuming.
+2. **Freemium.** Free version with the sidebar assistant; Agent mode and some advanced features are Plus/Pro/Business only.
+3. **The superapp merger is coming.** In March 2026, OpenAI announced that Atlas, the ChatGPT desktop app, and Codex would be merged into one unified desktop application — the "superapp." Atlas as a standalone product may not last forever.
+
+## What it does
+
+| Feature | What it actually does |
+|---|---|
+| **Sidebar assistant** | Open a panel next to any web page; ask ChatGPT about what you're looking at. Summarise, compare, answer questions. Free tier. |
+| **Cursor chat** | Select text on a page, ask ChatGPT to rewrite it in place. Works in content-editable surfaces (Google Docs, web textareas). Named "cursor chat" in [The Verge's launch coverage](https://www.theverge.com) of the OpenAI demo. |
+| **Browser memories** | ChatGPT stores summarised facts from your browsing history on OpenAI's servers (up to 30 days). Memory is **cross-session and cross-device** — not scoped to the tab. User controls live in Settings. |
+| **Agent mode** | ChatGPT takes actions in the browser on your behalf — clicks, fills forms, navigates, executes multi-step tasks. **Plus / Pro / Business only.** |
+| **Standard browser features** | Tabs, bookmarks, profiles, dev tools. It's still a Chromium browser. |
+
+## Why this matters
+
+Three lenses to read Atlas through:
+
+- **OpenAI is treating browsers as a primary agent surface.** Most "AI features" in current browsers are bolted-on assistants. Atlas is built around an embedded ChatGPT that has page context by default. Whether that approach pays off is a real, watchable question.
+- **It changes how publisher referrals work.** The [Associated Press](https://apnews.com) reported on Atlas keeping users inside AI-generated answers rather than clicking through to publisher sites. For research workflows: notice when an Atlas answer would replace a source visit, and click through anyway on claims that matter.
+- **It's chasing a real category shift.** Perplexity launched [Comet](https://comet.perplexity.ai) a few months before Atlas. Microsoft Edge has Copilot integration. The "AI-native browser" category is forming and Atlas is OpenAI's claim on it.
+
+## How it compares
+
+| | **ChatGPT Atlas** | **Perplexity Comet** | **Microsoft Edge + Copilot** | **Chrome** |
+|---|---|---|---|---|
+| Engine | Chromium / Blink | Chromium / Blink | Chromium / Blink | Chromium / Blink |
+| Built-in AI | ChatGPT (deeply integrated) | Perplexity | Copilot sidebar | Gemini (Search button) |
+| Agent mode | Yes (paid) | Yes (paid) | Limited | Limited |
+| Platforms | macOS at launch · Windows / iOS / Android coming | macOS · Windows (mobile not confirmed) | Windows · macOS · iOS · Android | Everywhere |
+| Pricing | Free + ChatGPT subscription unlocks features | Free + Pro subscription | Free + Copilot subscription | Free |
+| Privacy posture | Significant — see below | Significant | Microsoft's posture | Google's posture |
+
+> **Sush's honest take (sourced, not yet tried):** OpenAI positions Atlas as browser-first, not extension-first — the model has page context by default rather than through an add-on. The launch reviews suggest useful agent workflows; staying *sourced* until tried. The privacy story is the part that needs careful reading — a browser that summarises everything you read is a different threat profile from a chat app that only knows what you typed. And the March 2026 superapp merger means the standalone Atlas brand may not survive 2026; assume product churn.
+
+## The privacy thing
+
+Per Wikipedia and press coverage at launch, Atlas drew concern over:
+
+- **The memory feature** — by design, the browser remembers content from your tabs to make the assistant smarter over time. Critics raised concerns about who can access that memory, how long it lives, and how revocation works.
+- **Page content leaving the local machine** — for the assistant to answer questions about the page, content travels to OpenAI servers. Standard for any AI assistant; worth knowing.
+- **Agent mode actions** — when ChatGPT clicks buttons and fills forms on your behalf, it's executing on your credentials in real services. Compromises (prompt injection, malicious sites) have higher stakes than chatbot exploits.
+
+Before relying on Atlas for sensitive work, read OpenAI's current Atlas privacy documentation and decide what fits your risk profile.
+
+## What it doesn't do (yet)
+
+- **Cross-platform parity.** macOS is the only platform with full functionality at launch (October 2025). Windows / iOS / Android are catching up — verify current state.
+- **Replace Chrome extensions wholesale.** Chromium extensions work, but with caveats; some sidebar-style assistants conflict with the built-in one.
+- **Sync across machines.** Profile sync, bookmark sync, the standard Chrome niceties — confirm current parity before switching.
+- **Stay standalone forever.** Per the March 2026 announcement, Atlas is being merged into a unified ChatGPT + Codex desktop app. The standalone "Atlas" product as it exists today is on the path to becoming a mode inside that app.
+
+## What to do next
+
+- [§ATLAS.2 Use cases](/openai/chatgpt-atlas/use-cases/) — what Atlas is good for vs. what you'd still reach for another browser for
+- [Atlas landing page](https://chatgpt.com/atlas) — the official pitch + download

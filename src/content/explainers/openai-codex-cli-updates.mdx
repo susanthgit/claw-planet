@@ -1,0 +1,125 @@
+---
+title: "Updates feed — what's been shipping"
+section: "Codex CLI"
+sectionNumber: "CDX.8"
+description: "Codex CLI ships roughly weekly. This page summarises the last six months of major releases — what landed, what got deprecated, what's pre-release — plus where to subscribe to the official changelog."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from github.com/openai/codex/releases and developers.openai.com/codex/changelog as of 15 May 2026. This page is meant to be updated regularly — the canonical source is the official changelog."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://github.com/openai/codex/releases"
+  - "https://developers.openai.com/codex/changelog"
+  - "https://github.com/openai/codex"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## Where to track releases
+
+| Surface | Use for |
+|---|---|
+| [github.com/openai/codex/releases](https://github.com/openai/codex/releases) | Tagged releases with full notes per version (tag format `rust-v0.130.0`) |
+| [developers.openai.com/codex/changelog](https://developers.openai.com/codex/changelog) | Curated changelog with the human-readable summary per release |
+| [github.com/openai/codex commits](https://github.com/openai/codex/commits/main) | Day-by-day churn — useful when you're chasing a specific issue |
+
+**Release cadence:** roughly weekly during 2025-26, sometimes multiple releases in a single week. The CLI is actively maintained and individual features ship frequently.
+
+## Recent releases (last 6 months)
+
+### 0.130.0 — 8 May 2026
+
+- **Plugin share metadata + discoverability** — first cut at letting plugins discover and advertise each other.
+- **`codex remote-control` headless entrypoint** — new way to drive Codex programmatically.
+- **App-server thread pagination** — handles long-running sessions better.
+- **Bedrock AWS console-login credentials** — auth via existing AWS profiles instead of static keys.
+- **Windows sandbox binary cache fix** — addresses a class of "sandbox binary missing" errors.
+- **Built-in MCPs become "first-class runtime servers"** (PR #21356) — auto-start without explicit config.
+
+### 0.129.0 — 7 May 2026
+
+- **Modal Vim editing in TUI** (`/vim`) — vim-mode for the terminal input box.
+- **Redesigned resume/fork picker** — resume a session or fork a new one more clearly.
+- **`/hooks` for hook browsing** — see what hooks are loaded in the current session.
+- **Linux standalone `bwrap` bundled** with npm and DotSlash releases — system `bwrap` no longer required.
+- **Windows: named pipe + ConPTY + PowerShell improvements** — better Windows-native experience.
+- **Fix: large MCP tool outputs truncated in rollouts** (PR #20260) — prevents context blowouts.
+
+### 0.128.0 — 30 April 2026
+
+- **Persisted `/goal` workflows** — `create`, `pause`, `resume`, `clear` for long-running goals.
+- **`codex update` command** — recent Codex versions ship a built-in self-update command alternative to `npm i -g @openai/codex@latest`. Confirm with `codex --help` on your install before depending on it.
+- **Configurable TUI keymaps** — remap the terminal UI shortcuts.
+- **Expanded permission profiles** with built-in defaults:
+  - `:read-only` — pure observation, no writes
+  - `:workspace` — write inside the project directory only
+  - `:danger-no-sandbox` — no sandbox at all (use with care)
+- **Combined entry covers 0.125–0.127** — the changelog notes individual sub-releases happened but were rolled up into 0.128.0's notes.
+
+### Earlier in 2026 — themes
+
+- **WSL1 dropped at 0.115** — Linux sandbox moved to `bwrap`; WSL2 only from that point.
+- **GPT-5.4 for Codex landed 5 March 2026** — became the top-tier general-purpose model.
+- **Desktop Codex app released February 2026** — managing multiple parallel agents over longer periods.
+- **GPT-5.3-Codex released 5 February 2026** — coding-specialised model that powers cloud tasks and `/review`.
+- **GPT-5.3-Codex-Spark released ~12 February 2026** — Cerebras hardware. InfoQ reported it ran about 15× faster than earlier Codex versions; the spec is documented at [developers.openai.com/codex/models](https://developers.openai.com/codex/models) as the near-instant research preview for ChatGPT Pro.
+
+### History
+
+- **April 2025** — Codex CLI initial release (per Wikipedia / press coverage of the Codex line).
+- **16 May 2025** — Codex Cloud research preview announced, powered by `codex-1` (an `o3`-derived reasoning model).
+- **June 2025** — ChatGPT Plus users gained Codex access (initially Plus + Pro only).
+- **March 2026** — OpenAI announced ChatGPT desktop app + Codex + Atlas would be merged into a single unified "superapp" desktop application.
+
+## Pre-releases
+
+As of 15 May 2026 there are several `0.131.0-alpha.*` tags on GitHub Releases. Alpha releases are reasonable to try if you're chasing a specific feature; expect rough edges.
+
+```bash
+# Pin a specific alpha
+npm install -g @openai/codex@0.131.0-alpha.16
+```
+
+## How to keep up
+
+- **GitHub Releases watch** — star/watch the repo, choose "Releases only" in watch settings.
+- **Changelog page bookmark** — `developers.openai.com/codex/changelog` is the human-readable summary.
+- **Subscribe to OpenAI's developer-newsletter** — major model launches are also announced there.
+
+## Recent breaking changes worth knowing
+
+| Version | What changed |
+|---|---|
+| 0.115 | WSL1 support dropped (Linux sandbox moved to bwrap). |
+| 0.128 | `--full-auto` flag is now deprecated; use `--sandbox workspace-write` explicitly. |
+| Multiple | Chat Completions API path is deprecated; use the Responses API (default in all current configs). |
+| 0.130 | Built-in MCPs auto-start as first-class servers; if you had explicit config for OpenAI Docs MCP or Memories MCP, the explicit entry is redundant now. |
+
+## What's "stable" vs "experimental"
+
+| Feature | Status (15 May 2026) |
+|---|---|
+| `codex` interactive CLI | Stable |
+| `codex exec` non-interactive | Stable |
+| `codex login` (OAuth + API key) | Stable |
+| Config file (`~/.codex/config.toml`) | Stable |
+| MCP via config | Stable |
+| `codex mcp <subcommand>` CLI | Experimental |
+| `codex mcp-server` (Codex as MCP server) | Experimental |
+| Profiles | Experimental |
+| Subagents | Stabilising |
+| `codex update` | Available in recent versions (verify with `codex --help`) |
+| `/goal` persistent workflows | Stabilising (added in 0.128) |
+| `/vim` modal editing | Stable (added in 0.129) |
+
+> When picking up Codex CLI for the first time, lean on the "stable" surface. The experimental commands work but may rename or change between releases.
+
+## A reminder
+
+This page goes stale fast. The canonical reference is [developers.openai.com/codex/changelog](https://developers.openai.com/codex/changelog). When you depend on a specific behaviour, link to that — not to this page.
+
+## What to do next
+
+- [§CDX.7 Models](/openai/codex-cli/models/) — current model lineup
+- [§CDX.5 Pitfalls](/openai/codex-cli/pitfalls/) — including the deprecation list
+- [§CDX.6 MCP integration](/openai/codex-cli/mcp/) — including the 0.130 first-class MCP changes

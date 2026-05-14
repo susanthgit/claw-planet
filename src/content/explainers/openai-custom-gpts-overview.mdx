@@ -1,0 +1,109 @@
+---
+title: "Custom GPTs, plainly"
+section: "Custom GPTs"
+sectionNumber: "GPT.1"
+description: "Five-minute orientation to Custom GPTs — OpenAI's no-code chat assistants you build inside ChatGPT. What they are, how they differ from the Apps SDK and GPT Actions, what they're good for, and what they aren't."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from chatgpt.com/gpts, help.openai.com/en/articles/8554407-gpts, and openai.com/blog announcements as of 15 May 2026. Custom GPTs as a feature has been stable since late 2023; specifics like model defaults and Action limits change over time."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://chatgpt.com/gpts"
+  - "https://help.openai.com/en/articles/8554407-gpts"
+  - "https://openai.com/blog/introducing-gpts"
+vendor: "openai"
+product: "custom-gpts"
+---
+
+## The thirty-second version
+
+**Custom GPTs are no-code chat assistants you build inside ChatGPT.** You write instructions, optionally upload knowledge files (PDFs, docs, spreadsheets), set conversation starters, optionally wire in Actions (REST APIs the GPT can call), and publish. Users find your GPT in the GPT Store, click it, and start chatting.
+
+Three things to know:
+
+1. **No code required.** The whole build experience is a visual editor at [`chatgpt.com/gpts/editor`](https://chatgpt.com/gpts/editor). For most use cases you write English instructions, upload a few files, and you're done.
+2. **Different from the Apps SDK.** Custom GPTs are chat-only, no custom UI, no rich widgets. The [Apps SDK](/openai/apps-sdk/overview/) is the code-first surface for rich-UI apps. The two coexist; you pick based on whether you need custom UI.
+3. **Different from GPT Actions.** Actions are a *feature* of Custom GPTs — they're the REST-API-calling mechanism. A Custom GPT can have zero Actions or several; the GPT is the container, the Actions are the tools it can call.
+
+## What you can build (and what you can't)
+
+| You can | You can't |
+|---|---|
+| Give a GPT a persona via instructions | Build custom UI / forms / widgets |
+| Upload knowledge files (PDFs, docs, spreadsheets) | Render rich visualisations beyond what ChatGPT can render |
+| Wire in REST APIs via Actions (OAuth + API key) | Run server-side code under your control (Apps SDK is the path for that) |
+| Use ChatGPT's built-in tools: web search, image generation, code interpreter, file uploads | Skip the conversation interface — you're always chatting |
+| Distribute via the GPT Store or via a private link | Run a GPT inside another product (Apps SDK = embedded apps) |
+| Restrict use to your workspace (Team / Enterprise) | Avoid the ChatGPT account requirement — to **build** a Custom GPT you need Plus, Team, or Enterprise (Free users can **use** published public GPTs from the GPT Store) |
+
+## A real example
+
+Say you want a "Code review buddy" GPT that reviews a Python snippet against your team's style guide.
+
+You build:
+
+1. **Instructions:** "You are a code review assistant for the Acme team. Apply our Python style guide strictly. Be terse. Always cite the rule number."
+2. **Knowledge:** upload `acme-python-style.pdf` so the GPT can reference rules.
+3. **Conversation starters:** "Review this Python snippet", "Check this function against PEP 8 + Acme rules".
+4. **Capabilities:** enable Code Interpreter (lets the GPT actually run the snippet to check imports / syntax).
+5. **Action (optional):** add an Action that calls your team's lint server (POST `/lint` with the code, get JSON back).
+
+Publish to your Team workspace. Anyone on the team types `@code review buddy` in ChatGPT and the GPT runs.
+
+Total build time depends on what you include. Instructions + knowledge file: typically a short session. Adding a custom Action (especially with OAuth): considerably longer.
+
+## Why this matters
+
+Custom GPTs are OpenAI's answer to **personalising ChatGPT without writing code**. Three things fall out of the no-code shape:
+
+- **The skill ceiling is low.** Most people can build a useful GPT in an evening. The barrier to "I made a useful AI tool" is lower than ever.
+- **The skill floor is also low.** Custom GPTs are heavily constrained — chat interface, no custom UI, no server-side state, no scheduled triggers, no background jobs. They're not "build any app you want."
+- **The ChatGPT-only distribution is a feature and a flaw.** GPT Store reach is large; users discover GPTs without you marketing. But your users have to be ChatGPT subscribers. If you want broad reach across non-ChatGPT users, GPTs aren't the path.
+
+## How it compares
+
+| | **Custom GPTs** | **Apps SDK** | **GPT Actions (alone)** | **Claude Skills** |
+|---|---|---|---|---|
+| Build style | No-code visual editor | Code-first MCP server + widget | OpenAPI spec, attached to a GPT | Markdown spec, attached to Claude |
+| UI | ChatGPT chat | Custom HTML/JS widgets | ChatGPT chat | Claude chat |
+| Where it runs | ChatGPT (web + mobile + desktop) | ChatGPT apps store + Codex plugins | Inside a GPT | Claude.ai (Pro/Team/Enterprise) |
+| Tier needed by users | ChatGPT (Free can use public GPTs; building requires Plus / Team / Enterprise) | ChatGPT (build/run apps) | ChatGPT Plus / Team / Enterprise | Claude Pro / Team / Enterprise |
+| Distribution | GPT Store | App store + review | Tied to GPT | Personal / team-shared |
+| Best for | Persona + knowledge-base assistants | Apps with rich UI | Connecting one external API to a chat | Personal callable tools |
+
+> **Sush's honest take (sourced, not yet tried):** Custom GPTs are the easiest "build an AI assistant for my team" path on the OpenAI side. The trade-off is constraints — the assistant lives inside ChatGPT, looks like ChatGPT, behaves like ChatGPT. If "looks and feels custom" matters, the Apps SDK is the path. If "easy and shareable" matters, GPTs win.
+
+## What Custom GPTs are good at
+
+- **Onboarding new hires** — a GPT loaded with your handbook + style guide + team norms.
+- **Internal knowledge concierges** — point a GPT at the team's docs + an Action to your wiki search; it answers questions across both.
+- **Persona-shaped assistants** — "act like our customer support voice", "write in our brand tone".
+- **Light-touch API tools** — single-Action GPTs that wrap one REST API in a chat interface (look up a customer, fetch a status, create a ticket).
+
+## What they're not good at
+
+- **Anything where consistent UI matters.** Custom GPTs render in ChatGPT's chat. You can't ship a dashboard, a form, or a styled report.
+- **Background or scheduled work.** GPTs run when a user invokes them. No cron, no triggers, no events.
+- **Heavy state.** Conversations end when the chat ends. Knowledge files are read-only. If you need persistent state across users, you need a real backend.
+- **Sensitive data.** Uploaded knowledge files become part of the GPT. Anyone with access to the GPT can ask questions that surface the file content. Don't upload customer PII unless your workspace controls who can see the GPT.
+
+## Distribution + access
+
+- **Public GPTs** — listed in the GPT Store. Discoverable by any ChatGPT user with the right tier.
+- **Anyone with the link** — unlisted, but anyone with the URL can use it.
+- **Only me / Only my workspace** — private to you or your Team/Enterprise org.
+
+GPT Store earnings: programme terms and eligibility have changed over time. Check the current rules at OpenAI's developer site if monetisation matters — don't assume the rules from any specific year.
+
+## Watch for
+
+- **Instructions leak.** Users have figured out how to extract Custom GPT instructions via prompt manipulation. Don't put trade secrets in there.
+- **Knowledge files leak.** Same — users can sometimes extract uploaded file contents. Treat anything you upload as "publishable."
+- **Actions need real auth.** If your Action calls a sensitive API, use OAuth (not just an API key in the spec) and scope tokens carefully.
+- **The superapp merger.** With the March 2026 unified ChatGPT + Codex + Atlas desktop app announcement, where Custom GPTs sit in the long-term product surface is worth watching. The feature isn't going away, but the UI and the discovery model may evolve.
+
+## What to do next
+
+- Open [chatgpt.com/gpts/editor](https://chatgpt.com/gpts/editor) — the build environment
+- Browse [chatgpt.com/gpts](https://chatgpt.com/gpts) — see what's in the store, find calibration examples
+- If you need custom UI → look at the [§APPS.1 Apps SDK](/openai/apps-sdk/overview/) instead

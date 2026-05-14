@@ -1,29 +1,54 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import VendorHub from '@components/VendorHub.astro';
+import { getCollection } from 'astro:content';
+
+// Count OpenAI entries per product (Batch B, 14-15 May 2026).
+async function countByProduct(productKey: string): Promise<number> {
+  const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+  let n = 0;
+  for (const col of collections) {
+    const entries = await getCollection(col as any);
+    for (const e of entries as any[]) {
+      if (e.data.vendor === 'openai' && e.data.product === productKey && e.data.status === 'published') {
+        n++;
+      }
+    }
+  }
+  return n;
+}
+
+const codexCount = await countByProduct('codex-cli');
+const agentsCount = await countByProduct('agents-sdk');
+const appsCount = await countByProduct('apps-sdk');
+const atlasCount = await countByProduct('chatgpt-atlas');
+const gptsCount = await countByProduct('custom-gpts');
+const total = codexCount + agentsCount + appsCount + atlasCount + gptsCount;
 
 const vendor = {
   slug: 'openai',
   name: 'OpenAI',
-  blurb: 'GPT, the model family — plus the developer surfaces that wrap it: Codex CLI (terminal coding agent), the OpenAI Agents SDK (Python / TypeScript framework for multi-agent systems with handoffs and tracing), the OpenAI Apps SDK (MCP plugins that render rich widgets inside ChatGPT), ChatGPT Atlas (the new browser), and Custom GPTs (no-code chat assistants). Sush hasn\'t standalone-run any of these — they\'re on the learning roadmap.',
+  blurb: `GPT, the model family — plus the developer surfaces that wrap it: <strong>Codex CLI</strong> (the open-source, Rust-based terminal coding agent — the closest analogue to Claude Code), the <strong>OpenAI Agents SDK</strong> (Python + TypeScript framework for multi-agent apps with handoffs, tools, sessions, and built-in tracing), the <strong>OpenAI Apps SDK</strong> (MCP servers that render rich UI inside ChatGPT — the modern replacement for the old plugins system), <strong>ChatGPT Atlas</strong> (OpenAI's Chromium-based AI browser), and <strong>Custom GPTs</strong> (no-code chat assistants you build in ChatGPT). Honest take? Codex CLI being Apache-2.0 and open-source is a real advantage — you can read the sandboxing code, pin specific versions, fork it. The Agents SDK is provider-agnostic at its core (works with 100+ LLMs via LiteLLM). Apps SDK's MCP foundation means cross-vendor portability isn't marketing copy — it's literal.`,
   officialUrl: 'https://platform.openai.com/docs',
   officialLabel: 'platform.openai.com/docs',
-  status: 'coming-in-batch' as const,
-  statusNote: 'Day-1 sourced seed shipping in Batch B (~20 pages: Codex CLI · Agents SDK · Apps SDK · ChatGPT Atlas · Custom GPTs).',
+  status: total >= 19 ? 'live' as const : 'coming-in-batch' as const,
+  statusNote: total >= 19
+    ? `Batch B shipped — ${total} sourced entries live across 5 products. Sush hasn't personally run every command yet; entries flip from <em>sourced</em> to <em>tried</em> as he experiments. PRs with verification notes welcome.`
+    : `Day-1 sourced seed is mid-build (Batch B — ${total}/19 pages so far). Pages all start as <em>sourced</em> with citations; Sush upgrades to <em>tried</em> over time.`,
 };
 
 const products = [
-  { slug: 'codex-cli', name: 'Codex CLI', type: 'CLI' as const, status: 'coming-in-batch' as const, batchHint: 'Batch B', description: 'OpenAI\'s terminal coding agent — installs via npm, reads your repo, runs in a sandbox, edits files. The closest analogue to Claude Code from the OpenAI side. MCP integration on the roadmap.' },
-  { slug: 'agents-sdk', name: 'OpenAI Agents SDK', type: 'API / SDK' as const, status: 'coming-in-batch' as const, batchHint: 'Batch B', description: 'Python + TypeScript framework for building agents — handoffs between agents, tool calls, tracing, guardrails. The successor / sibling to the Assistants API.' },
-  { slug: 'apps-sdk', name: 'OpenAI Apps SDK', type: 'API / SDK' as const, status: 'coming-in-batch' as const, batchHint: 'Batch B', description: 'MCP plugins that render rich widgets inside ChatGPT. Uses the `text/html+skybridge` content type for client-side widget rendering. The cross-vendor MCP overlap is the interesting bit.' },
-  { slug: 'chatgpt-atlas', name: 'ChatGPT Atlas', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch B', description: 'OpenAI\'s new browser — built around an embedded ChatGPT that reads what you\'re looking at. Dossier on what it does well, what it doesn\'t, privacy implications.' },
-  { slug: 'custom-gpts', name: 'Custom GPTs', type: 'Hosted product' as const, status: 'coming-in-batch' as const, batchHint: 'Batch B', description: 'No-code chat assistants you build with instructions + knowledge files + actions. Useful for narrow internal use cases. The GPT Store is the marketplace.' },
+  { slug: 'codex-cli', name: 'Codex CLI', type: 'CLI' as const, status: (codexCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch B', href: '/openai/codex-cli/', description: `OpenAI's terminal coding agent — open-source (Apache-2.0), Rust-based. Installs via npm (\`npm i -g @openai/codex\`) or Homebrew (\`brew install --cask codex\`). Runs on macOS, Linux, Windows 11 native, WSL2. Sandbox-protected by default. MCP-native (client and server). ${codexCount} pages: overview · install · auth · use cases · pitfalls · MCP · models · updates feed.` },
+  { slug: 'agents-sdk', name: 'OpenAI Agents SDK', type: 'API / SDK' as const, status: (agentsCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch B', href: '/openai/agents-sdk/', description: `Python + TypeScript framework for multi-agent apps. Provider-agnostic core (works with 100+ LLMs via LiteLLM / any-llm). Primitives: Agents, Sandbox Agents, Handoffs, Tools, Guardrails, Sessions, Tracing, Realtime. Replaces Swarm + parts of the Assistants API. ${agentsCount} pages: overview · concepts · first agent · patterns · tracing.` },
+  { slug: 'apps-sdk', name: 'OpenAI Apps SDK', type: 'API / SDK' as const, status: (appsCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch B', href: '/openai/apps-sdk/', description: `MCP servers that render rich UI inside ChatGPT. Widget HTML served with the \`text/html;profile=mcp-app\` MIME type. JSON-RPC over postMessage bridge. Standardised as MCP Apps. Different from Custom GPTs (no-code) and GPT Actions (OpenAPI). ${appsCount} pages: overview · MCP plugin server · widget rendering.` },
+  { slug: 'chatgpt-atlas', name: 'ChatGPT Atlas', type: 'Hosted product' as const, status: (atlasCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch B', href: '/openai/chatgpt-atlas/', description: `OpenAI's web browser — Chromium-based (Blink engine). Launched Oct 21, 2025 (macOS first; Windows / iOS / Android following). Sidebar assistant + cursor chat + tab-level memory. Agent mode is Plus / Pro / Business only. Being merged into a unified ChatGPT + Codex desktop superapp during 2026. ${atlasCount} pages: overview · use cases.` },
+  { slug: 'custom-gpts', name: 'Custom GPTs', type: 'Hosted product' as const, status: (gptsCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch B', href: '/openai/custom-gpts/', description: `No-code chat assistants built inside ChatGPT — instructions, knowledge files, Actions. Distributed via the GPT Store. Users need a ChatGPT Plus / Team / Enterprise subscription. Different from the Apps SDK (which is code-first and renders custom UI). ${gptsCount} pages: overview.` },
 ];
 ---
 
 <BaseLayout
   title="OpenAI — Claw"
-  description="OpenAI vendor hub on Claw — plain-English field notes on Codex CLI, the OpenAI Agents SDK, Apps SDK, ChatGPT Atlas browser, and Custom GPTs. Day-1 sourced seed shipping in Batch B."
+  description="OpenAI vendor hub on Claw — plain-English field notes on Codex CLI, OpenAI Agents SDK, Apps SDK, ChatGPT Atlas, and Custom GPTs. Day-1 sourced seed."
   ogImage="/og/home.png"
 >
   <VendorHub vendor={vendor} products={products} />

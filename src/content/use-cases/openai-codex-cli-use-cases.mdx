@@ -1,0 +1,201 @@
+---
+title: "What Codex CLI is good at"
+section: "Codex CLI"
+sectionNumber: "CDX.4"
+description: "Five use cases the official docs emphasise — write code, understand unfamiliar codebases, review code, debug and fix problems, automate development tasks. Plus the non-interactive `codex exec` patterns for CI/CD and the scenarios where you'd reach for a different tool."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Use cases come from developers.openai.com/codex and developers.openai.com/codex/cli/features as of 15 May 2026. Sush hasn't run Codex on real work yet — these patterns transfer from his experience with Claude through GitHub Copilot CLI but specifics may differ."
+lastReviewedAt: "2026-05-15"
+estimatedTimeMinutes: 0
+sources:
+  - "https://developers.openai.com/codex"
+  - "https://developers.openai.com/codex/cli/features"
+  - "https://developers.openai.com/codex/noninteractive"
+vendor: "openai"
+product: "codex-cli"
+---
+
+## Five use cases the docs emphasise
+
+This page is sourced from the official docs, not yet tried by Sush — treat it as the first shortlist of Codex CLI jobs to test, not a verified recipe set. The five categories below come from [developers.openai.com/codex](https://developers.openai.com/codex); the `codex exec` patterns come from [the non-interactive guide](https://developers.openai.com/codex/noninteractive).
+
+### 1. Write code from intent
+
+Describe what you want; Codex generates matching code, adapting to your project's existing structure and conventions.
+
+```
+codex
+> add a function to src/lib/parse-query.ts that takes a URL string and
+  returns a typed object with { path, params, fragment }. Match the
+  existing style of the other parsers in that directory.
+```
+
+Codex reads neighbouring files first, mimics their patterns (TS-style, error handling, naming), and writes the new function with tests if `vitest` or similar is set up.
+
+**Why this works:** the agent has read access to your repo, so "match the existing style" is a real instruction, not a hope.
+
+### 2. Understand unfamiliar codebases
+
+You just cloned an open-source library or inherited a legacy service. Ask Codex to map the territory.
+
+```
+codex
+> summarise this repository's architecture. What are the entry points?
+  Where does request handling live? Where's the database access? 
+```
+
+Codex walks the directory tree, opens key files, builds a model of the codebase, and gives you a structured overview. Often more useful than `ls -R` + grepping for `main()`.
+
+### 3. Review code locally
+
+Codex CLI ships a `/review` slash command — review uncommitted changes, a branch, or a specific commit against the rest of the codebase.
+
+```
+codex
+> /review
+```
+
+Opens a picker. Select what to review (working changes / staged / branch / commit). Codex runs a separate "reviewer" agent that flags bugs, edge cases, and style drift before you commit.
+
+By default, `/review` uses the **current session model** — whatever you have active. To pin a specific model for reviews (`gpt-5.3-codex` is OpenAI's coding-tuned model and a common choice), set `review_model` in `config.toml`:
+
+```toml
+review_model = "gpt-5.3-codex"
+```
+
+### 4. Debug and fix problems
+
+Classic example: a build failure or a test failure. You don't know what's wrong; the stack trace points 12 frames deep into a file you've never seen.
+
+```
+codex
+> the `pnpm test:unit` run is failing with "TypeError: input.split is not 
+  a function" — figure out what's going on
+```
+
+Codex runs the failing test, walks the call chain, finds the place where `input` is a Buffer instead of a string, and either fixes it or explains what change you need to make.
+
+### 5. Automate development tasks
+
+Refactoring across many files, migrations, repo-wide naming changes, dependency upgrades. Tasks that would otherwise be a 2-hour grind of find-replace-test-fix loops.
+
+```
+codex
+> rename the `oldHelper` function to `newHelper` across the codebase. 
+  Update all call sites. Adjust the docstrings that reference the old 
+  name. Don't touch the test fixtures — they reference an external API 
+  that uses the old name and shouldn't change.
+```
+
+The "don't touch X" constraint matters — Codex respects it if you give it a clear reason.
+
+## Six more from `codex exec` (non-interactive)
+
+`codex exec` runs a single task non-interactively and exits. Built for scripting, CI/CD, and pipelines.
+
+### 6. CI pipelines — pre-merge checks
+
+```yaml
+- name: Codex review
+  env:
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  run: |
+    codex login --api-key "$OPENAI_API_KEY"
+    codex exec --sandbox workspace-write \
+      "review the diff between $BASE_SHA and HEAD for bugs and style issues. \
+       Exit with code 1 if you find critical issues."
+```
+
+### 7. Auto-fix CI failures
+
+When a CI job fails, trigger Codex to investigate and prepare a fix + PR description.
+
+```bash
+codex exec --json \
+  "the test suite failed in job $JOB_ID. Read the job logs, find the failure, 
+   propose a minimal fix, and write a description of the fix to PR_DESCRIPTION.md"
+```
+
+Wire the resulting branch and description into your CI's PR-creation step (e.g. `gh pr create --body-file PR_DESCRIPTION.md`). Codex itself doesn't open the PR — your CI does, with the artefacts Codex produced.
+
+### 8. Release notes generation
+
+```bash
+codex exec "generate release notes for the last 10 commits, grouped by 
+  feature / bugfix / refactor / docs. Output as Markdown." | tee release-notes.md
+```
+
+**Review before publishing** — don't pipe straight into a release-automation step. LLM-generated notes occasionally misclassify or summarise inaccurately, and release notes are read by customers.
+
+### 9. Triage and summarise
+
+```bash
+codex exec "summarise the repository structure and list the top 5 areas 
+  that look risky or unmaintained"
+```
+
+Useful for inheriting a new codebase or auditing one before changes.
+
+### 10. Web search for up-to-date info
+
+Codex CLI has a built-in web search feature. Useful when your question depends on current information (latest library version, recent CVEs, current API rate limits).
+
+```
+codex
+> what's the latest stable Node.js LTS version, and have there been any 
+  security advisories in the last 30 days?
+```
+
+Web search is cached by default (Codex uses a cached index, not live page fetches) — adjustable via config.
+
+### 11. Image generation
+
+Codex can generate / edit images directly in the CLI (uses `gpt-image-2`).
+
+```
+codex
+> generate a hero image for this README — flat illustration style, 
+  developer at a laptop, indigo + cream palette
+```
+
+Useful for content drafts, design references, or quick visualisations during a coding session.
+
+### 12. Subagents — parallelise complex tasks
+
+Spin up multiple subagents to tackle parts of a large task in parallel.
+
+```
+codex
+> /subagent
+```
+
+Pick a workflow, define what each subagent should do. Output gets merged back into your main session.
+
+**Watch for:** token cost. Each subagent does its own model + tool calls; subagent workflows consume more tokens than the equivalent single-agent run. Useful when wall time matters more than cost.
+
+## Where you'd reach for a different tool
+
+| Scenario | Better tool |
+|---|---|
+| Heavy real-time interaction inside an IDE | Cursor / Windsurf / VS Code with Copilot extension |
+| Multi-model flexibility (Claude one minute, GPT the next) | GitHub Copilot CLI |
+| Long agentic workflows on a sandboxed cloud machine | Codex Cloud (`chatgpt.com/codex`) — the cloud surface, not the CLI |
+| Quick one-off code completions | Editor inline-suggestion tools |
+| Anthropic-tuned coding loop | Claude Code |
+| Working with files in a constrained sandbox you fully control | Bare API + your own tool implementation |
+
+## What "load-bearing" in your project
+
+Once you start using Codex CLI seriously, these files matter:
+
+- **`AGENTS.md`** — project-level instructions (style guide, commands the agent should know, things never to do). Codex reads it on every session.
+- **`~/.codex/config.toml`** — your personal config (default model, MCP servers, sandbox prefs, profiles).
+- **`.codex/config.toml`** — project-scoped config. **Only loads when the project is trusted.** Untrusted projects skip this — that's by design (untrusted code can't override your settings).
+- **`.codex/`** directory — slash command shortcuts, subagent definitions, project-scoped MCP server pins.
+
+## What to do next
+
+- [§CDX.5 Pitfalls](/openai/codex-cli/pitfalls/) — rough edges to plan around
+- [§CDX.6 MCP integration](/openai/codex-cli/mcp/) — wiring tools into Codex
+- [§CDX.7 Models](/openai/codex-cli/models/) — picking the right model for the task

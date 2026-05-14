@@ -1,0 +1,178 @@
+---
+title: "Widget rendering — text/html;profile=mcp-app and the iframe bridge"
+section: "Apps SDK"
+sectionNumber: "APPS.3"
+description: "The widget side of the OpenAI Apps SDK — how ChatGPT renders your HTML in a sandboxed iframe, the MCP Apps JSON-RPC bridge for tool I/O, the window.openai extension surface, and the CSP contract."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from developers.openai.com/apps-sdk/build/custom-ux and build/mcp-server as of 15 May 2026. The bridge methods are stable today but new ones are still being added — confirm against current docs."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://developers.openai.com/apps-sdk/build/custom-ux"
+  - "https://developers.openai.com/apps-sdk/build/mcp-server"
+  - "https://developers.openai.com/apps-sdk/build/chatgpt-ui"
+  - "https://openai.github.io/apps-sdk-ui/"
+vendor: "openai"
+product: "apps-sdk"
+---
+
+## The iframe contract
+
+This is the **widget half** of the Apps SDK contract — how your HTML/JS renders inside ChatGPT and talks back to it. The server half is in [§APPS.2 MCP plugin](/openai/apps-sdk/mcp-plugin/); read that first if you want the full picture.
+
+ChatGPT renders your widget inside an `<iframe>` next to (or inline with) the conversation. The iframe is sandboxed: a Content Security Policy you declare, no top-level navigation, no access to ChatGPT's DOM. Communication with ChatGPT goes through `postMessage`, framed as JSON-RPC 2.0.
+
+The MIME type the iframe is served with is **`text/html;profile=mcp-app`**. That's the wire signal that says "this is an MCP Apps widget"; ChatGPT loads it with the bridge already in place.
+
+> The MIME type and the underlying spec come from the open **MCP Apps** standard — same protocol works in any MCP-Apps-compatible host. ChatGPT was the first host; others can adopt it.
+
+## The MCP Apps bridge — what methods exist
+
+The bridge uses JSON-RPC 2.0 over `postMessage`. Key methods you'll see in the wire traffic (the spec also includes initialisation methods — `ui/initialize` for handshake and `ui/notifications/initialized` to signal readiness — handled automatically by the official SDK helpers; you only touch the methods below in app code):
+
+| Method / notification | Direction | What it's for |
+|---|---|---|
+| `ui/notifications/tool-input` | host → iframe | Tool inputs (the args the model called with) |
+| `ui/notifications/tool-result` | host → iframe | Tool results (your server's `structuredContent`) |
+| `tools/call` | iframe → host | Widget calls another tool |
+| `ui/message` | iframe → host | Widget posts a follow-up message to the conversation |
+| `ui/update-model-context` | iframe → host | Widget updates the context the model sees |
+
+For any host-specific extensions ChatGPT adds, they're documented under [`window.openai`](https://developers.openai.com/apps-sdk/build/chatgpt-ui) (covered below).
+
+## Why this matters
+
+Three reasons the iframe contract is worth understanding before you start coding:
+
+- **Sandboxing protects the user, not just the host.** The CSP isn't a hostile cage; it limits the blast radius if your widget gets compromised (third-party script you didn't audit, supply-chain attack on a dependency). Declare the narrowest CSP that works.
+- **JSON-RPC + `postMessage` is the portable contract.** Stay on the standard bridge methods (`ui/notifications/*`, `tools/call`, `ui/message`, `ui/update-model-context`) and your widget can run anywhere the MCP Apps spec is supported. `window.openai` extensions are convenient but ChatGPT-only.
+- **You don't render your own MIME type.** Just serve the HTML; the host sets `text/html;profile=mcp-app` when it serves your registered resource. Reading `text/html+skybridge` somewhere old? That's the previous name; the current MIME is `text/html;profile=mcp-app`.
+
+## Receiving tool inputs and results
+
+Listen for `message` events on the iframe `window`. When a `ui/notifications/tool-result` arrives, re-render from `structuredContent`:
+
+```javascript
+window.addEventListener("message", (event) => {
+  if (event.source !== window.parent) return;
+  const msg = event.data;
+  if (!msg || msg.jsonrpc !== "2.0") return;
+  if (msg.method !== "ui/notifications/tool-result") return;
+
+  const toolResult = msg.params;
+  const data = toolResult?.structuredContent;
+  renderKanban(data);
+}, { passive: true });
+```
+
+The same pattern handles `ui/notifications/tool-input` if you need to react to the args the model sent.
+
+## Calling a tool from the widget
+
+```javascript
+function callTool(name, args) {
+  const id = crypto.randomUUID();
+  window.parent.postMessage({
+    jsonrpc: "2.0",
+    id,
+    method: "tools/call",
+    params: { name, arguments: args },
+  }, "*");
+  // Listen for the response with matching id…
+}
+```
+
+In practice you'll wrap this in a `Promise`-based helper that correlates request IDs with responses. The [`apps-sdk-ui`](https://openai.github.io/apps-sdk-ui/) kit provides one.
+
+For the tool to be callable from the widget, set `_meta.ui.visibility` on the tool descriptor — by default tools are callable by both model and UI, but you can lock down sensitive tools to model-only.
+
+## Posting a follow-up message
+
+Widget asks ChatGPT to send a message on the user's behalf:
+
+```javascript
+window.parent.postMessage({
+  jsonrpc: "2.0",
+  method: "ui/message",
+  params: {
+    role: "user",
+    content: [{ type: "text", text: "Draft a tasting itinerary for my picks." }],
+  },
+}, "*");
+```
+
+> **Security note on `postMessage` target origin.** Using `"*"` as the target tells the browser "send to any origin," which the host contract requires here because the widget can't reliably know the host's exact origin in advance. The risk goes the other way: when **receiving** messages from the host (see the listener above), always check `event.source === window.parent` (and optionally compare `event.origin` against a known allowlist if you have one) before trusting the payload.
+
+The model receives the message as if the user typed it. Useful for "I clicked the Confirm button" or "the user just selected three items, please act on them."
+
+## Updating model-visible context
+
+When widget state changes in a way that matters to the model — selections, filters, completed steps — push an update:
+
+```javascript
+await rpcRequest("ui/update-model-context", {
+  content: [{ type: "text", text: "User selected 3 items: A, B, C." }],
+});
+```
+
+The model factors this into its next turn. Keep these terse — every update adds tokens to the conversation context.
+
+## The CSP contract
+
+Your widget runs under a CSP you declared in the MCP resource registration. The three lists that matter:
+
+| List | What it controls |
+|---|---|
+| `connectDomains` | URLs your widget can `fetch` / WebSocket to |
+| `resourceDomains` | URLs your widget can load images, fonts, scripts from |
+| `frameDomains` | Origins your widget can embed as sub-iframes (default: none) |
+
+The CSP is enforced by the browser. If your widget tries to `fetch("https://other-api.example.com")` and `other-api.example.com` isn't in `connectDomains`, the request fails. Same for resources and frames.
+
+ChatGPT also reviews these lists during app submission. Domains you don't own → rejected. Wildcards that match too broadly → rejected.
+
+## The `window.openai` extension surface
+
+For ChatGPT-only capabilities that aren't in the MCP Apps standard, the host injects a `window.openai` object. Current capabilities (verify against [the ChatGPT UI docs](https://developers.openai.com/apps-sdk/build/chatgpt-ui#understand-the-windowopenai-api) before depending):
+
+| Capability | Purpose |
+|---|---|
+| `uploadFile` | Trigger a file upload from the widget |
+| `selectFiles` | Ask the user to pick files from their library |
+| `getFileDownloadUrl` | Get a temporary URL for a file the host holds |
+| `requestModal` | Open a host-owned modal (e.g. for a checkout flow) |
+| `requestCheckout` | Open Instant Checkout (when enabled for your app) |
+
+Use `window.openai` when the capability is materially better in ChatGPT than going through the bridge. For everything else, stay on the standard bridge so your widget is portable to other MCP Apps hosts.
+
+## The UI kit
+
+[`apps-sdk-ui`](https://openai.github.io/apps-sdk-ui/) is an optional kit with buttons, cards, input controls, and layout primitives that match ChatGPT's container styling. Saves time when you want a consistent look without rebuilding base components. Compatible with React; the JSON-RPC helpers are reusable in vanilla JS.
+
+## Versioning your widget
+
+When you ship a breaking change to your widget HTML/JS/CSS, **bump the resource URI**:
+
+```typescript
+// Old
+contents: [{ uri: "ui://widget/kanban-board.html" }];
+// New
+contents: [{ uri: "ui://widget/kanban-board-v2.html" }];
+```
+
+Update every reference — `registerAppResource`, `_meta.ui.resourceUri` on tool descriptors, internal links. ChatGPT caches by URI; bumping it forces a fresh load.
+
+If you ship updates frequently, keep a consistent versioning scheme (`-v2`, `-v3`, or date-stamped) so you can roll forward or back without reusing the same URI.
+
+## Watch for
+
+- **Sub-iframes are reviewed extra hard.** Apps that set `frameDomains` get more scrutiny during submission. Avoid if you can.
+- **Layout reflows on tool re-render.** If every tool call triggers a fresh render, the UI flickers. Use the [decoupled data-tool / render-tool pattern](/openai/apps-sdk/mcp-plugin/) to render once at the end.
+- **Hosted state is your problem.** ChatGPT doesn't persist widget state between sessions. If your widget has state worth saving, use `ui/update-model-context` to nudge the model + persist on your server.
+- **Testing across hosts.** The MCP Apps spec promises portability. In practice, today only ChatGPT runs the bridge end-to-end. Verify portability claims against current MCP Apps host coverage.
+
+## What to do next
+
+- [Examples repo](https://github.com/openai/openai-apps-sdk-examples) — copy a working widget
+- [§APPS.2 MCP plugin server side](/openai/apps-sdk/mcp-plugin/) — the server half of the contract
+- [§APPS.1 Apps SDK overview](/openai/apps-sdk/overview/) — refresher

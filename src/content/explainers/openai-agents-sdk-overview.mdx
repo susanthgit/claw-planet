@@ -1,0 +1,121 @@
+---
+title: "OpenAI Agents SDK, plainly"
+section: "Agents SDK"
+sectionNumber: "ASDK.1"
+description: "Five-minute orientation to the OpenAI Agents SDK — what it is (a Python + TypeScript framework for building multi-agent apps), what it gives you (agents · handoffs · tools · guardrails · sessions · tracing), and where it fits vs the Assistants API and Anthropic's SDK."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from github.com/openai/openai-agents-python and openai.github.io/openai-agents-python as of 15 May 2026. Sush hasn't built a production agent on this yet — page flips to tried with a session log when he does."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://github.com/openai/openai-agents-python"
+  - "https://github.com/openai/openai-agents-js"
+  - "https://openai.github.io/openai-agents-python/"
+  - "https://openai.github.io/openai-agents-python/quickstart/"
+vendor: "openai"
+product: "agents-sdk"
+---
+
+## The thirty-second version
+
+The OpenAI Agents SDK is a small, opinionated framework for building **multi-agent apps**. It ships in two flavours — Python (`pip install openai-agents`, Python 3.10+) and TypeScript (`@openai/agents`) — and the same primitives carry across both.
+
+Three things to know at the start:
+
+1. It's **provider-agnostic.** It calls the OpenAI Responses or Chat Completions API by default, but the same `Agent` class works with 100+ other LLMs via [LiteLLM](https://github.com/BerriAI/litellm) or [any-llm](https://github.com/mozilla-ai/any-llm).
+2. It **replaces older OpenAI experiments** — the Swarm project (deprecated; the SDK docs describe it as a production-ready upgrade of the Swarm experimentation). Higher-level pieces of the Assistants API have also been positioned as legacy on platform.openai.com — verify the current Assistants migration guidance on platform.openai.com/docs before relying on this framing.
+3. It's **open source** (MIT). Repos: [`openai/openai-agents-python`](https://github.com/openai/openai-agents-python) and [`openai/openai-agents-js`](https://github.com/openai/openai-agents-js). Docs at [openai.github.io/openai-agents-python](https://openai.github.io/openai-agents-python/).
+
+## What you get
+
+Per the official docs, the SDK ships nine core concepts (Handoffs and Agents-as-tools are listed as a single combined concept in the README, then expanded into a pair when you use them):
+
+| Concept | What it does |
+|---|---|
+| **Agents** | An LLM with instructions, tools, guardrails, and handoffs. The building block. |
+| **Sandbox Agents** | Agents preconfigured with a container/workspace — useful for long-horizon tasks that need a filesystem. New in v0.14.0. |
+| **Handoffs** | One agent transfers control to another (specialist takes over the rest of the turn). |
+| **Agents as tools** | Manager-pattern alternative — orchestrator stays in control and calls specialist agents as tools. |
+| **Tools** | Functions, MCP servers, or OpenAI-hosted tools (web search, code interpreter, computer use). |
+| **Guardrails** | Configurable safety checks for input and output validation. |
+| **Human in the loop** | Built-in pause-for-approval pattern across agent runs. |
+| **Sessions** | Automatic conversation history management across runs. |
+| **Tracing** | Built-in span recording — view, debug, and optimise workflows in the OpenAI dashboard. |
+| **Realtime Agents** | Voice agents using `gpt-realtime-2` with full agent features. |
+
+Most apps you build will use Agents + Tools + Handoffs + Sessions. Sandbox Agents, Realtime, and Guardrails are there when you need them.
+
+## A real example
+
+A simple two-agent setup with a handoff — one "history tutor" that answers questions, one "math tutor" that handles the math, and a triage agent in front:
+
+```python
+import asyncio
+from agents import Agent, Runner
+
+math_tutor = Agent(
+    name="Math Tutor",
+    instructions="You answer math questions with worked examples.",
+)
+history_tutor = Agent(
+    name="History Tutor",
+    instructions="You answer history questions clearly and concisely.",
+)
+triage = Agent(
+    name="Triage",
+    instructions="Route the user to the right tutor.",
+    handoffs=[math_tutor, history_tutor],
+)
+
+async def main():
+    result = await Runner.run(triage, "When did the Roman Empire fall?")
+    print(result.final_output)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+That's the shape: agents have instructions + (optionally) tools + (optionally) other agents they can hand off to. The `Runner` drives the conversation; you get a `RunResult` back with `final_output` plus the trace.
+
+## Why this matters
+
+LLM apps used to be "one model, one prompt, one response." The Agents SDK assumes the opposite — that real work involves **specialist agents talking to each other, calling tools, asking humans for help, and running for a while**. The SDK gives you the plumbing without the boilerplate.
+
+Three things that fall out of the design:
+
+- **Tracing is automatic and high-signal.** Every agent run, every tool call, every handoff is recorded as a span. You see what happened, how long it took, and where it went sideways. The OpenAI dashboard renders these traces in a UI by default.
+- **Multi-provider works out of the box.** Want Claude as a fallback? Set up `LiteLLM` and your `Agent` calls Anthropic instead. The SDK doesn't lock you to OpenAI models — though tracing, hosted tools, and Realtime agents depend on OpenAI-specific features.
+- **MCP is a first-class tool type.** Connect any MCP server (filesystem, git, database, Slack) the same way you'd register a function. Cross-vendor MCP servers slot in directly.
+
+## How it compares
+
+| | **OpenAI Agents SDK** | **Anthropic Claude API + tool use** | **LangChain / LangGraph** |
+|---|---|---|---|
+| Languages | Python + TypeScript | Python + TypeScript (plus HTTP) | Python + TypeScript |
+| Provider | OpenAI default · multi-provider via LiteLLM/any-llm | Anthropic-only | Multi-provider |
+| Multi-agent primitive | First-class (Handoffs · Agents as tools) | DIY — orchestrate via your own code | First-class (LangGraph) |
+| Tracing | Built-in, OpenAI dashboard | Manual / third-party | LangSmith (paid) |
+| MCP support | Native tool type | Native | Adapter exists |
+| Maturity | Stable but young (v0.x → 1.x in 2025-26) | Mature SDK · tool use stable | Mature, but the API churns |
+| Lock-in | Low (provider-agnostic core) | Anthropic | Low |
+
+> **Sush's honest take (sourced, not yet tried):** the Agents SDK feels designed by people who shipped multi-agent apps and got tired of writing the same handoff/tracing boilerplate every time. The trade-off is opinion — the SDK has views on how multi-agent systems should be shaped, and if your problem doesn't fit them, you'll fight the framework.
+
+## When you'd reach for it (vs the bare API)
+
+- You want **more than one agent** — a triage, a couple of specialists, a tool-runner.
+- You want **tracing without building it** — span recording + visualisation come free.
+- You want a **session memory layer** without writing your own.
+- You want **handoffs** between agents, with the right context carrying through.
+
+When you'd skip it:
+
+- One-prompt, one-response apps. Just call `client.responses.create()` from the `openai` package.
+- You need a different multi-agent shape than the SDK assumes (e.g. you're building a custom message-passing protocol).
+
+## What to do next
+
+- [§ASDK.2 Core concepts](/openai/agents-sdk/concepts/) — agents, handoffs, tools, guardrails explained with examples
+- [§ASDK.3 Your first agent](/openai/agents-sdk/first-agent/) — step-by-step walkthrough from `pip install` to a running agent with a tool
+- [§ASDK.4 Common patterns](/openai/agents-sdk/patterns/) — handoffs, agents-as-tools, parallel runs, retries, structured outputs
+- [§ASDK.5 Tracing](/openai/agents-sdk/tracing/) — what gets recorded, how to view it, how to export to external observability tools
