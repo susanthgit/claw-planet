@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import SectionHero from '@components/SectionHero.astro';
-import CatalogTable from '@components/CatalogTable.astro';
+import CompareCards from '@components/CompareCards.astro';
 import { getCollection } from 'astro:content';
 
 const allCompares = await getCollection('compares');
@@ -9,27 +9,35 @@ const compareEntries = allCompares
   .filter(e => e.data.section === 'Compare' && e.data.status === 'published')
   .sort((a, b) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
-const catalogEntries = compareEntries.map(e => ({
-  num: e.data.sectionNumber,
-  title: e.data.title,
-  href: `/compare/${e.id.replace(/\.mdx?$/, '')}/`,
-  description: e.data.description,
-  state: e.data.verificationState,
-  date: e.data.lastReviewedAt,
-}));
-
-const tested = compareEntries.filter(e => e.data.verificationState.startsWith('tested')).length;
+const tested = compareEntries.filter(e => ['tried', 'verified'].includes(e.data.verificationState)).length;
 const sourced = compareEntries.filter(e => e.data.verificationState === 'sourced').length;
 const planned = compareEntries.filter(e => e.data.verificationState === 'planned').length;
 
-const lede = `OpenClaw vs the alternatives. Same axes per matchup — capability, cost, lock-in, maturity, where it leads, where it lags. Currently one deep matchup live (vs MCP-based stacks); more matchups (vs Claude Code, vs LangChain) ship as Sush gains direct experience comparing.`;
+// Translate compare entries into atrium cards with one-liner decision-angle labels.
+const angleByNumber: Record<string, string> = {
+  '7.1': 'WHICH AGENT SHAPE?',
+  '7.2': 'WHICH CLI?',
+  '7.3': 'WHICH M365 PATH?',
+  '7.4': 'WHICH API / PLATFORM?',
+};
+
+const cards = compareEntries.map(e => ({
+  num: e.data.sectionNumber,
+  label: angleByNumber[e.data.sectionNumber] ?? 'COMPARE',
+  title: e.data.title,
+  blurb: e.data.description,
+  href: `/compare/${e.id.replace(/\.mdx?$/, '')}/`,
+  cta: 'Open comparison',
+}));
+
+const lede = `Cross-vendor comparisons readers can't get from any single vendor's docs. Same shape per matchup — where each wins, where each lags, an honest take at the bottom — so the "which fits my job" answer doesn't require reading four vendor sites.`;
 ---
 
 <BaseLayout
-  title="§ 7 Compare — OpenClaw vs alternatives"
-  description="OpenClaw compared to its neighbours — MCP-based stacks, Claude Code, framework approaches. Where each wins, where each loses, when to switch."
+  title="§ 7 Compare — cross-vendor comparisons"
+  description="Cross-vendor comparisons for builders. CLI coding agents · direct model APIs · M365 extensibility paths · OpenClaw vs MCP-based stacks. Where each wins, where each lags, when to switch."
 >
   <SectionHero num="7" title="Compare" lede={lede} tested={tested} sourced={sourced} planned={planned} />
-  <CatalogTable entries={catalogEntries} />
+  <CompareCards cards={cards} />
 </BaseLayout>
 

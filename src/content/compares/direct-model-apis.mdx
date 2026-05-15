@@ -1,0 +1,158 @@
+---
+title: "Direct model APIs — Claude API · Gemini API · Microsoft Foundry"
+section: "Compare"
+sectionNumber: "7.4"
+description: "Three direct model API surfaces a production builder picks between. Claude API · Gemini API · Microsoft Foundry. OpenAI's direct API is out of scope here — Foundry covers the Azure-governed path to GPT-5 and the broader Foundry catalogue."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Vendor pages were fetched 15 May 2026. Pricing pages render dollar values as JavaScript on Foundry's side — exact MTok values for Azure-direct GPT models couldn't be pinned from static HTML. All other facts sourced from canonical docs."
+lastReviewedAt: "2026-05-15"
+against: "Anthropic Claude API · Google Gemini API · Microsoft Foundry"
+depth: "deep"
+sources:
+  - "https://docs.anthropic.com/en/api/getting-started"
+  - "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+  - "https://www.anthropic.com/pricing"
+  - "https://docs.anthropic.com/en/api/messages-streaming"
+  - "https://docs.anthropic.com/en/api/client-sdks"
+  - "https://ai.google.dev/gemini-api/docs/quickstart"
+  - "https://ai.google.dev/gemini-api/docs/libraries"
+  - "https://ai.google.dev/gemini-api/docs/models"
+  - "https://ai.google.dev/gemini-api/docs/pricing"
+  - "https://ai.google.dev/gemini-api/docs/function-calling"
+  - "https://learn.microsoft.com/en-us/azure/ai-foundry/what-is-azure-ai-foundry"
+  - "https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/sdk-overview"
+  - "https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/how-to/use-foundry-models-claude"
+  - "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models"
+seeAlso:
+  - "7.1"
+  - "7.2"
+  - "7.3"
+vendor: "cross-vendor"
+---
+
+import ComparisonMatrix from '@components/ComparisonMatrix.astro';
+
+## What this comparison is — and what it's not
+
+Three direct model API surfaces a production builder is most likely to pick between today:
+
+- **Anthropic Claude API** — raw model API for the Claude family (Opus 4.7 · Sonnet 4.6 · Haiku 4.5).
+- **Google Gemini API** — raw model API for the Gemini family (2.5 Pro/Flash stable; 3.1 Pro Preview; 3.1 Flash-Lite GA since May 2026).
+- **Microsoft Foundry** — Azure platform-as-a-service that hosts 1,900+ models including Microsoft's GPT-5 series, Claude, Mistral, Llama, and more. Foundry supersedes the older "Azure AI Studio" / "Azure AI Foundry" brand and absorbs Azure OpenAI — the GPT-5 series runs as Azure Direct Models within Foundry, and existing Azure OpenAI resources can be upgraded to Foundry resources preserving endpoints, API keys, and state.
+
+> ⚠️ **OpenAI's direct API is intentionally excluded from this comparison.** Claw has no `/openai/api/` page — Sush prioritised the five OpenAI surfaces he actually uses (Agents SDK · Codex CLI · Apps SDK · Atlas · Custom GPTs). Builders wanting raw OpenAI models in production today typically go through Foundry (covered here, since Foundry hosts the GPT-5 / GPT-5.4 / GPT-5.5 families) or call `api.openai.com` directly with the OpenAI Python SDK. We'll add an OpenAI direct-API page if that becomes a primary surface Sush works in. Until then, this is honest about scope.
+
+This is **NOT** a model-quality comparison. Which model writes the best summary or hits the highest HumanEval score is out-of-scope per [Claw's scope guardrails](/methodology/). This is the API-shape comparison: what does the SDK look like, what auth do you need, how does streaming work, what do you pay for what.
+
+> ⚠️ **Model versions and SDK versions move fast.** All version numbers in the matrix below (anthropic 0.102.0, Claude Opus 4.7, Gemini 2.5 Pro, GPT-5.5, etc.) are current as of 15 May 2026. Verify in each vendor's reference before writing a string literal in production code.
+
+<ComparisonMatrix slug="direct-model-apis" />
+
+## The shape difference
+
+Three different API personalities:
+
+- **Anthropic Claude API** — the "model API" archetype. One vendor, one model family, one set of SDKs that map cleanly to the model lineup. Auth is API key or OAuth bearer. Streaming is named events. Pricing is straightforward per-MTok with cache discounts.
+- **Google Gemini API** — broadly the same shape, with a recent SDK changeover most builders haven't migrated yet (the `google-generativeai` Python SDK is no longer actively maintained and **stops working on 30 November 2025**; the current SDK is `google-genai`). Streaming is raw JSON chunks (no named event types). Pricing has more dimensions (priority/standard/flex/batch inference modes, separate caching serve + storage fees).
+- **Microsoft Foundry** — not really a model API. It's a *platform* (PaaS) where you deploy models from a 1,900+ catalogue, govern them with Azure RBAC and Entra ID, and call them through Azure-native endpoints. The SDK shape (`azure-ai-projects`) reflects this — it's project-and-deployment-centric, not model-call-centric. Internally it delegates to the OpenAI SDK for OpenAI-compatible models and the Anthropic SDK for Claude models — so the actual model-call shape depends on which model family you're hitting.
+
+If you're picking between these three for a single-model workload, the question isn't really "which API" — it's "where do I want this model deployed, governed, and billed?"
+
+## Where each wins
+
+### Anthropic Claude API
+
+1. **Prompt-caching that materially changes throughput.** Cached read tokens are dramatically cheaper ($0.50/MTok for Opus 4.7 vs $5.00 standard input) AND they typically don't count toward your ITPM rate limits. For agentic workloads where the same context gets re-sent many times — system prompt, tool schemas, large reference docs — this turns a single account into multiple effective throughput pools. (Verify on your tier in console.)
+2. **The cleanest SDK-to-model mapping.** One `anthropic.Anthropic()` client, `client.messages.create()`, model name as a string, done. No project-resource-deployment indirection. Lowest cognitive overhead of the three for a "I just want to call a model" workload.
+3. **Server tools.** `web_search`, `code_execution`, `web_fetch`, and `tool_search` execute Anthropic-side. Results come back in the response without your client touching the tool. Useful when you don't want to operate the tool infrastructure yourself.
+4. **Workload Identity Federation as a keyless auth option.** Short-lived OAuth tokens from `POST /v1/oauth/token` give you a path away from static API keys that doesn't require sending traffic through Bedrock/Vertex/Foundry. Mature key-rotation story.
+
+### Google Gemini API
+
+1. **True cross-modality across all input types — GA.** Text, image, video, audio, all as inputs. Real-time bidirectional audio/video via the Live API. Of the three, Gemini is the most "throw any media at the model" path today. Especially relevant for vision-heavy, video-heavy, or voice-app workloads.
+2. **The cheapest stable top-tier model.** Gemini 2.5 Flash at $0.30/MTok input + $2.50/MTok output (including thinking tokens) is materially cheaper than Claude Haiku 4.5 ($1/$5) or comparable Azure-OpenAI models for the same job. If your workload is high-volume and price-sensitive, Flash is the lowest-cost serious option.
+3. **Inference modes.** Standard / Flex (50% of Standard) / Priority (1.8× Standard) / Batch (50% of Standard) gives you a continuum of "how urgent is this request?" billing. Niche, but real value for workloads with mixed urgency.
+4. **Cross-modal embeddings.** `gemini-embedding-2` (GA April 2026) embeds text, images, video, audio, and PDFs into the same vector space. Anthropic and Foundry don't have a single-model-cross-modal-embedding option in 2026.
+
+### Microsoft Foundry
+
+1. **Model breadth.** 1,900+ models in the catalogue: GPT-5 series (Microsoft's primary), plus Claude, Gemini, Mistral, Llama, DeepSeek-R1, Phi-4, Grok, Hugging Face hub models, and partner-deployed niche models. If your scenario is "compare 5 model families in the same deployment infrastructure," Foundry is the only one of the three that gets you there in one place.
+2. **Azure-native governance.** Microsoft Entra ID auth (no static keys for the SDK itself), Azure RBAC for model deployments, Azure Private Link, Azure Monitor / Application Insights for observability, Azure Policy for compliance. If your org has Azure as its compliance baseline, Foundry inherits all of it.
+3. **The Foundry platform itself is free.** Per the docs: *"The platform is free to use and explore. Pricing occurs at the deployment level."* You only pay for the models you deploy (and any Azure infrastructure they sit on). Useful for evaluation phases.
+4. **Cross-vendor consistency for OpenAI workloads.** If you're already running on Azure OpenAI, the path to Foundry is an upgrade (the docs explicitly call out: *"Upgrade Azure OpenAI resource → Foundry resource"* preserving endpoints + keys + state). Less migration drama than picking a new vendor.
+
+## Where each lags
+
+### Anthropic Claude API
+
+- **No audio or video input today.** Vision is GA; everything beyond text + images is not on the canonical models overview page as of fetch date. If your scenario needs voice or video inputs, this isn't the API for it (Gemini is).
+- **One model family.** If you want to compare Claude to GPT-5 to Llama in the same code, you're hitting three APIs or going through Foundry.
+- **SDK still in 0.x.** The Python SDK is on `anthropic==0.102.0` as of mid-May 2026 — it's stable and widely used, but if your shop blocks pre-1.0 dependencies it's a real procurement question.
+
+### Google Gemini API
+
+- **The SDK changeover.** The old `google-generativeai` Python SDK is deprecated and "not actively maintained" per the libraries page. Code written against it still works for now, but new features (gemini-embedding-2, recent function-calling improvements, the Interactions API) ship to `google-genai` only. Migration is straightforward but needed.
+- **More pricing dimensions to model.** Standard vs Flex vs Priority vs Batch × per-model × context-window-tier × cached-vs-fresh × storage-by-the-hour. The cost spreadsheet is more complex than the other two for the same workload.
+- **Preview-heavy current lineup.** Gemini 3 family is what Google's quickstart points at, but most of it is `-preview` and pricing/availability moves. The stable GA top-tier remains Gemini 2.5 Pro/Flash. Worth knowing if you've been told "use Gemini 3" and your config errors at deploy.
+
+### Microsoft Foundry
+
+- **The pricing page is JavaScript-rendered.** Dollar values for GPT-5/5.4/5.5 and others appear as `$-` in static HTML. You either eyeball the rendered page or use the Azure pricing calculator — there's no clean way to verify-current-pricing in CI.
+- **Three SDK paths for three model families.** Foundry SDK (`azure-ai-projects`) for the project-and-deployment management layer; OpenAI SDK for Chat Completions / Responses API (delegates internally); Anthropic SDK + `AnthropicFoundry` client for Claude. Code that calls multiple model families ends up with multiple client objects.
+- **Entra ID is the only SDK auth.** API keys work for the `/openai/v1` endpoint and for keys-style routes, but the SDK client itself wants Entra. If you've inherited a workload that uses Azure OpenAI's API-key path, the migration to the SDK requires standing up Entra credentials.
+- **Region + availability matrix.** Different models are available in different Azure regions with different deployment-tier (Global / Data Zone / Regional) capabilities. Picking a model with the right regional availability is part of the design, not just a config detail.
+
+## Decision sketch
+
+```
+Do you need to deploy on Azure or live behind Microsoft Entra ID?
+  ├─ Yes → Microsoft Foundry
+  └─ No → continue
+       │
+       Does the workload need audio or video as input?
+         ├─ Yes → Google Gemini API (or Foundry with a GPT-5 audio-capable model for audio-only)
+         └─ No → continue
+              │
+              Is the workload high-volume and price-sensitive?
+                ├─ Yes → Google Gemini API (Gemini 2.5 Flash $0.30/$2.50)
+                └─ No → continue
+                     │
+                     Will you re-send the same large context many times (agent loop)?
+                       ├─ Yes → Anthropic Claude API (cache reads don't count toward ITPM limits — material throughput multiplier)
+                       └─ No → pick by model preference or org-policy
+```
+
+## Most people end up using two
+
+The honest pattern: pick a *home* API for the workload you ship + a *secondary* for the cases where the primary doesn't fit.
+
+- **Foundry primary + Anthropic API secondary** — common in Microsoft-shop enterprises. Foundry hosts the production deployments with governance; engineers experiment against direct Claude for the workloads where Anthropic's prompt-caching or extended thinking matter.
+- **Anthropic primary + Gemini secondary** — common in AI-native startups. Claude for the bulk of the agent work (cache-friendly, server tools, plan-quality outputs); Gemini for the vision/video workloads Claude can't do, plus cost-sensitive bulk operations on Flash.
+- **All three through Foundry** — common in regulated industries. Single billing dimension, single compliance posture, single set of monitoring dashboards. You give up some pricing flexibility (Foundry's wraps tend to be at or near vendor list price); you gain a unified governance story.
+
+## What we are NOT claiming
+
+- **Which model is "best."** Out of scope per Claw scope. Quality varies by task, prompt, language, modality, latency budget, and model version.
+- **Specific dollar pricing for Foundry-deployed models.** JavaScript-rendered on Azure's pricing page; we link to it but don't quote specific MTok values that would go stale.
+- **OpenAI's direct API is comparable.** It's deliberately excluded; readers wanting OpenAI in production should go to [Foundry](/microsoft/foundry/) (for the Azure-governed path) or `api.openai.com` directly (which we don't cover on Claw yet).
+- **That SDK versions or model names won't change.** Anthropic ships SDK versions monthly; Google rotates preview models faster than that; Foundry's catalogue adds models almost weekly. Versions on this page are current as of 15 May 2026.
+
+## Honest take
+
+If you're Sush — Microsoft SE, enterprise customers, Azure baseline — **Foundry is the default**, both because it's where the customer's compliance posture already lives and because the model breadth means you don't have to argue for a vendor switch when the customer wants to try Claude or Llama.
+
+If I were starting a fresh AI-native project today with no enterprise constraints, **Anthropic API would be my primary**. Lowest cognitive overhead, cache-friendly for the agent shape, server tools are genuinely useful, and the SDK ergonomics are the cleanest of the three.
+
+If I were building anything voice-or-video-heavy or anything where the per-token cost was the design constraint, **Gemini API**. Flash at $0.30/$2.50 is the only top-tier option in the three that's cheap enough to do "use the model on every event" workloads without burning the budget in a week.
+
+The trap to avoid: picking a vendor based on a quarter's pricing differential. The model lineups and prices reshuffle every few months across all three. Pick based on the shape of the API and how it fits your code, then optimise pricing within whichever you picked.
+
+## What to read next
+
+- [§7.1 OpenClaw vs MCP-based stacks](/compare/openclaw-vs-mcp-stacks/) — the architectural cut
+- [§7.2 CLI coding agents](/compare/cli-coding-agents/) — the developer-side compare
+- [§7.3 M365 extensibility paths](/compare/m365-extensibility-paths/) — same vendor's M365 story
+- [Anthropic Claude API overview](/anthropic/claude-api/) — the Claude API deep-dive
+- [Google Gemini API overview](/google/gemini-api/) — the Gemini API deep-dive
+- [Microsoft Foundry overview](/microsoft/foundry/) — the Foundry deep-dive

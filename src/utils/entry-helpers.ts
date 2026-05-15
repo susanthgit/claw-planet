@@ -97,6 +97,33 @@ export function getSchemaOrgArticle(opts: {
 }
 
 /**
+ * Build the correct route URL for an entry — vendor-aware.
+ *
+ * OpenClaw entries (the default vendor) route through the per-section href the
+ * caller supplied (e.g. /openclaw/overview/<slug>/). Vendor-namespaced entries
+ * (Anthropic, OpenAI, Google, Microsoft) live under /<vendor>/<product>/<short-slug>/
+ * where the file's `<vendor>-<product>-` prefix is stripped from the slug.
+ *
+ * Cross-vendor entries (compare pages) and entries without a product use the
+ * caller's section href as-is.
+ */
+function buildEntryHref(entry: any, defaultSectionHref: string): string {
+  const vendor = entry?.data?.vendor;
+  const product = entry?.data?.product;
+  const fullSlug = entry.id.replace(/\.mdx?$/, '');
+  if (
+    product &&
+    typeof vendor === 'string' &&
+    vendor !== 'openclaw' &&
+    vendor !== 'cross-vendor'
+  ) {
+    const shortSlug = fullSlug.replace(new RegExp(`^${vendor}-${product}-`), '');
+    return `/${vendor}/${product}/${shortSlug}/`;
+  }
+  return `${defaultSectionHref}${fullSlug}/`;
+}
+
+/**
  * Return up to N related entries across all sections.
  * Strategy:
  *   1. start with explicit seeAlso refs (sectionNumbers)
@@ -121,7 +148,7 @@ export function getRelated(opts: {
           title: found.data.title,
           sectionNumber: found.data.sectionNumber,
           sectionName: sec.sectionName,
-          href: `${sec.sectionHref}${found.id.replace(/\.mdx?$/, '')}/`,
+          href: buildEntryHref(found, sec.sectionHref),
         });
         if (out.length >= maxResults) return out;
       }
@@ -153,7 +180,7 @@ export function getRelated(opts: {
         title: c.entry.data.title,
         sectionNumber: c.entry.data.sectionNumber,
         sectionName: c.sectionName,
-        href: `${c.sectionHref}${c.entry.id.replace(/\.mdx?$/, '')}/`,
+        href: buildEntryHref(c.entry, c.sectionHref),
       });
     }
   }

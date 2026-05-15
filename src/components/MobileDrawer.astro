@@ -32,10 +32,10 @@ const activeVendor = path.startsWith('/anthropic/') ? 'anthropic'
   : path.startsWith('/microsoft/') ? 'microsoft'
   : 'openclaw';
 
-async function loadChildren(name: string, baseHref: string, vendor: string = 'openclaw') {
+async function loadChildren(name: string, baseHref: string, vendor: string | null = 'openclaw') {
   const all = await getCollection(name as any);
   return all
-    .filter((e: any) => e.data.status === 'published' && e.data.vendor === vendor)
+    .filter((e: any) => e.data.status === 'published' && (vendor === null || e.data.vendor === vendor))
     .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber))
     .map((e: any) => {
       const slug = e.id.replace(/\.mdx?$/, '');
@@ -85,7 +85,7 @@ if (activeVendor === 'openclaw') {
   const pluginsKids = await loadChildren('plugins', '/openclaw/plugins/');
   const useCasesKids = await loadChildren('use-cases', '/openclaw/use-cases/');
   const securityKids = await loadChildren('gotchas', '/openclaw/security/');
-  const compareKids = await loadChildren('compares', '/compare/');
+  const compareKids = await loadChildren('compares', '/compare/', null);
 
   sections = [
     { num: '§1',  title: 'Overview',    count: overviewKids.length,    slug: '/openclaw/overview/',    children: overviewKids },

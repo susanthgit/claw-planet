@@ -1,0 +1,159 @@
+---
+title: "CLI coding agents — Claude Code · Codex CLI · Gemini CLI · Copilot CLI"
+section: "Compare"
+sectionNumber: "7.2"
+description: "Four shell-native AI coding CLIs. Same shape, different identities. Where each wins, where each lags, when to switch — and why most thoughtful people end up using two."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Sush uses GitHub Copilot CLI daily (this site is built with it) and has tried Claude Code + Codex CLI. Gemini CLI is sourced from docs, not personal experience. Cross-tool comparison claims grounded in public docs as of 15 May 2026 — vendors ship fast; pricing + free-tier numbers in particular can move."
+lastReviewedAt: "2026-05-15"
+against: "Codex CLI · Gemini CLI · Copilot CLI"
+depth: "deep"
+sources:
+  - "https://github.com/anthropics/claude-code"
+  - "https://code.claude.com/docs/en/overview"
+  - "https://claude.com/pricing"
+  - "https://github.com/openai/codex"
+  - "https://developers.openai.com/codex"
+  - "https://developers.openai.com/codex/models"
+  - "https://github.com/google-gemini/gemini-cli"
+  - "https://www.geminicli.com/docs/"
+  - "https://www.geminicli.com/docs/tools/mcp-server"
+  - "https://github.com/github/copilot-cli"
+  - "https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli"
+  - "https://github.com/github/copilot-cli/blob/main/changelog.md"
+seeAlso:
+  - "7.1"
+  - "7.3"
+  - "7.4"
+vendor: "cross-vendor"
+---
+
+import ComparisonMatrix from '@components/ComparisonMatrix.astro';
+
+## What this comparison is
+
+Four shell-native AI coding CLIs. You install a binary, run a command in your project, and the CLI reads files, runs commands, edits code, and talks to MCP servers — all from your terminal.
+
+From a distance they look the same. Once you actually use them, they diverge fast — different default models, different auth, different sandboxing philosophies, different plan modes. **This is the "which CLI fits which job" cut.** Not a benchmark. Not a winner table. The honest take at the bottom is which one I'd pick for which kind of work.
+
+<ComparisonMatrix slug="cli-coding-agents" />
+
+## The four identities
+
+If you only remember one thing per CLI:
+
+- **Claude Code** — Anthropic's premier coding agent. Subscription-first (Pro/Max/Team/Enterprise OAuth). The most polished plan/permission model of the four (`plan` / `acceptEdits` / `auto` modes cycled with Shift+Tab). Recently moved off npm to a curl-installer as the recommended path.
+- **Codex CLI** — OpenAI's terminal coder. OS-enforced sandbox (`workspace-write` default, network off, web search defaults to a cached index). Strong default safety posture, less mode-switching ceremony. ChatGPT-account-first; the old $5 free credit is gone.
+- **Gemini CLI** — Google's terminal coder. The only one of the four with a **meaningful no-cost tier** (1,000 req/day on a personal Google account or an AI Studio API key). The widest sandbox backend menu (Seatbelt, Docker, Podman, Windows Native, gVisor, LXC). Plan Mode is first-class and routes Pro for planning + Flash for implementation.
+- **GitHub Copilot CLI** — GitHub's terminal coder. **Renamed in October 2025** — the old `gh-copilot` extension is deprecated; the current product is the standalone `copilot-cli` binary. **Defaults to Claude Sonnet 4.5** (not a GitHub-owned model). Ships with GitHub's MCP server pre-wired. The CLI that's easiest to use if your work already lives on github.com.
+
+## Where each wins
+
+### Claude Code
+
+1. **The plan/approval model.** `plan` mode is a first-class permission state — you can ask Claude to research and propose a multi-file edit before it writes anything, then approve, refine, or hand-edit the plan with `Ctrl+G`. Shift+Tab cycles through `default → acceptEdits → plan` mid-session. Of the four, this is the one that feels most like working with a thoughtful contractor rather than a junior who just starts typing.
+2. **The breadth of the auth model.** Six different ways to authenticate (subscription OAuth, API key, env-var token, OAuth long-lived token, `apiKeyHelper` for rotating creds, plus Bedrock/Vertex/Foundry routing). If you need to point Claude Code at a specific model gateway or rotating-credential setup, it's the most accommodating.
+3. **Auto mode with a classifier.** On Max/Team/Enterprise/API, `auto` mode runs autonomously with a background classifier model checking each action for destructive or exfiltration-style behaviour. The other three either prompt for everything or rely on a sandbox.
+
+### Codex CLI
+
+1. **The strongest default sandbox.** `workspace-write` mode plus network-off-by-default plus cached web-search plus an `auto_review` reviewer agent that watches for data exfiltration. You don't have to think about safety knobs; the defaults are tight.
+2. **Custom model providers as a first-class concept.** If you want to point Codex CLI at a non-OpenAI model (your own deployment, a self-hosted endpoint, another vendor via a proxy), the config supports it cleanly — Chat Completions API or Responses API, with auth via env var, OpenAI keyring, or no auth (for local models).
+3. **The `codex-spark` research preview.** A specialist model optimised for near-instant iteration on small tasks. Available on Pro subscriptions only at time of writing — niche, but if you do a lot of small typed-prompt-typed-prompt-typed-prompt iteration, the latency difference shows.
+
+### Gemini CLI
+
+1. **The free tier that's actually free.** A personal Google account (OAuth) gets you 1,000 requests/day — no card, no plan. An AI Studio API key is a separate path with a smaller free cap (Flash-only). Either way, of the four, this is the one a student or a beginner can pick up without paying anything.
+2. **The widest sandbox menu.** macOS Seatbelt for native isolation. Docker/Podman for cross-platform. **Windows Native Sandbox** (uses `icacls` to set Low Mandatory Level on files — note that changes are persistent after the sandboxed session, unlike VM snapshots). gVisor for Linux user-space-kernel isolation. LXC for full-system containers. If your security posture cares about which mechanism is doing the isolating, Gemini CLI lets you choose.
+3. **Plan Mode with intelligent model routing.** Plan mode is enabled by default; when active, Gemini routes the heavier Pro model for the planning phase and the cheaper Flash for execution. You get plan-quality reasoning without paying Pro rates for every line of generated code.
+
+### GitHub Copilot CLI
+
+1. **It already knows your GitHub world.** Ships with GitHub's MCP server pre-wired — issues, PRs, repo metadata, releases, workflow runs — without configuration. If your code lives on github.com, this is the lowest-friction CLI of the four for "agent that knows about my repo."
+2. **Plan mode plus experimental Autopilot.** Shift+Tab cycles into a structured plan mode where Copilot asks clarifying questions before writing. The `--experimental` flag (or `/autopilot`) adds autopilot mode — agent runs continuation after continuation until the task is done (capped at 5 by default with `--max-autopilot-continues`). Closer to "kick off and walk away" than the other three out of the box.
+3. **Free plan availability.** Copilot CLI ships with **every** GitHub Copilot plan — including the Copilot Free plan (which has a limited monthly premium-request quota). Of the four, this is the one with the lowest "I want to try a real agent CLI" cost for someone who already has a GitHub account.
+4. **Custom agent profiles + repo-level instructions.** `AGENTS.md` at the repo root, `.github/copilot-instructions.md`, and `~/.copilot/agents/` for personal agent profiles give it a richer customisation surface than the other three for "make this agent behave consistently across my team."
+
+## Where each lags
+
+### Claude Code
+
+- **No free tier of any kind.** Pro is $17/mo annual minimum. Or pay-per-token via the Anthropic API (which works fine, but the OAuth-subscription experience is what most users come for).
+- **The `npm install` is deprecated.** You're meant to use the curl/PowerShell installers or Homebrew/WinGet. If you have habit-installed it via npm, your install isn't recommended any more.
+- **No built-in sandbox.** The permission-mode system is sophisticated, but if your security posture wants OS-level isolation, you're running Claude Code inside Docker or a VM yourself.
+
+### Codex CLI
+
+- **No first-class plan mode** the way Claude Code and Gemini CLI have. The closest equivalent is `--sandbox read-only --ask-for-approval on-request`, which gets you safe browsing but not the "Claude proposes a multi-step plan and you approve it" UX.
+- **The old $5 free credit is gone.** You need a ChatGPT Plus subscription (≈$20/mo) or an API key (pay-per-token) to use it.
+- **No Shift+Tab mode cycling.** Modes are set with flags at startup or with `/permissions` mid-session — less ergonomic than the cycle-and-go model.
+
+### Gemini CLI
+
+- **MCP support across stdio, SSE, and Streamable HTTP** is documented at [geminicli.com/docs/tools/mcp-server](https://www.geminicli.com/docs/tools/mcp-server). Earlier reviews flagged HTTP/SSE as unconfirmed; current canonical docs confirm all three transports plus OAuth-aware configuration.
+- **Trusted Folders is off by default.** Some readers expect a "this folder is trusted" prompt on first launch — Gemini CLI doesn't ask one unless you opt in via `settings.json`. Documented behaviour, but easy to misread as "no trust system."
+- **Windows Native Sandbox is persistent.** Unlike Docker or Seatbelt, the `icacls` integrity-level changes survive after the sandbox session ends. Useful but surprising; readers should know.
+
+### GitHub Copilot CLI
+
+- **Still iterating fast.** v1.0.48 as of mid-May 2026 — stable enough for daily use, but the changelog has had some breaking-ish renames (the gh-copilot deprecation in October 2025 wasn't smooth — `docs.github.com/copilot/how-tos/use-copilot-for-common-tasks/use-copilot-in-the-cli` now redirects to a deprecation notice for the old extension). Newer features (Autopilot, MCP Tasks) are flagged experimental and shift between releases.
+- **Default model is not GitHub's.** Claude Sonnet 4.5 is the default, with GPT-5 and others available via `/model`. GitHub reserves the right to change the default. This is fine, but worth knowing if you assumed Copilot CLI was running a GitHub-owned model.
+- **No OS-enforced sandbox.** Like Claude Code, the safety story is trust-prompts and per-tool approval. Good for productivity, less good if you want OS-level isolation.
+
+## Decision sketch
+
+```
+Do you need a meaningful no-cost tier (no card, no plan)?
+  ├─ Yes → Gemini CLI (1,000 req/day on personal Google account)
+  └─ No → continue
+       │
+       Is your code already on github.com (issues/PRs/Actions central)?
+         ├─ Yes → GitHub Copilot CLI (ships with GitHub MCP server)
+         └─ No → continue
+              │
+              Do you care most about plan-before-execute UX?
+                ├─ Yes → Claude Code (best plan/approval model of the four)
+                └─ No → continue
+                     │
+                     Do you care most about default sandbox tightness?
+                       ├─ Yes → Codex CLI (workspace-write + network-off + auto_review)
+                       └─ No → pick by default model preference
+```
+
+## They overlap more than they compete
+
+For most builders, the right answer is **two of the four**, not one. Common combinations worth knowing:
+
+- **Copilot CLI for daily repo work + Claude Code for the gnarly multi-file refactors.** Copilot CLI knows the repo + the PR/issue surface; Claude Code's plan mode is better when you need a deliberate multi-step rewrite.
+- **Gemini CLI for personal projects + a paid CLI for work.** The free tier is genuinely usable for personal side-project velocity; the paid tools have higher reliability and more polished plan UX for production code.
+- **Codex CLI as the "safe one" in CI/autonomous flows.** The default-tight sandbox plus the auto-review reviewer agent make it a reasonable choice for "run this CLI inside a runner without a human watching."
+
+Picking one CLI to rule them all is a choice that costs you. Try two; switch on context.
+
+## What we are NOT claiming
+
+- **Which CLI writes the best code.** Quality varies by language, framework, model selection, and how you prompt — across all four. We have no benchmark data and would not trust a benchmark even if we had one. The CLI shape doesn't predict generated-code quality.
+- **Specific pricing in foreign currencies.** Pricing is in USD here and tracks the vendor's listed page; check your billing dashboard for local rates.
+- **Anything about model quality differences.** That's out-of-scope per [Claw's scope guardrails](/methodology/). We compare tool shapes, not model leaderboards.
+- **What will be true in six months.** All four vendors ship fast. Versions in this comparison are current as of 15 May 2026. Free-tier numbers and default models in particular move.
+
+## Honest take
+
+If you're Sush — Microsoft Copilot SE, code lives mostly on github.com, builds Hugo and Astro sites against MCP servers all day, doesn't want to run a Docker container around the agent — **GitHub Copilot CLI is the daily driver**. It's been the daily driver. This site was built with it.
+
+For the work where you want to think before you cut — a multi-file refactor, a careful migration, anything where the agent needs to plan before it acts — **Claude Code's plan mode wins**. Worth the second subscription for the maybe-twice-a-week jobs that benefit from it.
+
+If you're a student or new builder with no budget, **Gemini CLI's free tier is genuinely the right starting place**. 1,000 requests/day on a personal Google account is enough to learn what these tools can do without paying anything.
+
+Codex CLI is the one I reach for least, but I'd pick it first if I were standing up an autonomous coding agent in CI with a security-conscious org behind me. The defaults are tighter than the other three's, which matters when no human is watching.
+
+## What to read next
+
+- [§7.1 OpenClaw vs MCP-based stacks](/compare/openclaw-vs-mcp-stacks/) — the architectural comparison if you're choosing between agent shapes, not coding CLI brands
+- [§7.3 M365 extensibility paths](/compare/m365-extensibility-paths/) — if the code you're shipping ends up inside Microsoft 365
+- [§7.4 Direct model APIs](/compare/direct-model-apis/) — when you want to call the model directly instead of through a CLI
+- [Claude Code overview](/anthropic/claude-code/) — the Anthropic CLI deep-dive
+- [Codex CLI overview](/openai/codex-cli/) — the OpenAI CLI deep-dive
+- [Gemini CLI overview](/google/gemini-cli/) — the Google CLI deep-dive
+- [GitHub Copilot CLI overview](/microsoft/github-copilot/) — the GitHub CLI deep-dive

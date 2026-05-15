@@ -1,0 +1,196 @@
+---
+/**
+ * ComparisonMatrix — renders a /compare/ matrix from src/data/comparisons.ts.
+ *
+ * Usage in MDX:
+ *   import ComparisonMatrix from '@components/ComparisonMatrix.astro';
+ *   <ComparisonMatrix slug="cli-coding-agents" />
+ *
+ * Mobile behaviour: the wrapper scrolls horizontally; the first column
+ * (dimension labels) is `position: sticky; left: 0` so dimension labels
+ * stay visible while readers swipe through tool columns.
+ *
+ * Set 2026-05-15 (Claw v0b · Batch E).
+ */
+
+import { getComparison, resolveTool } from '@data/comparisons';
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const c = getComparison(slug);
+if (!c) {
+  throw new Error(`ComparisonMatrix: no comparison with slug "${slug}". Add to src/data/comparisons.ts.`);
+}
+
+const tools = c.tools.map((key) => {
+  const meta = resolveTool(key);
+  if (!meta) {
+    throw new Error(`ComparisonMatrix: tool key "${key}" not in toolRegistry (referenced by comparison "${slug}").`);
+  }
+  return { key, ...meta };
+});
+---
+
+<figure class="cm-figure" aria-label={c.title}>
+  <div class="cm-scroll">
+    <table class="cm-table">
+      <thead>
+        <tr>
+          <th class="cm-dimcol-head" scope="col">
+            <span class="cm-dimcol-label">Dimension</span>
+          </th>
+          {tools.map((t) => (
+            <th class="cm-toolcol-head" scope="col">
+              <a href={t.href} class="cm-tool-link">{t.label}</a>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {c.rows.map((row) => (
+          <tr>
+            <th class="cm-dim" scope="row">
+              <span class="cm-dim-label">{row.label}</span>
+            </th>
+            {tools.map((t) => {
+              const cell = row.cells[t.key];
+              return (
+                <td class="cm-cell">
+                  <span class="cm-value">{cell.value}</span>
+                  {cell.note && <span class="cm-note">{cell.note}</span>}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</figure>
+
+<style>
+  .cm-figure {
+    margin: 24px 0 28px;
+    border: 1px solid var(--rule-faint);
+    background: var(--canvas);
+  }
+  .cm-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cm-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 640px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .cm-table thead {
+    border-bottom: 2px solid var(--rule);
+    background: var(--paper-warm);
+  }
+  .cm-dimcol-head,
+  .cm-toolcol-head {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 600;
+    color: var(--ink);
+    vertical-align: bottom;
+    white-space: nowrap;
+  }
+  .cm-dimcol-head {
+    position: sticky;
+    left: 0;
+    background: var(--paper-warm);
+    z-index: 2;
+    border-right: 1px solid var(--rule);
+    min-width: 140px;
+  }
+  .cm-dimcol-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .cm-tool-link {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+  }
+  .cm-tool-link:hover {
+    color: var(--claw);
+    border-color: var(--claw);
+  }
+
+  .cm-table tbody tr {
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .cm-table tbody tr:last-child {
+    border-bottom: none;
+  }
+  .cm-dim {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 600;
+    color: var(--ink);
+    vertical-align: top;
+    background: var(--canvas);
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    border-right: 1px solid var(--rule-faint);
+    min-width: 140px;
+  }
+  .cm-dim-label {
+    font-size: 13px;
+  }
+  .cm-cell {
+    padding: 10px 14px;
+    color: var(--ink-mid);
+    vertical-align: top;
+    min-width: 160px;
+  }
+  .cm-value {
+    display: block;
+    color: var(--ink);
+  }
+  .cm-note {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    line-height: 1.45;
+  }
+
+  /* Code-style values for install commands etc. */
+  .cm-cell :global(code) {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--paper-warm);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  @media (max-width: 720px) {
+    .cm-table { min-width: 640px; }
+    .cm-dimcol-head,
+    .cm-dim {
+      min-width: 120px;
+    }
+    .cm-cell { min-width: 150px; font-size: 12.5px; }
+    .cm-dimcol-head,
+    .cm-toolcol-head,
+    .cm-dim,
+    .cm-cell {
+      padding: 8px 10px;
+    }
+  }
+</style>

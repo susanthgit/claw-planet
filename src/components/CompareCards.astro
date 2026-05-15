@@ -1,0 +1,134 @@
+---
+/**
+ * CompareCards — atrium grid of comparison cards on the /compare/ index.
+ *
+ * Purpose-built (not a reuse of ReadingPaths.astro, which is hard-coded for
+ * exactly 3 cards via nth-child). This handles 3 / 4 / 5 cards cleanly via
+ * CSS Grid auto-fit.
+ *
+ * Each card: section number tab · "DECISION ANGLE" eyebrow · title · blurb · CTA.
+ *
+ * Set 2026-05-15 (Claw v0b · Batch E).
+ */
+
+export interface Card {
+  num: string;      // e.g. "7.2"
+  label: string;    // small eyebrow, e.g. "WHICH CLI?"
+  title: string;
+  blurb: string;
+  href: string;
+  cta: string;      // e.g. "Open comparison"
+}
+
+interface Props {
+  cards: Card[];
+}
+
+const { cards } = Astro.props;
+---
+
+<section class="cc" aria-label="Comparison index">
+  <div class="cc-grid">
+    {cards.map((c) => (
+      <a class="cc-card" href={c.href}>
+        <span class="cc-num">§ {c.num}</span>
+        <span class="cc-label">{c.label}</span>
+        <span class="cc-title">{c.title}</span>
+        <span class="cc-blurb">{c.blurb}</span>
+        <span class="cc-cta">{c.cta} →</span>
+      </a>
+    ))}
+  </div>
+  <p class="cc-hint">More comparisons land as Sush ships them — hosted agent platforms · MCP clients matrix · framework approaches.</p>
+</section>
+
+<style>
+  .cc {
+    margin: 0 0 40px;
+  }
+  .cc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  /* With exactly 4 cards, pin to 2×2 from 880px up to 1199px to avoid 3+1 orphan, */
+  /* then expand to 4×1 at wide viewports. */
+  @media (min-width: 880px) and (max-width: 1199px) {
+    .cc-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1200px) {
+    .cc-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .cc-card {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 6px;
+    padding: 18px 20px 18px;
+    border: 1px solid var(--rule);
+    background: var(--canvas);
+    text-decoration: none;
+    position: relative;
+    transition: border-color var(--dur-base) var(--ease),
+                background var(--dur-base) var(--ease),
+                transform var(--dur-base) var(--ease);
+  }
+  .cc-card:hover {
+    border-color: var(--claw);
+    background: var(--paper-warm);
+    transform: translateY(-1px);
+  }
+
+  .cc-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-widest);
+  }
+  .cc-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--claw);
+    letter-spacing: var(--ls-wider);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .cc-title {
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: var(--ls-snug);
+    line-height: 1.25;
+    margin-top: 2px;
+  }
+  .cc-blurb {
+    font-size: 13.5px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+  .cc-cta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--claw);
+    letter-spacing: var(--ls-wide);
+    margin-top: 12px;
+    border-top: 1px dashed var(--rule-faint);
+    padding-top: 10px;
+  }
+
+  .cc-hint {
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: var(--ls-wide);
+  }
+
+  @media (max-width: 640px) {
+    .cc-grid { grid-template-columns: 1fr; gap: 12px; }
+    .cc-card { padding: 16px 16px; }
+    .cc-title { font-size: 16px; }
+  }
+</style>

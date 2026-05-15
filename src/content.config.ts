@@ -19,6 +19,7 @@ const vendor = z.enum([
   'openai',
   'google',
   'microsoft',
+  'cross-vendor',  // Batch E (2026-05-15) — for compare pages that span multiple vendors.
   // Phase 2 (later): meta, mistral, xai, perplexity
 ]);
 
