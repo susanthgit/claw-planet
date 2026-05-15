@@ -1,5 +1,23 @@
 name: Integrity check
 
+# Five gates locked in Phase 1.1 Session 5 (Sat 16 May 2026 NZST):
+#   1. voice-lint --strict      cheap fail-fast on forbidden marketing words
+#                                + Microsoft public-source citation rule.
+#                                OUT-of-scope phrase signals are also scanned but
+#                                are advisory only (logged, never block).
+#                                Inline escape hatch: voice-lint:ignore (same-line annotation).
+#   2. audit-blurbs --strict    cheap fail-fast on LEGACY model citations across
+#                                5 vendor hubs + 4 product hubs + 3 src/data/*.ts
+#                                files. INFO findings never block.
+#                                Inline escape hatch: audit-blurbs:ignore (same-line annotation).
+#   3. audit-verification       verifies the 5-state verification contract on .mdx frontmatter
+#                                (planned · sourced · tried · verified · disputed).
+#   4. build:no-search          Astro build without Pagefind (required precondition for
+#                                check:links, which depends on dist/).
+#   5. check:links              integrity-check.mjs internal-link + claims audit
+#                                (depends on dist/ from step 4).
+# Cheap gates first so CI fails fast (~10s) on guardrail breaks instead of after a 100s build.
+
 on:
   push:
     branches: [main]
@@ -26,15 +44,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (no Pagefind — just for link audit)
-        run: npm run build:no-search
+      - name: Voice lint (strict — forbidden words + Microsoft source rule)
+        run: npm run voice-lint:strict
+
+      - name: Audit blurbs (strict — legacy model citations)
+        run: npm run audit:blurbs:strict
 
       - name: Audit verification states
-        run: node scripts/audit-verification-states.mjs
+        run: npm run audit:verification
 
-      - name: Audit claims (counts + internal links)
+      - name: Build (no Pagefind — precondition for link audit)
+        run: npm run build:no-search
+
+      - name: Audit claims + internal links
         # P0a complete (Batch 10) — public launch — threshold ratcheted to 0.
-        run: node scripts/integrity-check.mjs
-
-      - name: Voice lint (advisory)
-        run: node scripts/voice-lint.mjs
+        run: npm run check:links
