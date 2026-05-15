@@ -6,7 +6,7 @@ description: "The brain. Which model providers OpenClaw supports, how to configu
 status: "published"
 verificationState: "sourced"
 verificationNote: "Compiled from the official model docs + README sponsor section. Specific model performance comparisons are not docs-derived; those are general-knowledge claims about model quality at last review."
-lastReviewedAt: "2026-05-07"
+lastReviewedAt: "2026-05-15"
 category: "models"
 sources:
   - "https://docs.openclaw.ai/concepts/models"
@@ -34,7 +34,7 @@ From the docs and README:
 
 | Provider | OAuth | API key | Recommended for |
 |---|---|---|---|
-| **Anthropic** | — | ✓ | Claude family — strongest agentic reasoning at last review |
+| **Anthropic** | — | ✓ | Claude family — solid fit for tool use and multi-step reasoning at last review |
 | **OpenAI** | ✓ (ChatGPT/Codex subscriptions) | ✓ | If you already pay for ChatGPT Plus/Pro/Codex |
 | **Google** | — | ✓ | Gemini family; cheap for chat |
 | **OpenRouter** | — | ✓ | Multi-model routing; good for trying many models with one key |
@@ -51,7 +51,7 @@ Model refs in config use `provider/model`:
 {
   "agents": {
     "defaults": {
-      "model": "anthropic/claude-3-5-sonnet"
+      "model": "anthropic/claude-sonnet-4-6"
     }
   }
 }
@@ -72,28 +72,32 @@ If a configured default provider no longer exposes the configured default model,
 
 ## Model selection in 2026
 
-> This section is opinion as of 2026-05. The model landscape changes fast. Verify against current benchmarks before locking in.
+> This section is opinion as of 2026-05. The model landscape changes fast — vendors ship new model generations and shift pricing roughly quarterly. Verify against current provider docs, pricing pages, and your own workload tests before locking in.
+
+The boring answer first: **start on Sonnet, set a cheap fallback, and only reach for Opus / GPT-5.5 / Gemini Pro when your actual workload proves it needs them.** Most of the picks below are corner cases on top of that.
 
 ### For agentic work (tool use, multi-step reasoning)
 
-- **`anthropic/claude-3-5-sonnet`** — strongest agentic reasoning. The default in many serious deployments.
-- **`openai/gpt-4o`** — close second; faster, similar tool use quality.
-- **`google/gemini-2-flash-exp`** — cheaper; quality close enough for many tasks.
+- **`anthropic/claude-sonnet-4-6`** — Anthropic's recommended default for production: a balance of speed and intelligence with 1M-token context. Start here unless cost or latency pushes you elsewhere.
+- **`anthropic/claude-opus-4-7`** — when correctness matters more than cost. Anthropic's heaviest tier for complex reasoning and agentic coding. 1M context. Roughly 1.7× the Sonnet price on input, 1.7× on output.
+- **`openai/gpt-5.5`** — OpenAI's heavy-reasoning tier per GitHub Copilot's model list — multi-step problem solving and architecture-level analysis.
+- **`google/gemini-3.1-pro-preview`** — Google's current Pro preview (the docs default for new Gemini 3 code). For a stable fallback, use `google/gemini-2.5-pro` — a previous generation (1M context), supported until 16 October 2026 shutdown.
 
 ### For cost-sensitive chat (no heavy tool use)
 
-- **`anthropic/claude-3-5-haiku`** — cheaper Claude variant; surprisingly capable for simple tool use.
-- **`openai/gpt-4o-mini`** — cheap-and-cheerful default for low-stakes tasks.
-- **`google/gemini-2-flash-lite`** — even cheaper.
+- **`anthropic/claude-haiku-4-5`** — Anthropic's fastest and cheapest tier. 200K context (not 1M). Surprisingly capable for light tool use and batch classification.
+- **`openai/gpt-5-mini`** — one of three OpenAI models included at zero premium-request cost on paid GitHub Copilot plans (the other two are GPT-4.1 and GPT-4o); pay-per-token via the OpenAI API directly. A reliable cheap default for low-stakes tasks.
+- **`google/gemini-3.1-flash-lite`** — Google's lightest Gemini 3 tier, stable since 7 May 2026. A low-cost option for high-volume chat and simple classification; verify current pricing before relying on it as the cheap default. Stable Gemini 2.5 alternative: `google/gemini-2.5-flash`.
 
 ### For privacy / offline (local)
 
-- **Llama 3.2 3B** — runs on a Pi 5 8GB. Quality noticeably below cloud models but acceptable for narrow tasks.
-- **Llama 3.1 8B** — needs ~8GB RAM available; runs on a Mac M1+ or a Linux desktop with 16GB+.
-- **Llama 3.3 70B** — needs serious GPU; not for laptops.
+- **Llama 3.2 3B** (or current Llama 4.x equivalents on Ollama) — runs on a Pi 5 8GB. Quality noticeably below cloud models but acceptable for narrow tasks.
+- **Llama 3.1 8B** / **Qwen 2.5 7B** — needs ~8GB RAM available; runs on a Mac M1+ or a Linux desktop with 16GB+.
+- **Llama 3.3 70B** / **Qwen 2.5 32B** — needs serious GPU; not for laptops.
 
 ```bash
 # Quick local model setup with Ollama
+# llama3.2:3b shown as example; check `ollama list` for current Llama 4.x tags
 ollama pull llama3.2:3b
 # Then in openclaw.json:
 { "agents": { "defaults": { "model": "ollama/llama3.2:3b" } } }
@@ -108,9 +112,9 @@ OpenClaw supports configuring multiple models, with failover when the primary fa
   "agents": {
     "defaults": {
       "models": [
-        "anthropic/claude-3-5-sonnet",
-        "openai/gpt-4o",
-        "google/gemini-2-flash-exp"
+        "anthropic/claude-sonnet-4-6",
+        "openai/gpt-5.5",
+        "google/gemini-3.1-pro-preview"
       ]
     }
   }
@@ -123,23 +127,29 @@ If the primary fails (rate limit, outage, auth error), OpenClaw tries the next. 
 
 ## Cost notes (rough, illustrative figures · 2026-05)
 
-> **These are rough estimates, not measured runs.** Pulled from each provider's public pricing page on 2026-05-07. Provider pricing changes frequently — re-check before you budget. The "monthly usage" figures are back-of-envelope assumptions about a personal-assistant workload (~1000 messages, ~2000 tokens each), not measurements from a real OpenClaw deployment.
+> **These are rough estimates, not measured runs.** Anthropic and Google values were pulled from each provider's public pricing page on 2026-05-15. OpenAI direct-API per-token prices aren't quoted here because the pricing page is JavaScript-rendered and shifts frequently — check it live before budgeting. The "monthly usage" figures are back-of-envelope assumptions about a personal-assistant workload (~1000 messages, ~2000 tokens per exchange — combined input + output), not measurements from a real OpenClaw deployment.
 
-API call cost per 1M tokens at last check ([Anthropic pricing](https://www.anthropic.com/pricing) · [OpenAI pricing](https://openai.com/api/pricing/) · [Google AI pricing](https://ai.google.dev/pricing)):
+API call cost per 1M tokens at last check ([Anthropic pricing](https://www.anthropic.com/pricing) · [OpenAI pricing](https://platform.openai.com/docs/pricing) · [Google Gemini pricing](https://ai.google.dev/pricing)):
 
 | Model | Input | Output |
 |---|---|---|
-| Claude 3.5 Sonnet | $3 | $15 |
-| Claude 3.5 Haiku | $0.80 | $4 |
-| GPT-4o | $2.50 | $10 |
-| GPT-4o mini | $0.15 | $0.60 |
-| Gemini 2 Flash | $0.075 | $0.30 |
+| Claude Opus 4.7 | $5 | $25 |
+| Claude Sonnet 4.6 | $3 | $15 |
+| Claude Haiku 4.5 | $1 | $5 |
+| Gemini 2.5 Pro (≤200K context) | $1.25 | $10 |
+| Gemini 3.1 Pro Preview (≤200K context) | $2 | $12 |
+| Gemini 3 Flash Preview | $0.50 | $3 |
+| Gemini 3.1 Flash-Lite (stable since 7 May 2026) | $0.25 | $1.50 |
+| Gemini 2.5 Flash | $0.30 | $2.50 |
+| GPT-5.5 / GPT-5.4 / GPT-5-mini | not quoted — check vendor page | not quoted — check vendor page |
+
+For GitHub Copilot users, the per-model **request multiplier** (not a per-token price) is what matters — those live at [docs.github.com/en/copilot/concepts/billing/copilot-requests](https://docs.github.com/en/copilot/concepts/billing/copilot-requests).
 
 For a back-of-envelope "personal assistant" usage profile (~1000 messages/month, ~2000 tokens/message average) the estimated monthly spend is:
 
-- Claude 3.5 Sonnet: **~$15–25/month** (estimate)
-- GPT-4o mini: **~$1–3/month** (estimate)
-- Gemini 2 Flash: **~$0.50–1.50/month** (estimate)
+- Claude Sonnet 4.6: **~$15–25/month** (estimate)
+- Claude Haiku 4.5: **~$3–6/month** (estimate)
+- Gemini 3.1 Flash-Lite: **~$0.50–1.50/month** (estimate)
 
 Heavy agentic workflows (long sessions, multiple tool calls per message) can be 5–10× this. **Measure your own usage before you trust the estimate.**
 
@@ -167,7 +177,7 @@ openclaw auth login openai
 ## Things to try
 
 - **Run the agent on Sonnet for a week, then Haiku for a week.** Notice which tasks degrade. Adjust your default based on real workload, not first-principles.
-- **Configure failover** Claude → GPT-4o → Gemini. Stress-test by temporarily revoking Claude's key. Watch the agent gracefully fall through.
+- **Configure failover** Claude → GPT-5.5 → Gemini. Stress-test by temporarily revoking Claude's key. Watch the agent gracefully fall through.
 - **Try a local 3B model on a Pi.** See [§2.6 Raspberry Pi](/openclaw/setup/raspberry-pi/) for the setup. Quality calibration is worthwhile even if you go back to hosted models afterwards.
 - **Set spending alerts at $5 / $10 / $25 thresholds** on your model provider account. Cheap insurance.
 

@@ -5,8 +5,8 @@ sectionNumber: "API.3"
 description: "What each Claude tier is good for, what they cost in relative terms, how to pick between them, and the always-changing context window + vision support matrix. Pricing and model names drift fast — verify before committing."
 status: "published"
 verificationState: "sourced"
-verificationNote: "Model lineup as of 14 May 2026. Anthropic changes model names + pricing on a roughly quarterly cadence; check anthropic.com/pricing before relying on specific numbers."
-lastReviewedAt: "2026-05-14"
+verificationNote: "Model lineup as of 15 May 2026. Anthropic changes model names + pricing on a roughly quarterly cadence; check anthropic.com/pricing before relying on specific numbers. Sonnet 4.5 ships at 200K standard context per AWS's Bedrock model card for anthropic.claude-sonnet-4-5; AWS's Bedrock/Claude marketing page lists a 1M-token context as preview-only for Sonnet 4 and 4.5. The 1M-as-standard story begins with Sonnet 4.6."
+lastReviewedAt: "2026-05-15"
 sources:
   - "https://docs.anthropic.com/en/docs/about-claude/models"
   - "https://www.anthropic.com/pricing"
@@ -33,7 +33,7 @@ When Anthropic ships a new Sonnet (say, Sonnet 4.5 → Sonnet 5), you get some m
 
 - **Higher quality** on hard tasks
 - **Better instruction following** (less prompting needed for the same output)
-- **Wider context window** — the current Opus and Sonnet tiers (Opus 4.7, Sonnet 4.6, and the older 4.x Opus/Sonnet models in the table below) ship with 1M-token context; Haiku 4.5 remains at 200K
+- **Wider context window** — Opus 4.7 and Sonnet 4.6 ship with 1M-token context as standard; **Sonnet 4.5 (and earlier Sonnet 4) ship at 200K standard with a 1M-token preview option** — the 1M-as-standard story begins with Sonnet 4.6. Haiku 4.5 remains at 200K. Opus 4.5/4.6 are listed at 1M in the docs (verify before relying)
 - **New capabilities** (vision support, computer-use APIs, new tool-use modes)
 - **Different pricing** (often a small bump on the latest, with the previous one becoming a bargain)
 
@@ -47,7 +47,7 @@ The old generation usually stays available for at least 6–12 months. Plan upgr
 | **claude-sonnet-4-6** | Default — production sweet spot | 1M | Yes | Yes (beta) |
 | **claude-haiku-4-5** | Fast + cheap · batch + classification | 200K | Yes | Yes (beta) |
 | **claude-opus-4-6** | Older Opus · still solid · cheaper | 1M | Yes | Yes (beta) |
-| **claude-sonnet-4-5** | Previous Sonnet · still active · legacy | 1M | Yes | Yes (beta) |
+| **claude-sonnet-4-5** | Previous Sonnet · still active · legacy | 200K (1M preview) | Yes | Yes (beta) |
 | **claude-opus-4-5** | Earlier Opus generation · still active | 1M | Yes | Yes (beta) |
 
 **Recently retired (do not use on the direct Claude API):**
