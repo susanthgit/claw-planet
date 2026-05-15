@@ -6,7 +6,7 @@ description: "Five-minute orientation to Claude Code — what it is, where it ru
 status: "published"
 verificationState: "sourced"
 verificationNote: "Compiled from docs.anthropic.com/claude-code and the Anthropic engineering blog. Sush uses Claude through GitHub Copilot CLI today and hasn't standalone-installed Claude Code yet — this page flips to tried with a session log when he does."
-lastReviewedAt: "2026-05-14"
+lastReviewedAt: "2026-05-15"
 sources:
   - "https://docs.anthropic.com/en/docs/claude-code/overview"
   - "https://docs.anthropic.com/en/docs/claude-code/quickstart"
@@ -69,7 +69,7 @@ Three things that fall out of this design:
 
 There are two ways to pay:
 
-1. **Claude.com subscription** — Pro (\$20/mo), Max (5× Pro · \$100/mo), Team (per-seat). Higher tiers raise the per-week message + context budget. Subscription tiers are the most predictable cost if you use it daily.
+1. **Claude.com subscription** — Pro (\$17/mo billed annually [\$200 up front], \$20/mo billed monthly), Max (\$100/mo for 5× Pro or \$200/mo for 20× Pro), Team (per-seat). Higher tiers raise the per-week message + context budget. Subscription tiers are the most predictable cost if you use it daily.
 2. **Pay-as-you-go via Anthropic Console** — set a credit balance, get charged per-token. Useful for occasional heavy bursts; expensive if you forget to monitor.
 
 You can also point Claude Code at a **third-party provider** — Amazon Bedrock, Google Vertex AI, or a self-hosted Claude proxy — via env vars. Useful for enterprise/governance reasons; check `/docs/en/third-party-integrations` for the current list. Pricing on Bedrock/Vertex is the cloud's own per-token rate, not Anthropic's direct rate.

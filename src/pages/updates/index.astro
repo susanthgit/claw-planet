@@ -4,6 +4,10 @@ import SectionHead from '@components/SectionHead.astro';
 import SectionBlurb from '@components/SectionBlurb.astro';
 import UpdateRow from '@components/UpdateRow.astro';
 import { updates } from '@data/updates';
+
+const latestDate = updates.length > 0
+  ? updates.reduce((max, u) => (u.date > max ? u.date : max), updates[0].date)
+  : '—';
 ---
 
 <BaseLayout
@@ -14,7 +18,7 @@ import { updates } from '@data/updates';
   <SectionBlurb>
     Hand-curated. <strong>Not a CVE feed</strong> and not a release tracker. High-signal items only —
     things that change how you would run OpenClaw, what you would build, or what to be aware of.
-    Each item has a date, type, and source link. Last updated <strong>2026-05-07</strong>.
+    Each item has a date, type, and source link. Last updated <strong>{latestDate}</strong>.
   </SectionBlurb>
 
   <div class="updates-list">
