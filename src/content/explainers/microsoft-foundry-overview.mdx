@@ -10,11 +10,13 @@ lastReviewedAt: "2026-05-15"
 sources:
   - "https://learn.microsoft.com/azure/ai-foundry/what-is-azure-ai-foundry"
   - "https://learn.microsoft.com/azure/ai-foundry/concepts/architecture"
-  - "https://learn.microsoft.com/azure/ai-foundry/concepts/foundry-models-overview"
+  - "https://learn.microsoft.com/azure/foundry/concepts/foundry-models-overview"
   - "https://learn.microsoft.com/azure/ai-foundry/agents/overview"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/concepts/tool-catalog"
   - "https://learn.microsoft.com/azure/ai-foundry/concepts/rbac-azure-ai-foundry"
   - "https://learn.microsoft.com/azure/ai-foundry/concepts/evaluation-approach-gen-ai"
   - "https://azure.microsoft.com/products/ai-foundry/"
+  - "https://azure.microsoft.com/pricing/details/ai-foundry/"
   - "https://pypi.org/project/azure-ai-projects/"
 vendor: "microsoft"
 product: "foundry"
@@ -22,11 +24,11 @@ product: "foundry"
 
 ## The thirty-second version
 
-**Azure AI Foundry** is Microsoft's **managed model + agent platform on Azure**. One portal at [ai.azure.com](https://ai.azure.com), one resource type (`Microsoft.CognitiveServices/accounts` with `Kind: AIServices`), one Python SDK entry point (`azure-ai-projects`). It wraps and extends Azure OpenAI direct: same OpenAI models you'd hit through an Azure OpenAI resource, plus a catalogue of 1,900+ other models (Anthropic Claude, xAI Grok, Mistral, Meta Llama, Microsoft Phi, Hugging Face, …), a managed Agent Service, built-in evaluations, and OpenTelemetry-based tracing.
+**Microsoft Foundry** (formerly Azure AI Foundry, formerly Azure AI Studio) is Microsoft's **managed model + agent platform on Azure**. One portal at [ai.azure.com](https://ai.azure.com), one resource type (`Microsoft.CognitiveServices/accounts` with `Kind: AIServices`), one Python SDK entry point (`azure-ai-projects`). It wraps and extends Azure OpenAI direct: same OpenAI models you'd hit through an Azure OpenAI resource, plus a catalogue of 1,900+ other curated models (Anthropic Claude, xAI Grok, Mistral, Meta Llama, Microsoft Phi, Hugging Face, …), a managed Agent Service, built-in evaluations, and OpenTelemetry-based tracing.
 
 Three things to know up front:
 
-1. **The name has changed twice in two years.** Azure ML Studio (the legacy ML design canvas — separate product line, listed here only for reader context) → Azure AI Studio (preview generative AI portal, 2023–2024) → Azure AI Foundry (GA rename at Microsoft Ignite, November 2024) → **Microsoft Foundry** (current name on some surfaces, Build 2025 era — "Azure AI" prefix dropped). Microsoft Learn still commonly uses **Azure AI Foundry**, so this page does too. The portal URL `ai.azure.com` survived every rename.
+1. **The name has changed twice in two years.** Azure ML Studio (the legacy ML design canvas — separate product line, not in the Foundry rebrand chain) → Azure AI Studio (preview generative AI portal, 2023–2024) → Azure AI Foundry (GA rename at Microsoft Ignite, November 2024) → **Microsoft Foundry** (current name, Build 2025 era; "Azure AI" prefix dropped). Microsoft Learn's primary brand is now Microsoft Foundry; "Azure AI Foundry" persists in older docs, the URL path (`/azure/ai-foundry/`), and many code samples — both names refer to the same product. The portal URL `ai.azure.com` survived every rename.
 2. **Two resource models still coexist.** The old hub-and-project model (`Microsoft.MachineLearningServices` provider) is now labelled **Foundry (classic)** and gets no new investments. The new flat model (`Microsoft.CognitiveServices/accounts` Kind=AIServices, with `accounts/projects` sub-resources) is where everything new lands. Plan new work on the new model.
 3. **The platform itself has no platform fee.** You pay only for what you consume — tokens, hosted agent compute, evaluation runs, AI Search indexes, observability storage. Foundry sits on top of an Azure subscription you already have.
 
@@ -103,21 +105,27 @@ The Agent Service is the **fully managed runtime for AI agents** inside Foundry.
 | **Workflow agents** *(preview)* | No (YAML optional) | Fully managed | Multi-step, multi-agent orchestration with branching |
 | **Hosted agents** *(preview)* | Yes | Container-based, managed | Bring-your-own framework; full custom logic |
 
-**Built-in tool catalogue** (GA unless noted):
+**Built-in tools** (the service executes them; GA unless noted):
 
 - **Web Search** — real-time public web with citations
 - **Code Interpreter** — sandboxed Python for data analysis, charts
+- **Custom Code Interpreter** *(preview)* — customise the interpreter's Python packages, container resources, and Container Apps environment
 - **File Search** — vector search over uploaded files
 - **Function calling** — define your own functions; your app executes them
 - **Azure AI Search** — ground on an existing AI Search index
 - **Azure Functions** — call Azure Functions for custom actions
+- Plus preview built-in tools: **Image Generation**, **Browser Automation**, **Computer Use**, **Microsoft Fabric**, **SharePoint**
+
+**Custom tools** (you bring the capability; GA unless noted):
+
 - **OpenAPI tool** — connect external HTTP APIs via OpenAPI 3.0/3.1 spec
 - **MCP servers** — first-class tool type (`MCPTool`); see [MCP for Microsoft](/microsoft/mcp/)
-- Plus preview tools: **Image Generation**, **Browser Automation**, **Computer Use**, **Microsoft Fabric**, **SharePoint**, **Agent-to-Agent (A2A)**, **Toolbox** (bundle multiple tools into a single MCP-compatible endpoint)
+- **Agent-to-Agent (A2A)** *(preview)* — A2A protocol for cross-agent communication
+- **Toolbox** *(preview)* — bundle multiple tools into a single MCP-compatible endpoint with versioning
 
-**API terminology — the v1 → v2 rename:**
+**API terminology — Agents v1 (Assistants API) → Agents v2 (Responses API):**
 
-| Old (Assistants API era) | New (Responses API era) |
+| Old (Agents v1 / Assistants API) | New (Agents v2 / Responses API) |
 |---|---|
 | Threads | Conversations |
 | Messages | Items |
@@ -125,18 +133,18 @@ The Agent Service is the **fully managed runtime for AI agents** inside Foundry.
 | Assistants | Agent Versions |
 | Date-stamped `api-version` parameters | Stable `v1` routes (`/openai/v1/…`) |
 
-If you find a code sample using `client.beta.threads.create(...)` it's pre-rename. The new shape is `conversations`.
+Note: the `azure-ai-agents` Python SDK (v1.x, GA) intentionally targets Agents v1 and continues to use Threads / Runs / Messages — that's not stale code, it's the legacy API surface, actively maintained. `azure-ai-projects` 2.x is the recommended SDK for new work and uses the Conversations / Items / Responses shape.
 
 ## The SDK
 
 **Python** is the primary surface:
 
 ```sh
-pip install azure-ai-projects   # primary SDK — full feature access (preview)
-pip install azure-ai-agents     # lower-level agents-only client (preview)
+pip install azure-ai-projects   # primary SDK — full feature access (current stable: 2.1.0, April 2026)
+pip install azure-ai-agents     # lower-level agents-only client (stable; latest GA: 1.1.0)
 ```
 
-`azure-ai-projects` requires **2.0.0 or above** and is currently labelled **preview** on PyPI. Both packages use Microsoft Entra ID auth — there's no API-key path in `AIProjectClient`. A typical first session:
+`azure-ai-projects` requires **2.0.0 or above**; **2.1.0 (April 2026)** added Toolboxes, Skills, and Agent Sessions sub-clients. The package was declared first-stable at 2.0.0 in March 2026 (CHANGELOG), although the PyPI description still labels it "in preview" as of May 2026 — a packaging-page lag. Both packages use Microsoft Entra ID auth — there's no API-key path in the `AIProjectClient` constructor. (An API key can optionally be passed to the OpenAI sub-client via `project.get_openai_client(api_key=...)` for specific scenarios, but Entra ID is the recommended path.) A typical first session:
 
 ```python
 from azure.identity import DefaultAzureCredential
@@ -148,7 +156,7 @@ client = AIProjectClient(
 )
 ```
 
-`azure-ai-agents` exposes `AgentsClient` separately for callers that only need the agents surface. Both packages currently authenticate with Entra ID; the Foundry docs recommend `azure-ai-projects` for full feature access.
+`azure-ai-agents` exposes `AgentsClient` separately for callers that only need the agents surface — it implements the **Agents v1 (Assistants API)** and intentionally uses Threads / Runs / Messages by design. `azure-ai-projects` 2.x implements the new **Agents v2 (Responses API)** with Conversations / Items / Responses. The two SDKs coexist for v1 and v2 surfaces respectively; if you see `client.beta.threads.create(...)` in `azure-ai-agents` samples, that's v1 code working as intended — not stale code.
 
 **Other languages:**
 
@@ -229,6 +237,8 @@ Where it's still rough: API/terminology drift (Assistants → Responses; Threads
 
 ## What's next
 
+- **[Declarative Agents](/microsoft/declarative-agents/)** — to publish a Foundry agent into Microsoft 365 Copilot Chat.
+- **[Copilot Studio](/microsoft/copilot-studio/)** — the no-code alternative for building agents.
 - **[Vertex AI Agents](/google/vertex-ai-agents/)** — the Google-cloud equivalent stack.
 - **[OpenAI Agents SDK](/openai/agents-sdk/)** — the OpenAI Platform equivalent.
 - **[MCP for Microsoft surfaces](/microsoft/mcp/)** — how MCP wires into Foundry Agent Service.

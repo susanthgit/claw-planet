@@ -79,13 +79,13 @@ Every entry in the `capabilities` array has a `name` field, and the value must b
 | `GraphConnectors` | The capability formerly known as Microsoft Graph connectors; the product UI was rebranded to "Copilot connectors" but the JSON token is still `GraphConnectors`. |
 | `GraphicArt` | Image generation. **Not** called `Image`. |
 | `CodeInterpreter` | Generates and executes Python (sandboxed) — data analysis, charts, maths. No sub-properties. |
-| `Dataverse` | Dataverse table search. Requires `host_name`, `skill` (exported from Copilot Studio), and `tables[]`. |
+| `Dataverse` | Dataverse table search. Requires a `knowledge_sources[]` array; each entry has `host_name` (your Dataverse org URL), `skill` (exported from Copilot Studio), and `tables[]` (array of `{table_name}` objects). |
 | `TeamsMessages` | Search Teams channels, chats, meetings. **Not** `TeamsChat` or `TeamsChannels`. Optional `urls` array (≤5). |
 | `Email` | Search mailboxes. Optional `shared_mailbox`, `group_mailboxes` (≤25 SMTP addresses, v1.6+), `folders`. |
 | `People` | Org directory / people. Optional `include_related_content` (v1.6+) widens to shared documents, emails, Teams messages between the user and the person. **Not** `PeopleKnowledge`. |
 | `ScenarioModels` | Task-specific fine-tuned models. Requires `models[].id`. Limited public documentation; advanced use. |
 | `Meetings` | Calendar / meeting search (added v1.5). Optional `items_by_id[]` (v1.6+) for specific meetings. |
-| `EmbeddedKnowledge` | Local files packaged with the agent (added v1.6). **Status: not yet available** — the schema accepts it; the runtime hasn't shipped. |
+| `EmbeddedKnowledge` | Local files packaged with the agent (added v1.6; GA in ATK 6.6.0 / March 2026). Grounds the agent on knowledge files bundled and deployed alongside it. |
 
 **Names that do not exist** (and the SME pass catches every time): ~~`Image`~~, ~~`CopilotConnectors`~~, ~~`SharePointDocument`~~, ~~`SharePointSite`~~, ~~`MicrosoftStreamLink`~~, ~~`PeopleKnowledge`~~, ~~`PowerPlatformConnectors`~~. Don't use any of those.
 

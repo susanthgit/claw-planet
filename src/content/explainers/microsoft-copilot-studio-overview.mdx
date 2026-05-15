@@ -46,6 +46,8 @@ For new agents Microsoft defaults to **generative orchestration** — the LLM re
 
 ## Licensing — the September 2025 rename
 
+> Pricing and credit rates below are as of 15 May 2026. Check [learn.microsoft.com/microsoft-copilot-studio/billing-licensing](https://learn.microsoft.com/microsoft-copilot-studio/billing-licensing) before buying — these change.
+
 ⚠️ **As of 1 September 2025 the billing unit changed from "messages" to Copilot Credits.** Per-pack quantity (25,000 / pack / month) and the per-credit rate are unchanged — only the label. Any third-party blog post mentioning "Copilot Studio messages" pricing is stale.
 
 The purchase modes today:
@@ -75,7 +77,7 @@ Per-event credit consumption (the bits that move your meter):
 
 A single complex turn stacks meters: a generative answer over the tenant graph is 2 + 10 = **12 CC** per turn. Plan for that.
 
-**M365 Copilot zero-rating:** when the agent's user is licensed for M365 Copilot **and** the agent operates under that user's identity (B2E), **all** Copilot Studio billing meters — classic answers, generative answers, agent actions, tenant graph grounding, agent flow actions, AI tools at every tier, and content processing — are zero-rated and don't consume Copilot Credits. This is the full table, not just the three most common items. The cost difference is significant for intranet / employee-facing deployments.
+**M365 Copilot zero-rating:** when the agent's user is licensed for M365 Copilot **and** the agent operates under that user's identity (B2E), **all** Copilot Studio billing meters — classic answers, generative answers, agent actions, tenant graph grounding, agent flow actions, AI tools at every tier, and content processing — are zero-rated and don't consume Copilot Credits. Microsoft applies fair usage limits to this zero-rated usage. This is the full table, not just the three most common items. The cost difference is significant for intranet / employee-facing deployments.
 
 Overage enforcement triggers at **125%** of prepaid capacity. At that point agents stop responding at the next attempt (not mid-conversation). PAYG mode prevents enforcement by routing overage to Azure.
 
@@ -90,7 +92,7 @@ The current channel list (from `publication-fundamentals-publish-channels`):
 - **Custom Website / Live Website** (iframe or script embed)
 - **Mobile App** (custom-built, via Direct Line API — developer work required)
 - **Facebook Messenger**
-- **Azure Bot Service channels** — Slack, Telegram, Twilio, Line, Kik, GroupMe, Direct Line Speech, Email — all require developer setup via the Azure portal
+- **Azure Bot Service channels** — **Cortana** (consumer surface retired in 2023 but still listed in current docs), Slack, Telegram, Twilio, Line, Kik, GroupMe, Direct Line Speech, Email — all require developer setup via the Azure portal
 
 **Skype is not on the list** — treat it as removed. **Teams-plan agents can only publish to Teams**; every other channel requires the standalone subscription.
 
@@ -109,13 +111,13 @@ Per-mode limits as of May 2026:
 | **Bing Custom Search** | (use generative answers node instead) | 2 config IDs | — |
 | **Azure OpenAI** | (use generative answers node instead) | 5 connections | — |
 
-With **tenant-wide semantic indexing of M365 content** enabled (a feature that requires an M365 Copilot license in the tenant), SharePoint and connector files up to **200 MB** are supported — or **up to 512 MB for PDF, PPTX, and DOCX files** specifically. The maker themselves does not need M365 Copilot personally — only the tenant-wide indexing feature requires it.
+With the **Work IQ** setting enabled (Settings → Generative AI → "Turn on Work IQ"), SharePoint and connector files up to **200 MB** are supported — or **up to 512 MB for PDF, PPTX, and DOCX files** specifically. Work IQ uses Microsoft Graph semantic indexing to improve knowledge retrieval quality. The tenant must have a Microsoft 365 Copilot licence assigned to at least one user; the maker themselves does not personally need M365 Copilot.
 
 Knowledge retrieval is **user-identity-scoped** — users only see content they already have access to (Entra ID checks at query time for SharePoint, Dataverse, and Graph connectors).
 
 ## MCP — the August 2025 wire-in
 
-Copilot Studio added **MCP** (Model Context Protocol) support in August 2025. You can connect a remote MCP server as a tool, the agent's orchestrator decides when to call it, and you're billed at the **agent action rate** (5 CC per tool call).
+Copilot Studio added **MCP** (Model Context Protocol) support in August 2025. You can connect a remote MCP server as a tool, the agent's orchestrator decides when to call it, and you're billed at the **agent action rate** (5 CC per call — MCP calls appear on the activity map as agent actions; the MCP docs themselves don't state a rate but agent actions are the metering mechanism).
 
 What's supported and what isn't:
 

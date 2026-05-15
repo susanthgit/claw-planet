@@ -124,7 +124,7 @@ Hit **Connect**. The wizard validates the connection, lists the tools and resour
 
 Once connected, every tool the MCP server exposes is now available to the generative orchestrator. The agent will call them when it decides they're relevant.
 
-> Cost note: each MCP tool invocation bills at the **agent action rate** — **5 Copilot Credits per call**. Test cycles can rack up credits quickly when iterating; consider turning the meter off in **Settings** → **Generative AI** during development, or build against a free MCP test endpoint first.
+> Cost note: each MCP tool invocation appears on the activity map as an agent action and is billed accordingly — at the **agent action rate** (5 Copilot Credits per call). Test cycles can rack up credits quickly when iterating; consider turning the meter off in **Settings** → **Generative AI** during development, or build against a free MCP test endpoint first.
 
 If you don't have an MCP server handy, you can add other tool types instead — a **prebuilt connector** (e.g. Outlook, ServiceNow), a **custom connector**, a **REST API**, or an **agent flow** (a Power Automate flow that becomes a callable tool).
 
@@ -177,7 +177,7 @@ Open Teams. The agent should now appear in your **Apps** sidebar (or via search)
 
 Common differences between Test pane and Teams:
 - **Identity scoping is more visible in Teams** — your knowledge source only returns documents *you* can see; in the Test pane you're already running as you.
-- **Latency feels different** — Teams adds 1–2 seconds of UI delay vs the embedded Test pane.
+- **Latency feels different** — Teams can feel slightly slower than the embedded Test pane.
 
 ## Step 12 — Monitor
 
@@ -204,7 +204,7 @@ Copilot Studio is genuinely the gentlest way into building a working agent insid
 
 The friction lives in three places:
 
-1. **The licence + billing setup.** Getting a tenant to a state where you can publish (prepaid pack OR PAYG policy + maker licence + Power Platform environment) takes the longest, and varies wildly between dev tenants, customer tenants, and partner tenants.
+1. **The licence + billing setup.** Getting a tenant to a state where you can publish (prepaid pack OR PAYG policy + maker licence + Power Platform environment) takes the longest, and varies with tenant configuration.
 2. **The generative-vs-classic divide.** Old agents (and old blog posts) often assume classic mode. Generative is the default for new agents and is what you should build for. Don't mix-and-match unless you have a reason.
 3. **The Copilot Studio agent vs declarative agent decision.** "Publish to Teams + M365 Copilot channel" gets you a Copilot Studio agent (runs on Studio's orchestrator). "Publish to the M365 Copilot agent surface specifically" gets you a declarative agent (runs on M365 Copilot's orchestrator, requires Copilot licences for end users). The former is cheaper; the latter is tighter integration. Choose deliberately.
 

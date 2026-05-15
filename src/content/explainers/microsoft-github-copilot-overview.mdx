@@ -69,7 +69,7 @@ Inline completion suggestions are **unmetered** on paid plans. The premium meter
 Two non-obvious points to file away:
 
 1. **Autonomous tool calls don't count separately.** Only the *user-initiated prompt* counts. If you send one message to agent mode and it makes 12 tool calls in response, that's still **one** premium request (multiplied by the model's multiplier).
-2. **On the Free plan, all Chat interactions count as premium requests** — even the "included" models like GPT-5 mini. On paid plans, GPT-5 mini, GPT-4.1, and GPT-4o do not consume premium requests; the heavier reasoning models (GPT-5.2 / GPT-5.4 / GPT-5.5 / Claude Opus / etc.) do, with per-model multipliers (e.g. GPT-5.5 has a 7.5× promotional multiplier; Claude Sonnet 4.6 has a 1× multiplier).
+2. **On the Free plan, all Chat interactions count as premium requests** — even the "included" models like GPT-5 mini. On paid plans, GPT-5 mini, GPT-4.1, and GPT-4o do not consume premium requests; the heavier reasoning models (GPT-5.2 / GPT-5.4 / GPT-5.5 / Claude Opus / etc.) do, with per-model multipliers. GPT-5.5 currently has a 7.5× promotional multiplier. Claude Sonnet 4.6's multiplier is flagged "subject to change" in docs and isn't published as a fixed number — check live before budgeting.
 
 The current multipliers per model live at [docs.github.com/en/copilot/concepts/billing/copilot-requests](https://docs.github.com/en/copilot/concepts/billing/copilot-requests) — they change frequently enough that the docs are the single source of truth. There's also an **Auto model selection** mode with a 10% discount on the multiplier.
 
@@ -161,9 +161,9 @@ For React components in src/components:
 
 > Note: VS Code also supports a separate **prompt files** feature for reusable callable prompts in Chat (slash-commands like `/review`). The exact folder convention for prompt files differs between IDEs — VS Code's docs are the source of truth and the layout has shifted over releases. Don't confuse `.instructions.md` (path-scoped repo instructions, read by Copilot everywhere) with prompt files (IDE-specific Chat snippets).
 
-### 3. The agents standard: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
+### 3. The agents standard: `AGENTS.md` (with `CLAUDE.md` / `GEMINI.md` as alternatives)
 
-The cross-vendor standard for instructing autonomous coding agents — the same family of files Claude Code, Codex CLI, Cursor, and others read. GitHub Copilot's cloud agent and Copilot CLI read **all three** (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`). All custom-instruction files in scope are **combined** — there's no priority-based fallback for these (unlike the path-specific `.instructions.md` system, which uses `applyTo` glob matching).
+The cross-vendor standard for instructing autonomous coding agents — the same family of files Claude Code, Codex CLI, Cursor, and others read. GitHub Copilot's cloud agent and Copilot CLI read **`AGENTS.md` as the primary file**. If you have multiple `AGENTS.md` files at different levels of the directory tree, the **nearest one to the working directory takes precedence**. If no `AGENTS.md` is present, the cloud agent and CLI **alternatively** read a single `CLAUDE.md` or `GEMINI.md` at the repo root — these are *substitutes* for `AGENTS.md`, not files merged alongside it.
 
 Used for: how to run tests, where the entry points live, what commands matter, what *not* to touch.
 
@@ -184,7 +184,7 @@ Used for: how to run tests, where the entry points live, what commands matter, w
 - Don't push to main. Open a PR.
 ```
 
-Place `AGENTS.md` at the repo root (or in any subdirectory). Copilot CLI also reads a user-level `copilot-instructions.md` inside its config directory for defaults that apply across every repo — see [docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions) for the current path.
+Place `AGENTS.md` at the repo root (or in any subdirectory if you want sub-tree-specific guidance, since the nearest one wins). Copilot CLI also reads a user-level `copilot-instructions.md` inside its config directory for defaults that apply across every repo — see [docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions) for the current path.
 
 ## Copilot CLI — the terminal coding agent
 
@@ -257,7 +257,7 @@ The friction points worth knowing:
 
 1. **Premium request budgeting.** Free's 50/month is enough to try the product; Pro's 300/month gets exhausted by serious work; Pro+'s 1,500/month is the right tier for daily developer use. Agent-mode sessions burn requests faster than Chat. Monitor your usage.
 2. **The temporary Pro / Pro+ sign-up pause** (announced 20 April 2026). Existing subscribers are unaffected, but if you're recommending Copilot to a teammate right now, point them at Free first and check for the sign-up reopening before suggesting an upgrade.
-3. **The "GitHub Copilot vs M365 Copilot" naming collision.** This catches enterprise customers monthly. They're separate products with separate billing, separate customisation, separate SLAs. If your colleague says "we have Copilot," ask which one.
+3. **The "GitHub Copilot vs M365 Copilot" naming collision.** This is a common source of confusion. They're separate products with separate billing, separate customisation, separate SLAs. If a colleague says "we have Copilot," ask which one.
 4. **The cloud agent's autonomous tool execution.** It's a real productivity multiplier and a real security consideration. Treat allowlisting in the MCP config as a non-optional ritual, not as something to skip.
 
 ## What's next

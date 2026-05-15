@@ -162,7 +162,7 @@ tool = MCPTool(
 | GitHub Copilot cloud agent | ✅ (`"local"`/`"stdio"`) | ✅ (`"sse"`) | ✅ (`"http"`) |
 | Copilot Studio | ❌ | ❌ (dropped Aug 2025) | ✅ **only** transport |
 | Foundry Agent Service | ❌ (remote only) | ❌ (remote only) | ✅ |
-| M365 Copilot (via DA + ATK) | depends on plugin | depends | ✅ typical |
+| M365 Copilot (via DA + ATK) | No native MCP client (wrapped via DA plugin action) | — | — |
 | Windows ODR | ✅ | — | — |
 
 ### Auth support
@@ -222,7 +222,7 @@ The `microsoft/mcp` repo is the canonical Microsoft MCP catalog (a registry / in
 
 ## Honest take
 
-Microsoft's MCP coverage is **broad** — it ships across more first-party surfaces than any other vendor's stack today. But the per-surface differences are real. Don't assume a server that works in VS Code will work in Copilot Studio (transport mismatch — Stdio vs Streamable-HTTP-only). Don't assume the same auth model works everywhere (the GitHub Copilot cloud agent's lack of OAuth catches teams every month). And don't assume "M365 Copilot supports MCP" — it doesn't, directly; you need a declarative agent wrapper.
+Microsoft's MCP coverage is **broad** — it ships across most of the first-party developer surfaces, and the per-surface differences are real. Don't assume a server that works in VS Code will work in Copilot Studio (transport mismatch — Stdio vs Streamable-HTTP-only). Don't assume the same auth model works everywhere (the GitHub Copilot cloud agent's lack of OAuth often catches teams out). And don't assume "M365 Copilot supports MCP" — it doesn't, directly; you need a declarative agent wrapper.
 
 The current direction of travel is good: Streamable HTTP is winning over SSE; first-party servers (Azure MCP, GitHub MCP, Playwright) are stable and well-maintained; Foundry's Entra-managed-identity option is genuinely better than the Anthropic/OpenAI norm.
 

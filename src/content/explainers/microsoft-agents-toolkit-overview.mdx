@@ -87,10 +87,11 @@ A short walkthrough of the verbs you'll actually use. Full reference at [learn.m
 | `atk deploy` | Run the deploy stage — push your code/manifest to the resources provision created. |
 | `atk package` | Build the `.zip` app package for upload. |
 | `atk validate` | Validate the app manifest + DA manifest + plugin manifests against the current schemas. |
-| `atk preview` | Open the agent inside M365 Copilot / Teams / Outlook for live testing. Must come after provision + deploy. |
+| `atk preview` | Open the agent inside M365 Copilot / Teams / Outlook for live testing. For `--env dev`, run `atk provision` first; `atk preview` handles package + install automatically. For `--env local`, preview manages the full local service lifecycle itself. |
 | `atk install` | Sideload the built package directly (personal-scope by default). |
 | `atk publish` | Submit the package to Teams Admin Centre for org-wide approval. |
 | `atk share` | Share a declarative agent with specific users or the whole tenant (added 6.4.0). |
+| `atk init` | Convert an existing Teams/agent project into an ATK-compatible project. Preview, behind feature flag `TEAMSFX_GENERATE_CONFIG_FILES=true`. |
 | `atk doctor` | Check that all prerequisites are healthy. |
 | `atk env add/list/reset` | Manage environments (dev, prod, etc.). |
 
@@ -155,13 +156,13 @@ When you add a `capabilities` array entry to the declarative agent manifest, the
 | `People` | Org directory / people. Not `PeopleKnowledge`. |
 | `ScenarioModels` | Task-specific fine-tuned models (required `models[].id`) |
 | `Meetings` | Calendar / meeting search (added v1.5) |
-| `EmbeddedKnowledge` | Files packaged with the agent (added v1.6; docs flag "not yet available" — schema present, runtime not yet) |
+| `EmbeddedKnowledge` | Files packaged with the agent (added v1.6; GA in ATK 6.6.0 / March 2026). Grounds the agent on local knowledge files packaged and deployed alongside it. |
 
 Common mistakes the SME pass catches: writing `Image` instead of `GraphicArt`; writing `CopilotConnectors` instead of `GraphConnectors`; inventing `PowerPlatformConnectors`, `SharePointDocument`, `MicrosoftStreamLink`, or `PeopleKnowledge`. None of those exist.
 
 ## Licensing — who can use what you build
 
-The licensing slice is where readers most often get burnt. The short version: **WebSearch, CodeInterpreter, and GraphicArt are the only capabilities available without a Copilot license or pay-as-you-go billing.** Everything else needs either a per-tenant pay-as-you-go (Copilot Credits) policy or a full Microsoft 365 Copilot user license.
+The licensing slice is where readers most often get burnt. The short version: **WebSearch is the only capability available without a Copilot license or pay-as-you-go billing.** Everything else needs either a per-tenant pay-as-you-go (Copilot Credits) policy or a full Microsoft 365 Copilot user license. (This matches the v1.7 manifest reference's Note: "Users can access declarative agents with any capabilities other than Web search only if their tenants allow metered usage or if they have a Microsoft 365 Copilot license.")
 
 The full table:
 
@@ -169,8 +170,7 @@ The full table:
 |---|---|---|---|
 | Custom instructions + custom actions | ✅ | ✅ | ✅ |
 | WebSearch | ✅ | ✅ | ✅ |
-| CodeInterpreter, GraphicArt | ✅ | ✅ | ✅ |
-| GraphConnectors, OneDriveAndSharePoint, Dataverse, EmbeddedKnowledge | ❌ | ✅ | ✅ |
+| CodeInterpreter, GraphicArt, GraphConnectors, OneDriveAndSharePoint, Dataverse, EmbeddedKnowledge | ❌ | ✅ | ✅ |
 | **Email, People, TeamsMessages, Meetings** | ❌ | ❌ | ✅ only |
 
 The last row is the trap. The four "deeply M365 personal" capabilities (mailbox, people, Teams chats, meetings) require a **full** M365 Copilot license — pay-as-you-go is not enough.
