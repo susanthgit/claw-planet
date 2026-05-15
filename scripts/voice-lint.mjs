@@ -58,16 +58,22 @@ const OUT_OF_SCOPE_PHRASES = [
 // Microsoft public-source domains — vendor:"microsoft" entries must cite
 // at least one URL matching one of these. Prevents customer-detail leakage
 // and enforces the public-sources-only rule from the Claw playbook.
+// GitHub is a Microsoft subsidiary; docs.github.com + github.com/features
+// are valid public-Microsoft sources for GitHub Copilot content (Batch D).
 const MS_PUBLIC_DOMAINS = [
   'learn.microsoft.com',
   'github.com/microsoft',
   'github.com/microsoftgraph',
   'github.com/OfficeDev',
+  'github.com/features/copilot',
+  'docs.github.com/copilot',
+  'docs.github.com/en/copilot',
   'devblogs.microsoft.com',
   'techcommunity.microsoft.com',
   'azure.microsoft.com',
   'microsoft.com/en-',  // microsoft.com regional pages
   'docs.microsoft.com', // legacy redirect target
+  'github.blog',         // github.blog (incl. /category/ai-and-ml/) — public GitHub announcements
 ];
 
 const MODE = process.argv.includes('--strict') ? 'strict' : 'warn';

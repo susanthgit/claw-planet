@@ -1,0 +1,268 @@
+---
+title: "GitHub Copilot, plainly"
+section: "GitHub Copilot"
+sectionNumber: "GHC.1"
+description: "Five-minute orientation to GitHub Copilot — the IDE + Chat + CLI coding assistant. Surfaces (VS Code, Visual Studio, JetBrains, Xcode, Neovim, Eclipse, GitHub.com, terminal). Tiers (Free / Pro / Pro+ / Business / Enterprise) and the premium-request meter. Customisation (instructions, prompts, AGENTS.md). NOT to be confused with Microsoft 365 Copilot."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from docs.github.com/en/copilot, github.com/features/copilot/plans, github.blog Copilot announcements, and the public Copilot CLI README as of 15 May 2026. Note: as of 20 April 2026, sign-ups for Copilot Pro, Copilot Pro+, and the Student plan are temporarily paused as GitHub rolls out a new flexible billing experience — confirm current status at docs.github.com before recommending a plan upgrade. Public sources only. Page flips to tried with a session log when Sush writes up his own customisation setup."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://docs.github.com/en/copilot/about-github-copilot/what-is-github-copilot"
+  - "https://docs.github.com/en/copilot/concepts/billing/individual-plans"
+  - "https://docs.github.com/en/copilot/concepts/billing/copilot-requests"
+  - "https://docs.github.com/en/copilot/customizing-copilot/about-customizing-github-copilot-chat-responses"
+  - "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp"
+  - "https://github.com/features/copilot/plans"
+  - "https://github.com/features/copilot/cli"
+  - "https://github.blog/category/ai-and-ml/"
+vendor: "microsoft"
+product: "github-copilot"
+---
+
+## The thirty-second version
+
+**GitHub Copilot** is GitHub's **coding assistant for developers**. It surfaces in your IDE (VS Code, Visual Studio, JetBrains, Xcode, Neovim, Eclipse, …), inside [github.com](https://github.com) as a chat panel, on mobile, and as a dedicated CLI tool. Same underlying service, different front-ends. Inline suggestions while you type; a Chat panel for conversation; an **agent mode** that can edit multiple files, run tests, and iterate; a **cloud Coding Agent** that opens pull requests for you; and a model picker that now spans Anthropic's Claude family, OpenAI's GPT family, and Google's Gemini family.
+
+Three things to know up front:
+
+1. **GitHub Copilot ≠ Microsoft 365 Copilot.** Microsoft uses "Copilot" for a dozen products. GitHub Copilot lives on github.com and inside developer IDEs. Microsoft 365 Copilot lives inside Outlook, Teams, Word, Excel, PowerPoint, and the M365 Copilot Chat surface. The two share branding only. Customisation files, licensing, billing — all different.
+2. **A "premium request" is the meter that matters.** Inline completions are unmetered on paid plans. Anything heavier — Chat, agent mode, code review, cloud agent, the Copilot CLI — burns *premium requests*, and Pro+ vs Pro vs Free differ mostly on how many you get per month and which models you can pick.
+3. **As of 20 April 2026, new sign-ups for Copilot Pro, Pro+, and Student are temporarily paused** while GitHub rolls out a new billing experience (Copilot Business self-serve sign-ups paused 22 April 2026). Existing subscribers keep working. The pause is explicitly time-limited; check [docs.github.com/copilot](https://docs.github.com/en/copilot) for current status before recommending an upgrade path.
+
+## The tiers, plainly
+
+Individual plans:
+
+| Plan | Price | Inline completions | Premium requests / month | Models |
+|---|---|---|---|---|
+| **Free** | $0 | 2,000 / month | 50 | A subset (Chat on Free uses premium requests even for the included models) |
+| **Pro** | $10 / month | Unlimited | 300 | Most models |
+| **Pro+** | $39 / month | Unlimited | 1,500 | **All** models in Copilot Chat |
+| **Student** | Free (verified students) | Unlimited | 300 | Same as Pro |
+
+Additional premium requests beyond the monthly allowance: **$0.04 per request**.
+
+Free for verified teachers and maintainers of popular open-source projects (Pro-equivalent).
+
+Organisation plans:
+
+| Plan | Price | Allowance (from 1 June 2026) | Notes |
+|---|---|---|---|
+| **Business** | $19 / user / month | 1,900 **AI credits** / user / month | License management, policy management, audit logs, IP indemnity |
+| **Enterprise** | $39 / user / month | 3,900 **AI credits** / user / month | Everything in Business plus organisation-codebase indexing + chat integration into github.com, requires GitHub Enterprise Cloud |
+
+⚠️ **Business + Enterprise billing change effective 1 June 2026**: GitHub is transitioning from "premium requests" to **GitHub AI Credits** (1 credit = $0.01 USD). The first three months (June–September 2026) include a promotional bump — 3,000 credits / user for Business, 7,000 for Enterprise — before settling at the steady-state allowances above. Inline code completions remain **unlimited and not credit-billed** across all paid plans. Individual plans (Free / Pro / Pro+ / Student) continue using premium requests.
+
+The differences between Business and Enterprise are governance and the github.com chat integration — not raw model capability. A developer using Business and a developer using Enterprise can both get to the same suggestions; what changes is how the organisation manages, audits, and customises the experience.
+
+## What counts as a premium request
+
+Inline completion suggestions are **unmetered** on paid plans. The premium meter starts running for any *heavier* work:
+
+- **Copilot Chat** — every message you send in the Chat panel
+- **Agent mode** — VS Code, Visual Studio, JetBrains, Eclipse, Xcode agent mode (multi-file edits, tool calls, iteration loops)
+- **Code review** — Copilot reviewing pull requests
+- **Cloud agent** — the async agent that opens pull requests
+- **Copilot CLI** — the terminal coding agent
+
+Two non-obvious points to file away:
+
+1. **Autonomous tool calls don't count separately.** Only the *user-initiated prompt* counts. If you send one message to agent mode and it makes 12 tool calls in response, that's still **one** premium request (multiplied by the model's multiplier).
+2. **On the Free plan, all Chat interactions count as premium requests** — even the "included" models like GPT-5 mini. On paid plans, GPT-5 mini, GPT-4.1, and GPT-4o do not consume premium requests; the heavier reasoning models (GPT-5.2 / GPT-5.4 / GPT-5.5 / Claude Opus / etc.) do, with per-model multipliers (e.g. GPT-5.5 has a 7.5× promotional multiplier; Claude Sonnet 4.6 has a 1× multiplier).
+
+The current multipliers per model live at [docs.github.com/en/copilot/concepts/billing/copilot-requests](https://docs.github.com/en/copilot/concepts/billing/copilot-requests) — they change frequently enough that the docs are the single source of truth. There's also an **Auto model selection** mode with a 10% discount on the multiplier.
+
+For a developer doing real work, **Pro's 300 premium requests / month** lasts a couple of weeks before overage; **Pro+'s 1,500 / month** covers most working developers comfortably.
+
+## Surfaces — where you can use it
+
+The integration list as of May 2026:
+
+| Surface | Status |
+|---|---|
+| **Visual Studio Code** | ✅ Most-developed surface. Completions, Chat, agent mode, code review, MCP — all live here first. |
+| **Visual Studio (.NET)** | ✅ 17.14+. Completions, Chat, agent mode, MCP. |
+| **JetBrains IDEs** | ✅ IntelliJ IDEA, PyCharm, GoLand, WebStorm, Rider, etc. Completions, Chat, agent mode. |
+| **Xcode** | ✅ Completions, Chat. |
+| **Neovim** | ✅ Completions (no Chat panel in stock Neovim). |
+| **Eclipse** | ✅ Completions, Chat, agent mode (recently added). |
+| **Azure Data Studio** | ✅ Completions, Chat. |
+| **github.com Chat panel** | ✅ Web chat across repositories, issues, PRs, docs. Enterprise gets organisation-codebase grounding. |
+| **GitHub Mobile** | ✅ Chat on iOS and Android. |
+| **Copilot CLI** | ✅ Dedicated CLI for terminal-driven coding. Different from the older `gh-copilot` extension to the `gh` CLI. |
+| **Windows Terminal Canary** | ✅ Chat integration. |
+
+Inline suggestions work in every IDE on the list; Chat is available in VS Code, Visual Studio, JetBrains, Xcode, Eclipse, and the github.com web interface. Agent mode requires VS Code, Visual Studio, JetBrains, Eclipse, or Xcode.
+
+## The model picker
+
+GitHub Copilot's model picker spans multiple vendors' families as of May 2026. The current line-up — pulled from `docs.github.com/en/copilot/reference/ai-models/model-comparison`:
+
+**OpenAI:**
+- **GPT-5 mini** — included (no premium cost) on paid plans
+- **GPT-4.1**, **GPT-4o** — also included on paid plans
+- **GPT-5.2**, **GPT-5.2-Codex**, **GPT-5.3-Codex** — premium reasoning + agentic models
+- **GPT-5.4**, **GPT-5.4 mini**, **GPT-5.4 nano** (Pro+ only; Codex VS Code extension only) — premium variants
+- **GPT-5.5** — premium with a 7.5× promotional multiplier
+
+**Anthropic:**
+- **Claude Haiku 4.5** — fast / simple
+- **Claude Sonnet 4.5**, **Claude Sonnet 4.6** — general coding + agent (Sonnet 4.6 carries a 1× multiplier)
+- **Claude Opus 4.6 (fast mode)** *(preview)*, **Claude Opus 4.7** — deep reasoning
+
+**Google:**
+- **Gemini 2.5 Pro** — deep reasoning / debugging
+- **Gemini 3 Flash** — fast / simple
+- **Gemini 3.1 Pro** — deep reasoning, long context
+
+**Others:**
+- **Grok Code Fast 1** — general coding
+- **Qwen2.5** — code generation, debugging
+- **Raptor mini** — fast inline suggestions
+- **Goldeneye** — complex reasoning
+
+A few naming notes to head off confusion: there is **no plain "GPT-5"** in the Copilot picker — the included base is "GPT-5 mini," and the reasoning variants are GPT-5.2 / 5.4 / 5.5. The older **o3** name has been retired from Copilot's lineup. The full per-plan availability matrix lives at [docs.github.com/copilot/using-github-copilot/ai-models](https://docs.github.com/en/copilot/using-github-copilot/ai-models/supported-ai-models-in-copilot); Pro+ subscribers get "full access to all available models," while Free and Pro carry a subset. Business and Enterprise admins can policy-gate which models their developers can pick.
+
+## Customisation files — the names that matter
+
+GitHub Copilot reads three kinds of files from your repo and your user profile to tailor its behaviour. Precedence order (highest first): personal settings → path-specific instructions → repository-wide → AGENTS.md / CLAUDE.md / GEMINI.md → organisation instructions.
+
+### 1. Repository-wide instructions: `.github/copilot-instructions.md`
+
+A Markdown file at this exact path that GitHub Copilot reads on every Chat / agent mode session in this repo. Used for: coding conventions, framework preferences, naming patterns, anti-patterns to avoid, project-specific terminology.
+
+```markdown
+# Copilot instructions
+
+- TypeScript only. No CoffeeScript or vanilla JS in new files.
+- Prefer `for ... of` over `forEach`. Reserve `forEach` for side-effect-only loops.
+- New components go in `src/components/`. New routes in `src/pages/`.
+- Tests are co-located: `Component.tsx` + `Component.test.tsx`.
+- Never `git stash`. Use a wip/<topic> remote branch instead.
+```
+
+The file is loaded into every Chat conversation in this repo as a system prompt prefix. Keep it tight — it eats context.
+
+### 2. Path-specific instructions: `.github/instructions/**/*.instructions.md`
+
+Per-folder or per-glob instructions that apply only when Copilot is editing files matching a path pattern declared in the file's frontmatter. Useful when one part of the codebase has different rules than another (e.g. tests vs production, frontend vs backend).
+
+```markdown
+---
+applyTo: "src/components/**/*.tsx"
+---
+
+For React components in src/components:
+- Use functional components, no class components.
+- Co-locate the component's CSS module: Component.tsx + Component.module.css.
+- Never call hooks conditionally.
+```
+
+> Note: VS Code also supports a separate **prompt files** feature for reusable callable prompts in Chat (slash-commands like `/review`). The exact folder convention for prompt files differs between IDEs — VS Code's docs are the source of truth and the layout has shifted over releases. Don't confuse `.instructions.md` (path-scoped repo instructions, read by Copilot everywhere) with prompt files (IDE-specific Chat snippets).
+
+### 3. The agents standard: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
+
+The cross-vendor standard for instructing autonomous coding agents — the same family of files Claude Code, Codex CLI, Cursor, and others read. GitHub Copilot's cloud agent and Copilot CLI read **all three** (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`). All custom-instruction files in scope are **combined** — there's no priority-based fallback for these (unlike the path-specific `.instructions.md` system, which uses `applyTo` glob matching).
+
+Used for: how to run tests, where the entry points live, what commands matter, what *not* to touch.
+
+```markdown
+# AGENTS.md
+
+## Build
+- `npm run build` — full production build
+- `npm test` — run tests
+- `npm run lint` — typecheck + eslint
+
+## Architecture
+- Source is `src/`. Don't edit `dist/` or `.astro/` — those regenerate.
+- Routes are in `src/pages/`. Components in `src/components/`.
+
+## Don't
+- Don't bump dependencies without confirming with the human first.
+- Don't push to main. Open a PR.
+```
+
+Place `AGENTS.md` at the repo root (or in any subdirectory). Copilot CLI also reads a user-level `copilot-instructions.md` inside its config directory for defaults that apply across every repo — see [docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions) for the current path.
+
+## Copilot CLI — the terminal coding agent
+
+GitHub Copilot CLI is **a dedicated standalone CLI** for terminal-driven coding (currently in public preview). It's available on Free, Pro, Pro+, Business, and Enterprise. Several install paths:
+
+```sh
+# npm (all platforms)
+npm install -g @github/copilot
+
+# Homebrew (macOS / Linux)
+brew install copilot-cli
+
+# WinGet (Windows)
+winget install GitHub.Copilot
+
+# Install script (macOS / Linux)
+curl -fsSL https://gh.io/copilot-install | bash
+```
+
+Launch with `copilot`. Two interfaces:
+
+- **Interactive** — `copilot` opens a conversational session
+- **Programmatic** — `copilot -p "Your prompt here"` for single-shot use in scripts
+
+Inside an interactive session, **Plan mode** (toggle with `Shift+Tab`) builds a structured implementation plan before writing code — useful for non-trivial changes. The CLI can edit files locally, run shell commands (with user approval), and interact with github.com (list PRs, create issues, merge PRs). It reads `AGENTS.md`, `.github/copilot-instructions.md`, and `$HOME/.copilot/copilot-instructions.md`. The GitHub MCP server is built in — no config needed for GitHub API access. Auto-compaction triggers at ~95% of the context window.
+
+> Not to be confused with the older `gh copilot` extension to the `gh` CLI — that was a simple command-suggestion helper (`gh copilot suggest`, `gh copilot explain`). The new standalone Copilot CLI **replaces** it and is a much broader agentic system. The old extension is being phased out.
+
+## Cloud agent — the autonomous PR opener
+
+The **GitHub Copilot cloud agent** (formerly "Copilot Coding Agent" — the rebrand happened during 2026) is the async agent that runs in an ephemeral **GitHub Actions-powered environment**, not on your machine. Assign it an issue or `@copilot` it in a PR comment, and it researches the issue, plans the change, writes the code, runs tests in the sandbox, and opens a draft pull request for you to review. Available on Pro, Pro+, Business, and Enterprise — **not Free**.
+
+You can trigger it from the **Agents panel** on github.com, by assigning issues to a Copilot user, via VS Code, via the Copilot CLI, or through external integrations (Azure Boards, Jira, Linear, Slack, Teams).
+
+**Third-party coding agents** can also be delegated tasks through the same interface — currently **Claude (Anthropic)** and **OpenAI Codex** are in public preview on **Pro+ only**. The cloud agent UI lets you pick which agent handles each task.
+
+Configure cloud-agent MCP in **Repository Settings → Copilot → Cloud agent → MCP configuration**. The cloud agent's MCP config is *separate* from `.vscode/mcp.json`. Two non-obvious details worth knowing:
+
+- The cloud agent **does not support OAuth** for remote MCP servers — only API keys / PATs, via repository secrets prefixed with `COPILOT_MCP_`.
+- It **executes MCP tools autonomously without user approval**. Docs warn explicitly and recommend allowlisting only read-only tools via the `tools` array.
+
+> Don't confuse cloud agent (async, GitHub-hosted, opens PRs) with **agent mode in your IDE** (synchronous, local, edits files on your machine in real time). They're different surfaces.
+
+## Whatever happened to Copilot Workspace?
+
+The web-based planning surface that GitHub previewed in 2024 as "Copilot Workspace" has been **superseded** by the cloud agent plus **Copilot Spaces** (a preview feature for organising context and prompts for repeated work). The standalone `/features/copilot/workspace` URL now 404s. If you read older blog posts referencing Workspace, mentally substitute "cloud agent" — that's where the planning + autonomous-PR functionality landed.
+
+## Copilot Extensions vs MCP
+
+The old **Copilot Extensions** model (where you'd type `@azure` or `@stripe` in Chat to invoke a vendor-specific extension) has been **largely superseded by MCP** as the primary integration mechanism. The Extensions docs URL now redirects to the MCP docs; the marketplace at github.com/features/copilot/extensions has folded into the main Copilot features page.
+
+The current direction:
+
+- **MCP servers** — the new standard. Available across VS Code, JetBrains, Xcode, Visual Studio, Eclipse, the cloud agent, and the Copilot CLI. The **GitHub MCP server** is built into the Copilot CLI by default (no config). Enterprise / Business admins must explicitly enable MCP via org policy (it's off by default at those tiers); Free / Pro / Pro+ have MCP available by default.
+- **Legacy Extensions** — the `@-handle` marketplace extensions remain installed for users who already have them, but new integrations should land as MCP servers.
+
+For the per-surface picture of MCP across the wider Microsoft stack — including the auth-shape and transport differences between VS Code, Copilot Studio, Foundry, and the cloud agent — see [MCP for Microsoft surfaces](/microsoft/mcp/).
+
+## GitHub Copilot ≠ GitHub Models
+
+**GitHub Models** is a separate product (preview): a workspace inside github.com for testing prompts against models, comparing model outputs, running evaluators (similarity / relevance / groundedness scoring), and saving prompt configs as `.prompt.yml` files in your repos for production use. It has a REST API for integration into apps.
+
+If you find yourself reading about `.prompt.yml` files, GitHub Models is what you want — not GitHub Copilot. The two products can interact (Copilot uses models you can also test in Models) but they have different purposes, different billing, and different docs.
+
+## Honest take
+
+GitHub Copilot is, in May 2026, **one of the most mature AI coding-assistant stacks in production**. The model picker, the customisation system (`copilot-instructions.md`, `.instructions.md`, `AGENTS.md`), agent mode, the cloud agent, the dedicated CLI, MCP support across every surface — all genuinely shipping, mostly GA, well-documented.
+
+The friction points worth knowing:
+
+1. **Premium request budgeting.** Free's 50/month is enough to try the product; Pro's 300/month gets exhausted by serious work; Pro+'s 1,500/month is the right tier for daily developer use. Agent-mode sessions burn requests faster than Chat. Monitor your usage.
+2. **The temporary Pro / Pro+ sign-up pause** (announced 20 April 2026). Existing subscribers are unaffected, but if you're recommending Copilot to a teammate right now, point them at Free first and check for the sign-up reopening before suggesting an upgrade.
+3. **The "GitHub Copilot vs M365 Copilot" naming collision.** This catches enterprise customers monthly. They're separate products with separate billing, separate customisation, separate SLAs. If your colleague says "we have Copilot," ask which one.
+4. **The cloud agent's autonomous tool execution.** It's a real productivity multiplier and a real security consideration. Treat allowlisting in the MCP config as a non-optional ritual, not as something to skip.
+
+## What's next
+
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — VS Code, cloud agent, and Copilot Studio differ on transport and auth.
+- **[Claude Code](/anthropic/claude-code/)** — the Anthropic-side terminal coding agent.
+- **[Codex CLI](/openai/codex-cli/)** — the OpenAI-side terminal coding agent.
+- **[Gemini CLI](/google/gemini-cli/)** — the Google-side terminal coding agent.

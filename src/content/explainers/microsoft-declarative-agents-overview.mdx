@@ -1,0 +1,258 @@
+---
+title: "Declarative Agents for M365 Copilot, plainly"
+section: "Declarative Agents"
+sectionNumber: "DA.1"
+description: "Five-minute orientation to declarative agents — the manifest-driven agent format that runs inside Microsoft 365 Copilot Chat. The v1.7 manifest, the 12 capabilities you can actually use, the three distribution paths, and the licensing trap that catches most teams (Email + People + TeamsMessages + Meetings need a full M365 Copilot license, not pay-as-you-go)."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com/microsoft-365-copilot/extensibility (overview-declarative-agent · declarative-agent-manifest-1.7 · build-declarative-agents · decision-guide · declarative-agent-tool-comparison · agents-are-apps · overview-api-plugins · publish · manage · prerequisites) and the OfficeDev/microsoft-365-copilot-samples GitHub repo as of 15 May 2026. All public sources only. Page flips to tried with a session log when Sush ships a non-trivial DA into his dev tenant."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/overview-declarative-agent"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/declarative-agent-manifest-1.7"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/build-declarative-agents"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/decision-guide"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/declarative-agent-tool-comparison"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/agents-are-apps"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/overview-api-plugins"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/prerequisites"
+  - "https://github.com/OfficeDev/microsoft-365-copilot-samples"
+vendor: "microsoft"
+product: "declarative-agents"
+---
+
+## The thirty-second version
+
+A **declarative agent** is a Microsoft 365 Copilot agent expressed entirely as a **JSON manifest**. No code path for the LLM. No orchestrator to host. You write a `declarativeAgent.json` file with a name, description, instructions, a few capabilities (web search, OneDrive grounding, Graph connectors, code interpreter, …), maybe one or more API-plugin actions, package it as a Microsoft 365 app `.zip` next to a Teams app manifest, sideload or publish, and the **M365 Copilot orchestrator runs the agent**. The user gets a new option inside the M365 Copilot Chat agent picker.
+
+Three things to know up front:
+
+1. **Microsoft's M365 Copilot orchestrator is the runtime.** You're not bringing your own model, prompt-graph, or hosting. The declarative agent is purely a configuration of Microsoft's Copilot orchestrator scoped to your data sources, instructions, and tools.
+2. **The current schema version is v1.7.** The Learn docs still index v1.5 first (SEO momentum), but every page has a banner directing new agents to v1.7. The toolkit templates (see [M365 Agents Toolkit](/microsoft/agents-toolkit/)) already scaffold v1.7 by default.
+3. **Capability spelling matters.** A declarative agent's capability names are exact JSON strings — get one wrong and the manifest fails validation in some tools and silently misbehaves in others. The list of 12 is below.
+
+## What the manifest looks like
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.7/schema.json",
+  "version": "v1.7",
+  "name": "Repairs Hub",
+  "description": "Help technicians manage open repair tickets across customer sites.",
+  "instructions": "$[file('instruction.txt')]",
+  "conversation_starters": [
+    { "title": "My open repairs", "text": "What open repairs are assigned to me?" }
+  ],
+  "capabilities": [
+    { "name": "WebSearch" },
+    { "name": "OneDriveAndSharePoint",
+      "items_by_url": [{ "url": "https://contoso.sharepoint.com/sites/Repairs" }] }
+  ],
+  "actions": [
+    { "id": "repairsPlugin", "file": "repairs-hub-api-plugin.json" }
+  ]
+}
+```
+
+### Field limits (the bits readers most often hit)
+
+| Field | Limit |
+|---|---|
+| `name` | ≤ 100 characters |
+| `description` | ≤ 1,000 characters |
+| `instructions` | **≤ 8,000 characters** |
+| `disclaimer.text` | ≤ 500 characters |
+| `conversation_starters` array | ≤ 12 items |
+| `actions` array | 1 – 10 items |
+| Default string limit on other properties | 4,000 characters |
+
+Instructions are typically loaded from a separate `instruction.txt` file using `$[file('instruction.txt')]` template syntax — keeps the manifest scannable and the prompt readable.
+
+## The 12 capabilities
+
+Every entry in the `capabilities` array has a `name` field, and the value must be **one of exactly twelve strings** as of v1.7. Get these right and you save yourself a 30-minute debugging session.
+
+| Capability (exact JSON value) | What it does |
+|---|---|
+| `WebSearch` | Web grounding. Optional `sites` array of ≤4 URLs, each with ≤2 path segments. The only capability available without a Copilot license or PAYG. |
+| `OneDriveAndSharePoint` | Search the user's OneDrive + SharePoint. Scope with `items_by_sharepoint_ids` (GUIDs: `site_id`, `web_id`, `list_id`, `unique_id`) or `items_by_url` (absolute URL). Omit both → all org content. |
+| `GraphConnectors` | The capability formerly known as Microsoft Graph connectors; the product UI was rebranded to "Copilot connectors" but the JSON token is still `GraphConnectors`. |
+| `GraphicArt` | Image generation. **Not** called `Image`. |
+| `CodeInterpreter` | Generates and executes Python (sandboxed) — data analysis, charts, maths. No sub-properties. |
+| `Dataverse` | Dataverse table search. Requires `host_name`, `skill` (exported from Copilot Studio), and `tables[]`. |
+| `TeamsMessages` | Search Teams channels, chats, meetings. **Not** `TeamsChat` or `TeamsChannels`. Optional `urls` array (≤5). |
+| `Email` | Search mailboxes. Optional `shared_mailbox`, `group_mailboxes` (≤25 SMTP addresses, v1.6+), `folders`. |
+| `People` | Org directory / people. Optional `include_related_content` (v1.6+) widens to shared documents, emails, Teams messages between the user and the person. **Not** `PeopleKnowledge`. |
+| `ScenarioModels` | Task-specific fine-tuned models. Requires `models[].id`. Limited public documentation; advanced use. |
+| `Meetings` | Calendar / meeting search (added v1.5). Optional `items_by_id[]` (v1.6+) for specific meetings. |
+| `EmbeddedKnowledge` | Local files packaged with the agent (added v1.6). **Status: not yet available** — the schema accepts it; the runtime hasn't shipped. |
+
+**Names that do not exist** (and the SME pass catches every time): ~~`Image`~~, ~~`CopilotConnectors`~~, ~~`SharePointDocument`~~, ~~`SharePointSite`~~, ~~`MicrosoftStreamLink`~~, ~~`PeopleKnowledge`~~, ~~`PowerPlatformConnectors`~~. Don't use any of those.
+
+## Actions — connecting external APIs and MCP servers
+
+Actions are how a declarative agent calls outside the M365 Copilot orchestrator's built-in tools. You list them in the manifest's `actions` array (1–10 items, since v1.6).
+
+Two syntax forms:
+
+**Form A — reference a plugin manifest file** (most common):
+
+```json
+"actions": [
+  { "id": "repairsPlugin", "file": "repairs-hub-api-plugin.json" }
+]
+```
+
+**Form B — inline plugin manifest** (v1.7+):
+
+```json
+"actions": [
+  {
+    "schema_version": "v2.4",
+    "name_for_human": "GitHub Issues Plugin",
+    "runtimes": [{
+      "type": "OpenApi",
+      "auth": { "type": "None" },
+      "spec": { "url": "https://example.com/openapi.yaml" }
+    }]
+  }
+]
+```
+
+Supported action types: **REST APIs with OpenAPI specs**, and **MCP servers** (Model Context Protocol). For the latter, see [MCP for Microsoft surfaces](/microsoft/mcp/) — the M365 Copilot runtime never calls MCP servers directly, but a declarative agent can wrap one as an action.
+
+**Performance note:** when a DA has ≤5 plugins, all are injected directly into the orchestrator's prompt. With more than 5, the orchestrator uses semantic matching on plugin descriptions to pick which to use per turn — so write descriptive `description_for_model` strings.
+
+**Confirmation behaviour:** Copilot confirms with the user before sending data to a plugin for the first time. Read-only operations skip subsequent confirmations; write operations always confirm.
+
+## The app package
+
+Declarative agents are packaged as Microsoft 365 app `.zip` files:
+
+```
+my-agent.zip
+├── manifest.json              ← outer M365 app manifest (Teams schema ≥ v1.13)
+├── color.png                  ← 192×192 colour icon (required)
+├── outline.png                ← 32×32 outline icon (required for AppSource validation)
+├── declarativeAgent.json      ← the declarative-agent manifest (v1.7)
+└── plugin.json                ← API plugin manifest (optional, referenced from DA)
+```
+
+The outer **app manifest** references the declarative agent under `copilotAgents.declarativeAgents`:
+
+```json
+"copilotAgents": {
+  "declarativeAgents": [
+    { "id": "agent1", "file": "declarativeAgent.json" }
+  ]
+}
+```
+
+⚠️ Currently **only one declarative-agent definition is supported per app manifest** — one app package, one DA. If you need three agents, you ship three packages.
+
+## Distribution — three paths
+
+### 1. Personal sideload (developer test)
+
+The fast path. Use [ATK](/microsoft/agents-toolkit/) in VS Code → Lifecycle pane → **Provision**, or alternatively use Agent Builder in M365 Copilot → "Create agent" → personal use. Test at `https://m365.cloud.microsoft/chat`.
+
+**Prerequisite:** a Teams admin must have enabled **Upload custom apps** in **Teams Admin Centre** → Teams Apps → Setup Policies → Global → toggle on. This is the only thing Teams Admin Centre is used for. Tenant-wide governance lives elsewhere.
+
+### 2. Tenant publish (organisation-wide)
+
+Goes through the **Microsoft 365 admin centre** at [admin.microsoft.com](https://admin.microsoft.com) → **Copilot** section → **Integrated Apps**. Admins upload a custom app package, approve/reject agents submitted by users, and manage availability per user / group.
+
+> Trap: it is the **Microsoft 365 admin centre**, **not** the Teams Admin Centre, for org-wide deployment of agents. Teams Admin Centre is only for the sideloading toggle.
+
+### 3. AppSource (Microsoft Commercial Marketplace)
+
+Microsoft Partner Center → **Microsoft 365 and Copilot** program → offer type **"Apps and agents for Microsoft 365 and Copilot."** Requires passing Commercial Marketplace certification, M365 Store validation, and Responsible AI (RAI) validation. ATK supports submission; Copilot Studio cannot publish to AppSource — only the tenant catalog.
+
+Once approved, the agent appears in the Apps store within M365 Copilot, Teams, Outlook, Word, Excel, PowerPoint, and in the dedicated **Agent Store** inside M365 Copilot.
+
+## Licensing — the trap
+
+This is the gap most teams discover the wrong way.
+
+| Capability | Microsoft 365 Chat only (no Copilot license) | Pay-as-you-go (Copilot Credits) | Full M365 Copilot license |
+|---|---|---|---|
+| Custom instructions + custom actions | ✅ | ✅ | ✅ |
+| WebSearch | ✅ | ✅ | ✅ |
+| CodeInterpreter, GraphicArt | ✅ | ✅ | ✅ |
+| GraphConnectors, OneDriveAndSharePoint, Dataverse, EmbeddedKnowledge | ❌ | ✅ | ✅ |
+| **Email, People, TeamsMessages, Meetings** | ❌ | ❌ | ✅ only |
+
+The bold row is the trap. The four "deeply M365 personal" capabilities — mailbox, people, Teams chats, meetings — require a **full** M365 Copilot license per end user. Pay-as-you-go is not enough for those four.
+
+Developers building and testing with ATK or Copilot Studio can use a free Microsoft 365 Developer Program sandbox — but it gives only Web Search-only agents (no personal-data grounding). To test grounded capabilities, you need a Copilot Developer license or a tenant with pay-as-you-go billing.
+
+## Versus custom-engine agents
+
+Declarative agents are one half of a binary choice. The other half is **custom-engine agents** — agents you write in code, with your own orchestrator and your own LLM.
+
+| Dimension | Declarative agent | Custom-engine agent |
+|---|---|---|
+| Orchestrator | Microsoft's M365 Copilot orchestrator | Yours (Semantic Kernel, LangChain, Agent Framework, …) |
+| LLM | Microsoft's foundation models | Any model (Azure OpenAI, OSS, fine-tuned, domain-specific) |
+| Authoring | JSON manifest or TypeSpec, no code for core logic | Full code in .NET, Python, JavaScript via M365 Agents SDK, Teams SDK, or Azure AI Foundry |
+| Hosting | Hosted in Microsoft 365; zero infrastructure | External hosting (Azure, etc.) — except for the Copilot Studio variant |
+| Proactive messaging | Not supported (user-initiated only) | Supported (programmatic / workflow triggers) |
+| Multi-user collaboration | Individual productivity focus | Multi-user, Teams channels and meetings |
+| Responsible-AI compliance | Inherits M365 RAI policies automatically | Developer implements RAI compliance |
+| Setup complexity | Low (no-code to pro-code path) | Medium to high |
+| Channels | M365 Copilot Chat (and selected M365 surfaces) | M365 + external (web, SMS, voice, custom) |
+
+The decision is roughly: **declarative when M365 Copilot is the surface and the orchestrator is good enough; custom-engine when you need a different model, your own logic, or channels Microsoft doesn't host.**
+
+## Versus Copilot Studio agents
+
+[Copilot Studio](/microsoft/copilot-studio/) can also build declarative agents — under the hood the same `declarativeAgent.json` manifest is generated. The choice between Copilot Studio and ATK for declarative-agent authoring is no-code vs pro-code:
+
+- **Copilot Studio**: graphical maker portal, low-code, can't publish to AppSource (only the tenant catalog).
+- **M365 Agents Toolkit (ATK)**: VS Code + CLI, pro-code, full TypeSpec support, can publish to AppSource. New manifest features generally land in ATK first.
+- **Agent Builder** (inside the M365 Copilot app itself): no-code natural-language interface, shareable with the org, also can't publish to AppSource.
+- **SharePoint**: no-code, scoped to a SharePoint site's content, also no AppSource path.
+
+## TypeSpec — the type-first authoring path
+
+Microsoft also supports authoring declarative agents in **TypeSpec for AI** instead of hand-writing JSON. You write `.tsp` files with decorators (`@agent`, `@instructions`, `@conversationStarter`, `@actions`, HTTP decorators for API plugins) and the toolchain compiles to the JSON manifest:
+
+```typespec
+import "@typespec/http";
+import "@microsoft/typespec-m365-copilot";
+
+using TypeSpec.Http;
+using TypeSpec.M365.Copilot.Agents;
+
+@agent("My Posts Agent", "Manages blog posts.")
+@instructions("Help users manage blog posts.")
+@conversationStarter(#{ title: "List Posts", text: "List all blog posts." })
+namespace MyAgent { }
+```
+
+Package: `@microsoft/typespec-m365-copilot` (npm). Used inside ATK — `atk provision` compiles the TypeSpec to the manifest and deploys. The docs don't currently flag it as preview; treat it as recently GA.
+
+## Governance — admin controls
+
+All declarative-agent governance flows through the **Microsoft 365 admin centre**:
+
+- **Copilot → Integrated Apps** → review and approve agents submitted to the org catalog; manage availability per user / group; enable / disable agents tenant-wide or individually.
+- **Default state**: Copilot agent capability is **enabled by default** in tenants with M365 Copilot licenses; admins can disable per user/group.
+- **Copilot Studio agents** are also managed here, plus additional governance in the Power Platform admin centre.
+
+(The older `copilot-control-system` URL is a 404 as of May 2026 — Microsoft reorganised that content into `manage`, `prerequisites`, and `agents-are-apps`.)
+
+## Honest take
+
+Declarative agents are the cheapest, fastest way to ship a useful agent into M365 Copilot — when the M365 Copilot orchestrator is what you want. You spend most of your time on instruction-writing and capability scoping, not on infrastructure.
+
+Where they bite back: the **licensing matrix** (the Email / People / TeamsMessages / Meetings full-license trap); the **capability-name spellings** (manifests that "look right" but fail validation); the **single-agent-per-package limit** (multi-agent products are three packages, not one); and the **schema drift** (1.5 docs still index first; new features land in ATK before docs catch up).
+
+For day-1 prototyping: scaffold with [ATK](/microsoft/agents-toolkit/), use v1.7, start with WebSearch + OneDriveAndSharePoint, sideload personally, iterate fast.
+
+## What's next
+
+- **[Scaffolding a declarative agent with ATK](/microsoft/agents-toolkit/scaffolding-a-declarative-agent/)** — the end-to-end walkthrough.
+- **[M365 Agents Toolkit](/microsoft/agents-toolkit/)** — the toolkit overview.
+- **[Copilot Studio](/microsoft/copilot-studio/)** — the no-code alternative.
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — wiring MCP servers as DA actions.

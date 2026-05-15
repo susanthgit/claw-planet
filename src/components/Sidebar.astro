@@ -152,8 +152,29 @@ if (activeVendor === 'openclaw') {
     { num: 'STUD', title: 'AI Studio',        count: studKids.length, slug: '/google/ai-studio/',         children: studKids },
     { num: 'GEM',  title: 'Gems',             count: gemKids.length,  slug: '/google/gems/',              children: gemKids },
   ];
+} else if (activeVendor === 'microsoft') {
+  // Microsoft — product-shaped nav. 6 products (Batch D, 15 May 2026):
+  // M365 Agents Toolkit · Copilot Studio · Azure AI Foundry · GitHub Copilot ·
+  // Declarative Agents · MCP for Microsoft. Builder-only · public sources only.
+  // voice-lint enforces a public-source-citation gate on every Microsoft entry.
+  const atkKids = await loadVendorProductChildren('microsoft', 'agents-toolkit', '/microsoft/agents-toolkit/');
+  const cpsKids = await loadVendorProductChildren('microsoft', 'copilot-studio', '/microsoft/copilot-studio/');
+  const fdyKids = await loadVendorProductChildren('microsoft', 'foundry', '/microsoft/foundry/');
+  const ghcKids = await loadVendorProductChildren('microsoft', 'github-copilot', '/microsoft/github-copilot/');
+  const daKids  = await loadVendorProductChildren('microsoft', 'declarative-agents', '/microsoft/declarative-agents/');
+  const mcpKids = await loadVendorProductChildren('microsoft', 'mcp', '/microsoft/mcp/');
+
+  sections = [
+    { num: 'MS',   title: 'Hub',                count: undefined,       slug: '/microsoft/' },
+    { num: 'ATK',  title: 'M365 Agents Toolkit', count: atkKids.length, slug: '/microsoft/agents-toolkit/',     children: atkKids },
+    { num: 'CPS',  title: 'Copilot Studio',     count: cpsKids.length, slug: '/microsoft/copilot-studio/',     children: cpsKids },
+    { num: 'FDY',  title: 'Azure AI Foundry',   count: fdyKids.length, slug: '/microsoft/foundry/',            children: fdyKids },
+    { num: 'GHC',  title: 'GitHub Copilot',     count: ghcKids.length, slug: '/microsoft/github-copilot/',     children: ghcKids },
+    { num: 'DA',   title: 'Declarative Agents', count: daKids.length,  slug: '/microsoft/declarative-agents/', children: daKids },
+    { num: 'MMS',  title: 'MCP for Microsoft',  count: mcpKids.length, slug: '/microsoft/mcp/',                children: mcpKids },
+  ];
 } else {
-  // microsoft hub — placeholder until Batch D lands
+  // Fallback for future vendors before their batch lands.
   sections = [
     { num: '·', title: 'Hub', count: undefined, slug: `/${activeVendor}/` },
   ];

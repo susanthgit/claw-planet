@@ -1,0 +1,202 @@
+---
+title: "Microsoft 365 Agents Toolkit, plainly"
+section: "M365 Agents Toolkit"
+sectionNumber: "ATK.1"
+description: "Five-minute orientation to the Microsoft 365 Agents Toolkit (ATK) — what it is, what it scaffolds, where it runs, and how it relates to the dozen-and-a-half older names you've probably heard for it. The renamed Teams Toolkit, with first-class declarative-agent + MCP-plugin scaffolding."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com/microsoftteams/platform/toolkit, the OfficeDev/microsoft-365-agents-toolkit GitHub repo (README + CHANGELOG + packages/cli/package.json), and the v1.7 declarative-agent manifest docs as of 15 May 2026. Public sources only. Page flips to tried with a session log when Sush scaffolds a fresh project end-to-end on a clean machine."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://learn.microsoft.com/microsoftteams/platform/toolkit/visual-studio-code-overview"
+  - "https://learn.microsoft.com/microsoftteams/platform/toolkit/microsoft-365-agents-toolkit-cli"
+  - "https://github.com/OfficeDev/microsoft-365-agents-toolkit"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/overview-declarative-agent"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/declarative-agent-manifest-1.7"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/prerequisites"
+vendor: "microsoft"
+product: "agents-toolkit"
+---
+
+## The thirty-second version
+
+The **Microsoft 365 Agents Toolkit** — abbreviated **ATK** — is **a VS Code extension, a Visual Studio extension, and a CLI** for building agents and apps that live inside Microsoft 365 Copilot, Microsoft Teams, and the wider M365 surface. You install one (or both) of the extensions, run `atk new`, pick a template, and ATK scaffolds a working project with a manifest, icons, lifecycle config, and the right Entra app registration plumbing already wired in. You then iterate; `atk provision` creates the cloud resources; `atk preview` runs it locally against M365; `atk publish` submits it to Teams Admin Centre for org approval.
+
+Three things to know up front:
+
+1. **It's the renamed Teams Toolkit.** The product Microsoft used to call Teams Toolkit (and the CLI it called `teamsfx`, then `teamsapp`) is now the M365 Agents Toolkit, and the CLI binary is `atk`. The old npm name `@microsoft/teamsfx-cli` is superseded by `@microsoft/m365agentstoolkit-cli`. Existing Teams Toolkit projects continue to work; the rebrand reflects that the toolkit is no longer Teams-only — it scaffolds declarative agents and API plugins for Microsoft 365 Copilot, MCP plugins, Outlook add-ins, and yes, still Teams apps.
+2. **It's free and open-source.** **MIT license**, repository `OfficeDev/microsoft-365-agents-toolkit` on GitHub. Active development — the VS Code extension shipped 6.8.0 in April 2026.
+3. **The "Agents SDK" is a different thing.** The Microsoft 365 **Agents SDK** is a code library for building custom-engine agents (bring-your-own LLM/orchestrator). The Agents **Toolkit** scaffolds projects for both declarative agents (no code path for the LLM) and custom-engine agents. The two are complementary, not the same product.
+
+## What it actually scaffolds
+
+`atk list templates` is the ground truth (it reads from the toolkit's own template library), but the most-used templates as of May 2026 fall into these buckets:
+
+**Declarative agents** (the "no LLM code, manifest-driven" agents that run inside M365 Copilot Chat):
+- `declarative-agent-basic` — minimal DA, no action
+- `declarative-agent-with-action-from-existing-api` — DA + OpenAPI-spec-backed action
+- `declarative-agent-with-action-from-mcp` — DA + an MCP server as an action (preview in 6.4.0, GA in 6.6.0; full CLI scaffolding wired in 6.8.0)
+- `declarative-agent-with-action-from-scratch` (and `-bearer` / `-oauth` variants) — DA + a new API you generate alongside the agent
+- `declarative-agent-typespec` — DA authored in [TypeSpec for AI](https://learn.microsoft.com/microsoft-365-copilot/extensibility/build-api-plugins-typespec) instead of hand-written JSON
+
+**Custom-engine agents** (you bring your own LLM + orchestrator):
+- `basic-custom-engine-agent`
+- `teams-collaborator-agent` (Teams SDK-powered, added 6.4.0)
+- `weather-agent` (sample)
+- `foundry-agent-to-m365` (Azure AI Foundry agent surfaced inside M365 Copilot, template added 6.6.0; sample first available in 6.4.0)
+
+**Older Teams-style scaffolds** still supported:
+- `default-bot` — chatbot
+- `basic-tab` — Teams tab app
+- `message-extension-v2` — Teams message extensions
+- `graph-connector` — Microsoft Graph connector for Copilot
+- Several `custom-copilot-*` RAG templates (Azure AI Search, custom API, customisable)
+- `office-addin-*` for Excel, Word, PowerPoint, OneNote, Outlook
+
+## Install
+
+**VS Code extension** — search "Microsoft 365 Agents Toolkit" in the Extensions marketplace. The exact marketplace ID is `TeamsDevApp.ms-teams-vscode-extension` (the publisher name still says "TeamsDevApp" — historical, unchanged). Latest stable: **6.8.0** released April 17, 2026.
+
+**CLI** — install globally from npm:
+
+```sh
+npm install -g @microsoft/m365agentstoolkit-cli
+```
+
+The published binary is `atk`. Two backward-compatibility aliases also work: `teamsapp` (points to the older CLI implementation, retained for old projects) and `m365agentstoolkit-cli` (the full-name alias for `atk`).
+
+**Prerequisites:**
+- Node.js 20 or later (the install page calls out 20+; the package's own `engines` field is looser but use 20+ for safety).
+- A Microsoft 365 tenant where a Teams admin has enabled **Upload custom apps** in Teams Admin Centre → Teams Apps → Setup Policies → Global → "Upload custom apps" = On. Without this, you cannot sideload your dev build. (More on licensing below.)
+- For Visual Studio (.NET / C# path), Visual Studio 17.10 or later with the workload installed.
+
+## The CLI surface, plainly
+
+A short walkthrough of the verbs you'll actually use. Full reference at [learn.microsoft.com/microsoftteams/platform/toolkit/microsoft-365-agents-toolkit-cli](https://learn.microsoft.com/microsoftteams/platform/toolkit/microsoft-365-agents-toolkit-cli).
+
+| Command | What it does |
+|---|---|
+| `atk new` | Interactive scaffold of a new agent or app. Picks template, language, and capabilities. |
+| `atk new sample` | Scaffold from an existing sample (good for "show me what's possible"). |
+| `atk list templates` / `atk list samples` | List everything available. |
+| `atk add action` | Add an API plugin or MCP action to an existing declarative-agent project. |
+| `atk add capability` | Add a capability (e.g. SPFx web part) to an existing project. |
+| `atk add auth-config` | Wire up auth config (Bearer, OAuth) for an action. |
+| `atk auth login` / `auth logout` / `auth list` | Sign in to M365 + Azure accounts the toolkit will use. |
+| `atk provision` | Run the provision stage in `m365agents.yml` — creates Entra app registration, cloud resources, etc. |
+| `atk deploy` | Run the deploy stage — push your code/manifest to the resources provision created. |
+| `atk package` | Build the `.zip` app package for upload. |
+| `atk validate` | Validate the app manifest + DA manifest + plugin manifests against the current schemas. |
+| `atk preview` | Open the agent inside M365 Copilot / Teams / Outlook for live testing. Must come after provision + deploy. |
+| `atk install` | Sideload the built package directly (personal-scope by default). |
+| `atk publish` | Submit the package to Teams Admin Centre for org-wide approval. |
+| `atk share` | Share a declarative agent with specific users or the whole tenant (added 6.4.0). |
+| `atk doctor` | Check that all prerequisites are healthy. |
+| `atk env add/list/reset` | Manage environments (dev, prod, etc.). |
+
+### The non-obvious bits
+
+- **`atk publish` does NOT make the agent live to users.** It submits to **Teams Admin Centre** (`admin.teams.microsoft.com/policies/manage-apps`), where a Teams admin manually changes status from "Submitted" to "Publish" in the Manage Apps page. (For tenant-wide declarative-agent governance and per-user availability, the **Microsoft 365 admin centre** at admin.microsoft.com → Copilot → Integrated Apps is the actual control surface — see [Declarative Agents](/microsoft/declarative-agents/) for the full distribution picture.) For personal testing without admin approval, use `atk install` or `atk preview` after `atk provision` + `atk deploy`.
+- **`atk validate` validates — it does not build.** Use `atk package` to build the `.zip`; use `atk provision` to create cloud resources.
+- **The legacy `teamsfx` binary is gone.** It was the Teams Toolkit v3/v4 era binary, replaced by `teamsapp` and now by `atk`. If you still have `teamsfx` from an old install, uninstall the old npm package.
+- **`atk publish` is for an organisation's internal app store, not the public Teams Store.** Public Teams Store submission goes through Microsoft Partner Center and additional Microsoft validation.
+
+## The two manifests every declarative-agent project has
+
+ATK-scaffolded declarative-agent projects ship with **two** JSON manifests — easy to confuse.
+
+```
+my-agent/
+├── m365agents.yml              ← lifecycle config (provision, deploy, publish stages)
+├── m365agents.local.yml        ← lifecycle config for local dev
+├── env/                        ← per-environment .env files
+└── appPackage/
+    ├── manifest.json           ← M365 app manifest (Teams schema v1.27)
+    ├── declarativeAgent.json   ← declarative-agent manifest (DA schema v1.7)
+    ├── instruction.txt         ← agent instructions loaded by declarativeAgent.json
+    ├── color.png               ← 192×192 colour icon (required)
+    └── outline.png             ← 32×32 outline icon (required)
+```
+
+The **app manifest** (`appPackage/manifest.json`) is the outer Teams/M365 app manifest. It references the declarative agent under `copilotAgents.declarativeAgents`:
+
+```json
+"copilotAgents": {
+  "declarativeAgents": [
+    { "id": "declarativeAgent", "file": "declarativeAgent.json" }
+  ]
+}
+```
+
+The **declarative-agent manifest** (`appPackage/declarativeAgent.json`) is the inner file with `$schema` pointing at `https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.7/schema.json`. Current schema version is **v1.7** (the v1.5 docs page is still indexed for SEO but its top banner directs new agents to v1.7).
+
+Instructions are loaded from a separate `instruction.txt` file via template syntax:
+
+```json
+"instructions": "$[file('instruction.txt')]"
+```
+
+`instructions` is capped at **8,000 characters**. `name` at 100. `description` at 1,000. `disclaimer.text` at 500. Most other strings default to 4,000. Conversation starters cap at 12. Actions array caps at 10.
+
+## Capabilities — the 12 names that matter
+
+When you add a `capabilities` array entry to the declarative agent manifest, the `name` field must be one of exactly twelve strings as of v1.7. Get the spelling wrong and the manifest fails validation silently in some tools. The full list:
+
+| Name (exact JSON value) | What it does |
+|---|---|
+| `WebSearch` | Web grounding; optional `sites` array (≤4 URLs, ≤2 path segments each) |
+| `OneDriveAndSharePoint` | OneDrive + SharePoint grounding; scope by GUIDs or absolute URLs |
+| `GraphConnectors` | Copilot connectors (the product name was rebranded "Copilot connectors" but the JSON token is still `GraphConnectors`) |
+| `GraphicArt` | Image generation. Not called `Image` — that name is wrong. |
+| `CodeInterpreter` | Sandboxed Python execution for data analysis, charts, maths |
+| `Dataverse` | Dataverse table grounding (requires `host_name`, `skill`, `tables`) |
+| `TeamsMessages` | Teams channels, chats, meetings. Not `TeamsChat` or `TeamsChannels`. |
+| `Email` | Mailbox search; optional `shared_mailbox`, `group_mailboxes`, `folders` |
+| `People` | Org directory / people. Not `PeopleKnowledge`. |
+| `ScenarioModels` | Task-specific fine-tuned models (required `models[].id`) |
+| `Meetings` | Calendar / meeting search (added v1.5) |
+| `EmbeddedKnowledge` | Files packaged with the agent (added v1.6; docs flag "not yet available" — schema present, runtime not yet) |
+
+Common mistakes the SME pass catches: writing `Image` instead of `GraphicArt`; writing `CopilotConnectors` instead of `GraphConnectors`; inventing `PowerPlatformConnectors`, `SharePointDocument`, `MicrosoftStreamLink`, or `PeopleKnowledge`. None of those exist.
+
+## Licensing — who can use what you build
+
+The licensing slice is where readers most often get burnt. The short version: **WebSearch, CodeInterpreter, and GraphicArt are the only capabilities available without a Copilot license or pay-as-you-go billing.** Everything else needs either a per-tenant pay-as-you-go (Copilot Credits) policy or a full Microsoft 365 Copilot user license.
+
+The full table:
+
+| Capability | Microsoft 365 Chat only (no Copilot license) | Pay-as-you-go (Copilot Credits) | Full M365 Copilot license |
+|---|---|---|---|
+| Custom instructions + custom actions | ✅ | ✅ | ✅ |
+| WebSearch | ✅ | ✅ | ✅ |
+| CodeInterpreter, GraphicArt | ✅ | ✅ | ✅ |
+| GraphConnectors, OneDriveAndSharePoint, Dataverse, EmbeddedKnowledge | ❌ | ✅ | ✅ |
+| **Email, People, TeamsMessages, Meetings** | ❌ | ❌ | ✅ only |
+
+The last row is the trap. The four "deeply M365 personal" capabilities (mailbox, people, Teams chats, meetings) require a **full** M365 Copilot license — pay-as-you-go is not enough.
+
+For your own developer testing: a free Microsoft 365 Developer Program sandbox gives you sideloading + Web Search-only agents. To test grounded capabilities, you need a Copilot Developer license or a tenant with pay-as-you-go billing.
+
+## Where ATK ends and other things begin
+
+A short map of confusing adjacent things:
+
+- **ATK ≠ Microsoft 365 Agents SDK.** ATK is the scaffolder; the Agents SDK is a library for writing custom-engine agents in code (the successor to TeamsFx SDK).
+- **TeamsFx SDK is deprecated.** The npm package `@microsoft/teamsfx` is in community-only support mode until September 2026. Do not build new things with it.
+- **ATK is for Microsoft 365 Copilot, not GitHub Copilot.** Microsoft uses the word "Copilot" for a dozen products. Microsoft 365 Copilot (the productivity Chat experience) is what ATK targets. GitHub Copilot (the IDE coding assistant) is a separate product line with its own customisation files.
+- **Declarative agents in Copilot Studio.** Copilot Studio can also build declarative agents — those generate the same manifest under the hood. The choice is no-code (Copilot Studio) vs pro-code (ATK). New manifest features land in ATK first. See [Copilot Studio](/microsoft/copilot-studio/).
+
+## Honest take
+
+ATK is one of the more pleasant first-party scaffolders Microsoft ships. Templates work. `atk doctor` actually catches problems. The 6.x line dropped most of the Teams-era friction (multi-step env setup, fragile sign-in plumbing).
+
+The rougher edges, mostly inherited from the M365 platform around it: declarative-agent manifest version drift (the docs index 1.5 first because of SEO momentum; the current version is 1.7); the gap between `atk publish` and "users can actually use it" (admin approval in a different portal); and the licensing matrix above — easy to scaffold an agent locally that turns out to need a full Copilot license to ship.
+
+You'll hit those once. Then ATK gets out of your way.
+
+## What's next
+
+- **[Scaffolding a declarative agent](/microsoft/agents-toolkit/scaffolding-a-declarative-agent/)** — the end-to-end walkthrough.
+- **[Declarative agents overview](/microsoft/declarative-agents/)** — the manifest format itself, capability-by-capability.
+- **[Copilot Studio](/microsoft/copilot-studio/)** — the no-code alternative for building the same agents.
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — where MCP plugs into ATK, Copilot Studio, Foundry, and VS Code.

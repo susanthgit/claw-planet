@@ -1,0 +1,235 @@
+---
+title: "Azure AI Foundry, plainly"
+section: "Azure AI Foundry"
+sectionNumber: "FDY.1"
+description: "Five-minute orientation to Azure AI Foundry — Microsoft's managed model + agent platform on Azure. The rebrand chain (ML Studio → AI Studio → AI Foundry → Microsoft Foundry), the new flat resource model, the model catalogue, Agent Service, and where it sits next to Azure OpenAI direct."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com/azure/ai-foundry (what-is + architecture + concepts/foundry-models-overview + agents/overview + observability + rbac), pypi.org for azure-ai-projects + azure-ai-agents package metadata, and azure.microsoft.com/products/ai-foundry as of 15 May 2026. Public sources only. Page flips to tried with a session log when Sush runs an end-to-end Agent Service deploy on a personal Azure subscription."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://learn.microsoft.com/azure/ai-foundry/what-is-azure-ai-foundry"
+  - "https://learn.microsoft.com/azure/ai-foundry/concepts/architecture"
+  - "https://learn.microsoft.com/azure/ai-foundry/concepts/foundry-models-overview"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/overview"
+  - "https://learn.microsoft.com/azure/ai-foundry/concepts/rbac-azure-ai-foundry"
+  - "https://learn.microsoft.com/azure/ai-foundry/concepts/evaluation-approach-gen-ai"
+  - "https://azure.microsoft.com/products/ai-foundry/"
+  - "https://pypi.org/project/azure-ai-projects/"
+vendor: "microsoft"
+product: "foundry"
+---
+
+## The thirty-second version
+
+**Azure AI Foundry** is Microsoft's **managed model + agent platform on Azure**. One portal at [ai.azure.com](https://ai.azure.com), one resource type (`Microsoft.CognitiveServices/accounts` with `Kind: AIServices`), one Python SDK entry point (`azure-ai-projects`). It wraps and extends Azure OpenAI direct: same OpenAI models you'd hit through an Azure OpenAI resource, plus a catalogue of 1,900+ other models (Anthropic Claude, xAI Grok, Mistral, Meta Llama, Microsoft Phi, Hugging Face, …), a managed Agent Service, built-in evaluations, and OpenTelemetry-based tracing.
+
+Three things to know up front:
+
+1. **The name has changed twice in two years.** Azure ML Studio (the legacy ML design canvas — separate product line, listed here only for reader context) → Azure AI Studio (preview generative AI portal, 2023–2024) → Azure AI Foundry (GA rename at Microsoft Ignite, November 2024) → **Microsoft Foundry** (current name on some surfaces, Build 2025 era — "Azure AI" prefix dropped). Microsoft Learn still commonly uses **Azure AI Foundry**, so this page does too. The portal URL `ai.azure.com` survived every rename.
+2. **Two resource models still coexist.** The old hub-and-project model (`Microsoft.MachineLearningServices` provider) is now labelled **Foundry (classic)** and gets no new investments. The new flat model (`Microsoft.CognitiveServices/accounts` Kind=AIServices, with `accounts/projects` sub-resources) is where everything new lands. Plan new work on the new model.
+3. **The platform itself has no platform fee.** You pay only for what you consume — tokens, hosted agent compute, evaluation runs, AI Search indexes, observability storage. Foundry sits on top of an Azure subscription you already have.
+
+## The rebrand timeline, since you'll meet it in docs
+
+| Era | Name | Status |
+|---|---|---|
+| Pre-2023 | Azure Machine Learning Studio | Legacy ML design canvas — separate product line, NOT in the Foundry rebrand chain (included for reader context only) |
+| 2023 – mid-2024 | Azure AI Studio (preview) | Unified generative AI portal, preview |
+| November 2024 (Ignite) | **Azure AI Foundry** | GA rename; "Azure AI Foundry" brand introduced |
+| 2025 (Build era) | **Microsoft Foundry** | Current name on some surfaces; "Azure AI" prefix dropped |
+
+What survived: the `ai.azure.com` portal URL, the model catalogue (which expanded), Azure OpenAI model access (now routed through Foundry endpoints).
+
+What changed: the hub-based resource model was superseded by the flat Foundry model. The Assistants API terminology (Threads / Messages / Runs) was replaced by Responses-API terminology (Conversations / Items / Responses). API versioning moved from monthly date-stamped `api-version` parameters to stable `/openai/v1/` routes.
+
+## Resource hierarchy — the new flat model
+
+```
+Microsoft.CognitiveServices/accounts        ← Foundry resource (governance boundary)
+  └── Microsoft.CognitiveServices/accounts/projects   ← Foundry project (dev boundary)
+```
+
+A **Foundry resource** is the top-level governance unit — networking, identity, security policy, model deployments. A **Foundry project** is where development happens — agents, evaluations, files, datasets, prompt assets, all scoped per team.
+
+The provider namespace **`Microsoft.CognitiveServices`** is shared with Azure OpenAI, Azure Speech, Azure Vision, Azure Language. Existing Azure Policy rules scoped at that level carry forward when you upgrade from a standalone Azure OpenAI resource into a Foundry resource.
+
+Other Azure services you'll connect to a Foundry project — **Azure Storage** (file uploads), **Azure Key Vault** (secrets), **Azure AI Search** (vector indexes) — are separate resources with their own governance.
+
+## The model catalogue
+
+Numbers floating around in Microsoft's own docs:
+
+- **"Over 1,900 models"** — the Learn docs ("What is Azure AI Foundry") and the Foundry Models overview page
+- **"More than 11,000 models"** — the Azure pricing page, which includes the broader Hugging Face Hub collection across inference tasks
+
+Conservative copy: "1,900+ curated models from Microsoft, OpenAI, Anthropic, xAI, Mistral, Meta, DeepSeek, Cohere, NVIDIA, plus the Hugging Face Hub." Avoid quoting "11,000" without noting the source.
+
+**Two high-level deployment categories:**
+
+| Category | How it works | Billing |
+|---|---|---|
+| **Serverless** (Microsoft-hosted) | Microsoft hosts and manages the model; you call a REST API | Pay-per-token (Standard sub-types) **or** reserved PTU hourly rate (Provisioned sub-types) |
+| **Managed Compute** | Model weights deployed to dedicated VMs you provision | Per VM core-hour |
+
+**Serverless sub-types**, by data-residency and throughput SKU:
+
+| Sub-type | SKU code | Data processing | Notes |
+|---|---|---|---|
+| Global Standard | `GlobalStandard` | Any Azure region | Highest quota, most common starting point |
+| Global Provisioned | `GlobalProvisionedManaged` | Any region | Reserved PTU, predictable throughput |
+| Global Batch | `GlobalBatch` | Any region | 50% discount, 24-hour turnaround |
+| Data Zone Standard | `DataZoneStandard` | US or EU zone | Data sovereignty compliance |
+| Data Zone Provisioned | `DataZoneProvisionedManaged` | US or EU zone | Zone + throughput guarantee |
+| Data Zone Batch | `DataZoneBatch` | US or EU zone | 50% discount, 24-hour turnaround, zone-residency |
+| Standard | `Standard` | Single region | Regional compliance, lower volume |
+| Regional Provisioned | `ProvisionedManaged` | Single region | Regional + throughput |
+| Developer | `DeveloperTier` | Any region (no residency guarantee) | Fine-tuned model eval; 24-hour lifetime; no SLA |
+
+**Two model ownership categories:**
+
+- **Models sold directly by Azure** — hosted and sold by Microsoft under Microsoft Product Terms; Microsoft support; enterprise SLAs; subject to Responsible AI review.
+- **Models from partners and community** — third-party (e.g. Anthropic Claude, Hugging Face); supported by their providers; SLAs vary.
+
+## Foundry Agent Service
+
+The Agent Service is the **fully managed runtime for AI agents** inside Foundry. Hosting, scaling, identity, observability, security — all handled.
+
+**Three agent types:**
+
+| Type | Code required? | Hosting | Best for |
+|---|---|---|---|
+| **Prompt agents** | No | Fully managed | Prototyping, single-task agents — portal or SDK |
+| **Workflow agents** *(preview)* | No (YAML optional) | Fully managed | Multi-step, multi-agent orchestration with branching |
+| **Hosted agents** *(preview)* | Yes | Container-based, managed | Bring-your-own framework; full custom logic |
+
+**Built-in tool catalogue** (GA unless noted):
+
+- **Web Search** — real-time public web with citations
+- **Code Interpreter** — sandboxed Python for data analysis, charts
+- **File Search** — vector search over uploaded files
+- **Function calling** — define your own functions; your app executes them
+- **Azure AI Search** — ground on an existing AI Search index
+- **Azure Functions** — call Azure Functions for custom actions
+- **OpenAPI tool** — connect external HTTP APIs via OpenAPI 3.0/3.1 spec
+- **MCP servers** — first-class tool type (`MCPTool`); see [MCP for Microsoft](/microsoft/mcp/)
+- Plus preview tools: **Image Generation**, **Browser Automation**, **Computer Use**, **Microsoft Fabric**, **SharePoint**, **Agent-to-Agent (A2A)**, **Toolbox** (bundle multiple tools into a single MCP-compatible endpoint)
+
+**API terminology — the v1 → v2 rename:**
+
+| Old (Assistants API era) | New (Responses API era) |
+|---|---|
+| Threads | Conversations |
+| Messages | Items |
+| Runs | Responses |
+| Assistants | Agent Versions |
+| Date-stamped `api-version` parameters | Stable `v1` routes (`/openai/v1/…`) |
+
+If you find a code sample using `client.beta.threads.create(...)` it's pre-rename. The new shape is `conversations`.
+
+## The SDK
+
+**Python** is the primary surface:
+
+```sh
+pip install azure-ai-projects   # primary SDK — full feature access (preview)
+pip install azure-ai-agents     # lower-level agents-only client (preview)
+```
+
+`azure-ai-projects` requires **2.0.0 or above** and is currently labelled **preview** on PyPI. Both packages use Microsoft Entra ID auth — there's no API-key path in `AIProjectClient`. A typical first session:
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
+
+client = AIProjectClient(
+    endpoint="https://<resource>.services.ai.azure.com/api/projects/<project>",
+    credential=DefaultAzureCredential(),
+)
+```
+
+`azure-ai-agents` exposes `AgentsClient` separately for callers that only need the agents surface. Both packages currently authenticate with Entra ID; the Foundry docs recommend `azure-ai-projects` for full feature access.
+
+**Other languages:**
+
+- **JavaScript / TypeScript** — `@azure/ai-agents` (preview as of May 2026)
+- **C# / .NET** — preview
+- **Java** — preview
+- **REST API** — GA, with stable `v1` routes
+
+## Evaluations
+
+Built-in evaluators across five buckets:
+
+| Bucket | Metrics |
+|---|---|
+| General quality | Coherence, fluency |
+| RAG-specific | Groundedness, relevance |
+| Safety / security | Hate-and-unfairness, violence, protected materials |
+| Agent-specific | Tool call accuracy, task completion |
+| Custom | User-defined evaluators for domain needs |
+
+**Two modes:**
+
+- **Pre-production**: run evaluators against datasets. Portal wizard or SDK. PyRIT-backed **AI red teaming agent** for adversarial testing.
+- **Post-production**: continuous sampling of live traffic; scheduled evals; scheduled red-teaming runs; Azure Monitor alerts on quality thresholds.
+
+Evaluations billed via **Foundry Observability** pricing. Playground evaluations are **on by default** and consume the meter; you can turn them off per project.
+
+## Observability — OpenTelemetry-native
+
+Foundry tracing is built on **OpenTelemetry semantic conventions for GenAI spans**. Traces ship into Azure Monitor Application Insights (connected per project). Multi-agent semantic conventions were co-developed with Cisco Outshift. **W3C Trace Context** compliant.
+
+Frameworks supported in the trace pipeline: LangChain, LangGraph, OpenAI Agents SDK, Microsoft Agent Framework. Captures inputs/outputs, tool calls, token consumption, latency, and cost. GA for prompt agents; preview for workflow / hosted / custom agents.
+
+## Auth — keyless RBAC by default
+
+Microsoft Entra ID is the recommended (and SDK-default) auth model. The RBAC roles you'll care about:
+
+| Role | Scope | Purpose |
+|---|---|---|
+| **Azure AI User** | Foundry resource or project | Least privilege — build and develop. Auto-assigned on portal deploy if you're an Owner. |
+| **Azure AI Project Manager** | Foundry resource | Create projects, assign Azure AI User to others, publish agents. |
+| **Azure AI Account Owner** | Foundry resource | Manage resource, deploy models, create projects. |
+| **Azure AI Owner** | Foundry resource | Full access + role assignment + model management. |
+
+⚠️ **Do not use** the older `Cognitive Services *` roles (scoped at the wrong level) or the `Azure AI Developer` role (scoped to AML / Foundry classic hubs). API keys still exist (the project portal exposes them) but they grant full unrestricted access — Microsoft recommends Entra ID for production.
+
+## Pricing posture
+
+| Component | Pricing |
+|---|---|
+| **Foundry platform itself** | **Free** — no platform fee |
+| Foundry Models (serverless) | Pay-per-token, model-specific |
+| Foundry Models (provisioned) | Reserved PTU hourly rate |
+| Foundry Models (managed compute) | Per VM core-hour |
+| Foundry Agent Service | Consumption-based; own billing model |
+| Foundry IQ (AI Search) | Azure AI Search pricing |
+| Foundry Tools (Speech, Vision, Language) | Foundry Tools pricing |
+| Foundry Observability | Per-data-volume |
+| Fine-tuning | Azure Machine Learning pricing |
+
+**Microsoft Agent Pre-Purchase Plan**: 1-year ACU (Agent Commit Units) commitment, three tiers (20K ACU @ 5% discount, 100K @ 10%, 500K @ 15%).
+
+## Where Foundry sits relative to alternatives
+
+**vs Azure OpenAI direct.** Azure OpenAI (`Microsoft.CognitiveServices/accounts` Kind=`OpenAI`) is the narrower resource — OpenAI models only, no agent runtime, no built-in eval framework. Foundry **wraps** Azure OpenAI — all your existing Azure OpenAI endpoints work through Foundry; you can upgrade an Azure OpenAI resource to a Foundry resource while preserving endpoint URLs, API keys, and state. Use standalone Azure OpenAI only when you literally need nothing beyond completions.
+
+**vs OpenAI Platform direct** (platform.openai.com). OpenAI Platform is simpler but has no Azure RBAC, no private VNet, no Azure Policy. Foundry adds enterprise auth, data residency controls, private networking, and multi-model access. Pick OpenAI Platform if you want the fastest possible on-ramp and don't need Azure compliance. Pick Foundry if you're already in Azure or need any of Entra / VNet / Policy / multi-model.
+
+**vs Google Vertex AI.** Both are unified cloud AI platforms. Foundry is Entra ID + Azure RBAC native; Vertex AI is Google IAM. Foundry's deeper integration is with Microsoft 365 (Teams, Copilot publishing). Vertex AI's deeper integration is with Google Workspace. Pricing models differ — no direct head-to-head. (See [Vertex AI Agents](/google/vertex-ai-agents/) for the Google side.)
+
+## Honest take
+
+Foundry is the right Microsoft surface for almost any non-trivial Azure-hosted AI build today. The rebrand churn is the biggest thing to track — names, docs, SDK package names have all shifted, and Microsoft hasn't yet sunset enough of the old surface to make it tidy.
+
+The flat resource model is a real upgrade over the hub-and-project tangle; the SDK is finally a single entry point worth recommending. Tracing on OpenTelemetry was the correct architectural call. The model catalogue keeps expanding faster than any individual page can document.
+
+Where it's still rough: API/terminology drift (Assistants → Responses; Threads → Conversations) means old sample code is everywhere, and you'll hit moments where a docs page is one rename behind the SDK. Read the date stamp on every page; if it says before mid-2025, treat the API names as suspect.
+
+## What's next
+
+- **[Vertex AI Agents](/google/vertex-ai-agents/)** — the Google-cloud equivalent stack.
+- **[OpenAI Agents SDK](/openai/agents-sdk/)** — the OpenAI Platform equivalent.
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — how MCP wires into Foundry Agent Service.
+- **[Claude API](/anthropic/claude-api/)** — accessing Anthropic Claude (also available through Foundry's model catalogue).

@@ -1,0 +1,266 @@
+---
+title: "Scaffolding a declarative agent with ATK"
+section: "M365 Agents Toolkit"
+sectionNumber: "ATK.2"
+description: "End-to-end walkthrough — install the M365 Agents Toolkit, scaffold a declarative-agent project, edit the manifest + instructions, validate, sideload, test inside Microsoft 365 Copilot. The minimum path from `npm install -g` to a working agent in your dev tenant."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com/microsoftteams/platform/toolkit + learn.microsoft.com/microsoft-365-copilot/extensibility + the OfficeDev/microsoft-365-agents-toolkit GitHub repo (README, CHANGELOG, declarative-agent-basic template) as of 15 May 2026. Walkthrough commands match ATK 6.8.0 and DA manifest schema v1.7. Public sources only. Page flips to tried with a session log when Sush runs the whole flow on a clean machine."
+lastReviewedAt: "2026-05-15"
+estimatedTimeMinutes: 30
+sources:
+  - "https://learn.microsoft.com/microsoftteams/platform/toolkit/visual-studio-code-overview"
+  - "https://learn.microsoft.com/microsoftteams/platform/toolkit/microsoft-365-agents-toolkit-cli"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/build-declarative-agents"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/declarative-agent-manifest-1.7"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/prerequisites"
+  - "https://github.com/OfficeDev/microsoft-365-agents-toolkit"
+vendor: "microsoft"
+product: "agents-toolkit"
+---
+
+A walkthrough from "nothing installed" to "your agent answers a question in Microsoft 365 Copilot Chat." Total ≈ 30 minutes for a first run. The path uses the **declarative-agent-basic** template (no actions yet), built with the CLI for clarity — the VS Code extension wraps the same lifecycle in a UI pane.
+
+## Before you start — the prerequisites that bite
+
+Two things commonly aren't ready:
+
+1. **Sideload toggle.** Your Teams admin must have enabled **Upload custom apps** in **Teams Admin Centre** → **Teams Apps** → **Setup policies** → **Global (Org-wide default)** → "Upload custom apps" = **On**. Without this, the sideload step fails silently. In a Microsoft 365 Developer Program tenant you are the admin, so toggle it yourself.
+2. **Account with sideloading rights.** You'll need to sign in with both a Microsoft 365 account (tenant where you'll sideload) and an Azure account (for `atk provision` resource creation). The two can be the same account if your tenant has Azure attached.
+
+You'll also need:
+- **Node.js 20+** installed and on PATH.
+- The **Microsoft 365 Agents Toolkit** VS Code extension (`TeamsDevApp.ms-teams-vscode-extension`) — optional but useful for the integrated chat preview.
+- A **Microsoft 365 tenant** with sideloading enabled. A free [Microsoft 365 Developer Program](https://developer.microsoft.com/microsoft-365/dev-program) sandbox works for this walkthrough.
+
+## Step 1 — Install the CLI
+
+```sh
+npm install -g @microsoft/m365agentstoolkit-cli
+```
+
+Confirm it landed:
+
+```sh
+atk --version
+atk doctor
+```
+
+`atk doctor` checks Node version, npm presence, and whether you've signed in with M365 + Azure accounts. Fix whatever it flags before continuing.
+
+## Step 2 — Sign in
+
+```sh
+atk auth login m365
+atk auth login azure
+```
+
+Each opens a browser to complete the sign-in. After both succeed:
+
+```sh
+atk auth list
+```
+
+Should show both accounts with a green "Signed in" status.
+
+## Step 3 — Scaffold the project
+
+```sh
+atk new
+```
+
+The wizard asks a series of questions. For this walkthrough, pick:
+
+1. **Capability** → `declarative-agent`
+2. **Type** → `declarative-agent-basic` (no action)
+3. **Programming language** → `typescript` (the CLI accepts both `typescript` and `javascript`; even though the basic DA has no code, the language flag influences future `atk add action` scaffolds)
+4. **App name** → `repairs-hub` (or whatever)
+5. **Folder** → current directory or wherever you'd like
+
+Once it finishes, `cd repairs-hub` and look at what you got:
+
+```text
+repairs-hub/
+├── .gitignore
+├── README.md
+├── m365agents.yml            ← lifecycle config (provision / deploy / publish)
+├── m365agents.local.yml      ← lifecycle config for local dev
+├── .vscode/                  ← VS Code launch + debug configs
+├── env/                      ← per-env .env files
+└── appPackage/
+    ├── manifest.json         ← outer M365 app manifest (Teams schema v1.27)
+    ├── declarativeAgent.json ← declarative-agent manifest (v1.7)
+    ├── instruction.txt       ← agent's instruction prompt
+    ├── color.png             ← 192×192 icon
+    └── outline.png           ← 32×32 icon
+```
+
+## Step 4 — Edit the manifest and instructions
+
+Open `appPackage/declarativeAgent.json`. It looks something like:
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.7/schema.json",
+  "version": "v1.7",
+  "name": "${{APP_NAME_SUFFIX}}",
+  "description": "Declarative agent created with Teams Toolkit",
+  "instructions": "$[file('instruction.txt')]",
+  "conversation_starters": [
+    {
+      "title": "Hello",
+      "text": "Hello, how can you help me?"
+    }
+  ]
+}
+```
+
+Edit it for the example. Two changes:
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.7/schema.json",
+  "version": "v1.7",
+  "name": "Repairs Hub ${{APP_NAME_SUFFIX}}",
+  "description": "Help technicians find and prioritise open repair tickets across customer sites.",
+  "instructions": "$[file('instruction.txt')]",
+  "conversation_starters": [
+    { "title": "My open repairs", "text": "What open repairs are assigned to me?" },
+    { "title": "Urgent tickets", "text": "Show me the highest-priority tickets right now." }
+  ],
+  "capabilities": [
+    { "name": "WebSearch" }
+  ]
+}
+```
+
+We added a `capabilities` array with a single `WebSearch` entry. This is the only capability that works **without** an M365 Copilot license or pay-as-you-go billing, which makes it the right pick for a dev-tenant smoke test.
+
+Now open `appPackage/instruction.txt` and replace its contents:
+
+```text
+You are an assistant for field technicians who manage repair tickets.
+
+When a technician asks about repair status, priorities, or workload, search the web for general best practices and respond plainly. Do not invent ticket data — if the technician asks for specific tickets, say "I don't have access to your ticket system in this version" and suggest they check their repairs portal.
+
+Keep responses under 200 words unless the technician asks for detail. Use plain English. When you cite a source, link it.
+```
+
+Keep it under 8,000 characters; the docs say "best results around 2,000–3,000 characters." Be specific about behaviour you want and behaviour you don't want — the latter matters more than people expect.
+
+## Step 5 — Validate
+
+```sh
+atk validate
+```
+
+This validates the app manifest, the declarative-agent manifest, and any plugin manifests against the current schemas. Common errors at this stage:
+
+- **Schema mismatch** — your `version` field doesn't match the `$schema` URL. Both should be `v1.7`.
+- **Capability name typo** — you wrote `WebSearch` correctly but try `Image` (wrong; use `GraphicArt`) or `CopilotConnectors` (wrong; use `GraphConnectors`) and you'll see a schema error.
+- **Icon dimensions** — `color.png` must be 192×192, `outline.png` must be 32×32 and **monochrome**.
+- **Missing required field** — `name`, `description`, `instructions`, `version` are all required.
+
+Fix whatever it reports. Re-run until clean.
+
+## Step 6 — Provision
+
+```sh
+atk provision --env dev
+```
+
+This stage runs the `provision` block in `m365agents.yml`. For a minimal declarative agent, that's:
+
+1. Register an Entra application for the agent (used for identity and consent screens).
+2. Generate a unique app ID and inject it into `env/.env.dev`.
+3. Bind that ID into your `manifest.json` via the templating system.
+
+You'll be prompted to allow consent for the Entra app. Accept.
+
+If `atk doctor` was clean and your account has Application.ReadWrite.All on the tenant, this completes in ~30 seconds. If it stalls, the most common cause is missing tenant admin consent for `Microsoft Graph` admin scopes — ask your admin to consent on your behalf (or grant yourself the role temporarily in a dev tenant).
+
+## Step 7 — Package and install
+
+```sh
+atk package --env dev
+atk install --env dev
+```
+
+`atk package` zips up the `appPackage/` directory into `appPackage/build/appPackage.dev.zip`. `atk install` uploads that zip to your tenant as a sideloaded app.
+
+> ⚠️ The default scope is `Personal` — the app is installed only for *you*. If you want a shared sideload that other tenant users can install, run `atk install --scope Shared` *from the start* (set the `AGENT_SCOPE` env var in `m365agents.yml` first). You cannot upgrade Personal→Shared after the fact in the same install.
+
+## Step 8 — Test inside Microsoft 365 Copilot
+
+Open [https://m365.cloud.microsoft/chat](https://m365.cloud.microsoft/chat) (or the M365 Copilot mobile app, or M365 Copilot in Teams). In the agent picker (the drawer at the top of Copilot Chat), find **Repairs Hub** under "Your agents" or use the search box.
+
+Click in, and try a conversation:
+
+> *Show me the highest-priority tickets right now.*
+
+You should see the agent respond using the conversation-starter behaviour — with the `WebSearch`-grounded response from your instructions, including a polite "I don't have access to your ticket system in this version" message that you wired into `instruction.txt`.
+
+If you instead see "I'm not sure I can help with that" or the wrong personality, your instructions need tightening. Iterate on `instruction.txt`, re-run `atk package`, re-run `atk install`, refresh the agent picker. The full local cycle takes about 60 seconds.
+
+## Step 9 — Iterate with `atk preview` (optional, faster loop)
+
+For active development the faster loop is:
+
+```sh
+atk preview --env dev
+```
+
+This combines `package` + `install` + opens the agent in your default browser inside M365 Copilot Chat. Use this loop until your instructions and capabilities are stable.
+
+## Step 10 — Publish to your tenant (optional)
+
+When you're ready to make the agent available to others in your tenant (not just sideloaded for you):
+
+```sh
+atk publish --env dev
+```
+
+This submits the app to **Teams Admin Centre** ([admin.teams.microsoft.com/policies/manage-apps](https://admin.teams.microsoft.com/policies/manage-apps)). A Teams admin (or you, in a dev tenant) manually changes the status from "Submitted" to "Publish" in the Manage Apps page. After that, the agent appears in your organisation's internal app store.
+
+> ⚠️ The tenant-wide governance for declarative agents lives in the **Microsoft 365 admin centre** at [admin.microsoft.com](https://admin.microsoft.com) → **Copilot** → **Integrated Apps**, not the Teams Admin Centre. Teams Admin Centre is used for the `atk publish` submission step (and the sideloading toggle); the M365 admin centre is where availability and governance per user/group are actually controlled.
+
+## Adding an action (next step beyond this walkthrough)
+
+When your basic agent works and you want to wire it to a real backend, add an action:
+
+```sh
+atk add action
+```
+
+This walks you through adding either an **OpenAPI-spec-backed REST API plugin** or an **MCP plugin** (the latter scaffolds an MCP server starter project alongside the declarative agent). The plugin manifest goes into `appPackage/` and gets referenced from `declarativeAgent.json`'s `actions` array.
+
+For more on actions and the manifest shape, see [Declarative agents overview](/microsoft/declarative-agents/) and [MCP for Microsoft surfaces](/microsoft/mcp/).
+
+## What went wrong checklist
+
+If you hit issues at each stage:
+
+| Stage | Common failure | First thing to check |
+|---|---|---|
+| `atk doctor` | Node version too old | Install Node 20+ |
+| `atk auth login m365` | "You don't have permission to sideload custom apps" | Teams admin must enable Upload custom apps in TAC |
+| `atk validate` | Schema mismatch | `version` field matches `$schema` URL (both v1.7) |
+| `atk provision` | Stalls on Entra app registration | Tenant admin must consent to Graph admin scopes |
+| `atk install` | "Custom apps disabled" | Same as auth login — TAC sideload toggle |
+| Agent doesn't appear in M365 Copilot picker | Wrong tenant | `atk auth list` — am I signed into the same tenant the install went to? |
+| Agent appears but answers oddly | Instructions vague | Rewrite `instruction.txt` with explicit do / don't behaviour |
+
+## Honest take
+
+The mechanical bits of this walkthrough are reliable in ATK 6.x — Microsoft has invested in the toolkit and it shows. The friction is mostly platform-side, not toolkit-side: tenant permissions, sideloading toggles, Entra consent grants, and the unsigned-by-default state of your dev tenant.
+
+The biggest first-time-user mistake is **not having sideloading enabled in TAC** and not realising that's the cause of the failure. The error messages are clearer than they used to be, but still don't always point you at the right toggle.
+
+Once you've got one declarative agent shipping end-to-end, every subsequent project scaffolds in a small fraction of the first run's wall time.
+
+## What's next
+
+- **[Declarative agents overview](/microsoft/declarative-agents/)** — the manifest format in full, capability-by-capability.
+- **[M365 Agents Toolkit overview](/microsoft/agents-toolkit/)** — back to the toolkit reference.
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — wiring an MCP server as an action.
+- **[Copilot Studio](/microsoft/copilot-studio/)** — the no-code path to the same declarative-agent format.

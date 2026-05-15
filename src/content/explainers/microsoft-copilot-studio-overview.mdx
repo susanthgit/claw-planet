@@ -1,0 +1,189 @@
+---
+title: "Copilot Studio, plainly"
+section: "Copilot Studio"
+sectionNumber: "CPS.1"
+description: "Five-minute orientation to Microsoft Copilot Studio — the low-code agent builder. What you can build, who pays what (the September 2025 Copilot Credits rename), where you can publish, and the distinction between a Copilot Studio agent and a declarative agent for M365 Copilot."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com/microsoft-copilot-studio (fundamentals · billing-licensing · authoring-triggers-about · publication-fundamentals-publish-channels · agent-extend-action-mcp) as of 15 May 2026. Public sources only. Page flips to tried with a session log when Sush builds a non-trivial agent end-to-end with current generative orchestration."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/billing-licensing"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/requirements-messages-management"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/advanced-generative-actions"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/authoring-triggers-about"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/publication-fundamentals-publish-channels"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp"
+  - "https://www.microsoft.com/microsoft-copilot/microsoft-copilot-studio"
+vendor: "microsoft"
+product: "copilot-studio"
+---
+
+## The thirty-second version
+
+**Copilot Studio** is Microsoft's **low-code agent builder**. You open a web app at [copilotstudio.microsoft.com](https://copilotstudio.microsoft.com), describe what you want an agent to do, add knowledge sources and tools, test in a side chat, then publish to channels — Microsoft 365 Copilot, Teams, the web, SharePoint, WhatsApp, Facebook Messenger, and several others. No code path is required for the LLM. You can wire in code-shaped things (custom REST APIs, MCP servers, Power Automate flows), but the agent body is configured through a maker portal, not authored as a manifest file.
+
+Three things to know up front:
+
+1. **It used to be Power Virtual Agents.** Same product, more features, new name (2023). The PVA acquisition into the broader Copilot brand is complete.
+2. **It runs on Power Platform infrastructure.** Connectors, Dataverse, Power Automate flows — all the Power Platform plumbing is underneath. You do not need a Power Apps license, but agents live in a Power Platform environment and share its connector catalogue (the same connectors Power Automate uses).
+3. **It can publish to two different runtimes.** A Copilot Studio agent can run on **Copilot Studio's own orchestrator** (full agent: topics, flows, autonomous triggers, any channel) or it can publish as a **declarative agent for M365 Copilot** (which runs on the M365 Copilot orchestrator instead). The two have different end-user-licensing implications. More on this below.
+
+## What you can build
+
+Copilot Studio handles five distinguishable agent shapes:
+
+| Shape | Trigger | Orchestration |
+|---|---|---|
+| **Classic topic agent** | Trigger phrases → scripted node flow | Classic |
+| **Generative agent** | User message → LLM picks topics + tools + knowledge dynamically | Generative (the default for new agents) |
+| **Autonomous agent** | External event (Dataverse row added, file uploaded, schedule timer, Planner task completed…) | Generative |
+| **Agent for Microsoft 365 Copilot** | User in M365 Copilot Chat | M365 Copilot orchestrator (not Studio's) |
+| **Multi-channel custom agent** | Anything | Generative or Classic |
+
+For new agents Microsoft defaults to **generative orchestration** — the LLM reads the descriptions of every topic, tool, and knowledge source and decides which to call. You can still author scripted topics for predictable answers (FAQ, sensitive flows) and the orchestrator will route to those when triggered. Classic-only mode still exists, mainly for the Teams plan and for legacy agents that haven't been migrated.
+
+## Licensing — the September 2025 rename
+
+⚠️ **As of 1 September 2025 the billing unit changed from "messages" to Copilot Credits.** Per-pack quantity (25,000 / pack / month) and the per-credit rate are unchanged — only the label. Any third-party blog post mentioning "Copilot Studio messages" pricing is stale.
+
+The purchase modes today:
+
+| Mode | Mechanics | Cost |
+|---|---|---|
+| **Prepaid Copilot Credit pack** | 25,000 Copilot Credits per pack per month, tenant-wide pool | **$200 USD / pack / month** |
+| **Pay-as-you-go (Azure)** | Azure subscription meter; consumed credits billed at end of period | Same per-credit rate, charged to Azure |
+| **Copilot Credits prepurchase plan (CCCUs)** | 1-year prepaid pool, Azure Marketplace | Volume discount possible |
+| **Teams plan** (included in some M365 SKUs) | Classic orchestration only, Teams channel only | No extra cost |
+
+**End-user licensing:** end users of a published agent need **no special license** unless the agent is published as a declarative agent for M365 Copilot (then they need a Microsoft 365 Copilot license). The agent maker needs a Copilot Studio user license (free, admin-assigned). The tenant needs either a prepaid pack or a PAYG billing policy.
+
+Per-event credit consumption (the bits that move your meter):
+
+| Event | Copilot Credits per event |
+|---|---|
+| Classic answer (scripted) | 1 CC |
+| Generative answer (from knowledge) | 2 CC |
+| Agent action (trigger, deep reasoning, topic transition, Computer-Use Agent) | 5 CC |
+| Tenant graph grounding (Microsoft Graph RAG) | 10 CC |
+| Agent flow actions (per 100 actions) | 13 CC |
+| AI tools — basic (per 10 responses) | 1 CC |
+| AI tools — standard (per 10 responses) | 15 CC |
+| AI tools — premium / reasoning model (per 10 responses) | 100 CC |
+| Content processing (per page) | 8 CC |
+
+A single complex turn stacks meters: a generative answer over the tenant graph is 2 + 10 = **12 CC** per turn. Plan for that.
+
+**M365 Copilot zero-rating:** when the agent's user is licensed for M365 Copilot **and** the agent operates under that user's identity (B2E), **all** Copilot Studio billing meters — classic answers, generative answers, agent actions, tenant graph grounding, agent flow actions, AI tools at every tier, and content processing — are zero-rated and don't consume Copilot Credits. This is the full table, not just the three most common items. The cost difference is significant for intranet / employee-facing deployments.
+
+Overage enforcement triggers at **125%** of prepaid capacity. At that point agents stop responding at the next attempt (not mid-conversation). PAYG mode prevents enforcement by routing overage to Azure.
+
+## Channels you can publish to
+
+The current channel list (from `publication-fundamentals-publish-channels`):
+
+- **Microsoft Teams + Microsoft 365 Copilot** (same channel config; same agent appears in both surfaces)
+- **SharePoint** (embed in a SharePoint page)
+- **WhatsApp** (GA since July 2025)
+- **Demo Website** (preview URL — not for production)
+- **Custom Website / Live Website** (iframe or script embed)
+- **Mobile App** (custom-built, via Direct Line API — developer work required)
+- **Facebook Messenger**
+- **Azure Bot Service channels** — Slack, Telegram, Twilio, Line, Kik, GroupMe, Direct Line Speech, Email — all require developer setup via the Azure portal
+
+**Skype is not on the list** — treat it as removed. **Teams-plan agents can only publish to Teams**; every other channel requires the standalone subscription.
+
+## Knowledge sources
+
+Per-mode limits as of May 2026:
+
+| Source | Generative mode | Classic mode | Auth |
+|---|---|---|---|
+| **Public website** (Bing-scoped) | 25 URLs | 4 URLs | None |
+| **File upload** (Dataverse-backed) | Unlimited | Dataverse storage limit | None |
+| **SharePoint** | 25 URLs | 4 URLs | Entra ID (user's identity) |
+| **Dataverse** | Unlimited | 2 sources / 15 tables each | Entra ID |
+| **Enterprise connectors** (Microsoft Search indexed) | Unlimited | 2 per agent | Entra ID |
+| **Azure AI Search** | Yes (separate config) | Yes | — |
+| **Bing Custom Search** | (use generative answers node instead) | 2 config IDs | — |
+| **Azure OpenAI** | (use generative answers node instead) | 5 connections | — |
+
+With **tenant-wide semantic indexing of M365 content** enabled (a feature that requires an M365 Copilot license in the tenant), SharePoint and connector files up to **200 MB** are supported — or **up to 512 MB for PDF, PPTX, and DOCX files** specifically. The maker themselves does not need M365 Copilot personally — only the tenant-wide indexing feature requires it.
+
+Knowledge retrieval is **user-identity-scoped** — users only see content they already have access to (Entra ID checks at query time for SharePoint, Dataverse, and Graph connectors).
+
+## MCP — the August 2025 wire-in
+
+Copilot Studio added **MCP** (Model Context Protocol) support in August 2025. You can connect a remote MCP server as a tool, the agent's orchestrator decides when to call it, and you're billed at the **agent action rate** (5 CC per tool call).
+
+What's supported and what isn't:
+
+- ✅ MCP **Tools** (functions the LLM can call)
+- ✅ MCP **Resources** (file-like context data)
+- ❌ MCP **Prompts** (predefined prompt templates) — not supported
+
+**Transport:** **Streamable HTTP only.** SSE transport was deprecated after August 2025 and dropped. There is no Stdio support in Copilot Studio (Stdio is local-process MCP — meaningless in a cloud agent builder).
+
+**Auth shapes** (three options in the MCP onboarding wizard):
+
+1. **None** (anonymous)
+2. **API key** (header or query parameter)
+3. **OAuth 2.0**, with three sub-shapes:
+   - *Dynamic discovery* — server supports OAuth Dynamic Client Registration + discovery (simplest)
+   - *Dynamic* — DCR but no discovery (you provide the auth + token URL templates)
+   - *Manual* — full client ID/secret/auth URL/token URL/scopes
+
+Under the hood, MCP servers are surfaced as **Power Platform custom connectors**. The MCP wizard creates a connector definition; alternatively you can hand-roll a custom connector in Power Apps with an OpenAPI YAML schema. Once certified, an MCP-backed connector can be published in Power Platform for cross-tenant use.
+
+For more on MCP across Microsoft surfaces, see [MCP for Microsoft](/microsoft/mcp/).
+
+## Standalone vs Teams plan — the comparison
+
+| Dimension | Teams plan | Standalone subscription |
+|---|---|---|
+| Entry | Included in select M365 SKUs | Purchased from M365 admin centre |
+| Orchestration | Classic only | Classic + Generative |
+| Channels | Teams only | All channels |
+| Premium connectors | ❌ | ✅ |
+| Autonomous (event-triggered) agents | ❌ | ✅ |
+| Generative AI authoring features | ❌ Not available | Full |
+| Live-agent handoff | ❌ | ✅ |
+| AI authoring help ("Create with Copilot") | ❌ | ✅ |
+
+Copilot Studio is **not** an internal sub-module of Power Platform — it is a separate product with its own SKUs. But it shares Power Platform infrastructure: Power Automate flows, Dataverse storage, the connector library, the Power Platform admin centre for capacity management. You do need a Power Platform environment to host your agents.
+
+## Copilot Studio agents vs declarative agents — the most-confused distinction
+
+Copilot Studio can build **both** shapes. The choice has real licensing consequences:
+
+| | Custom agent (Copilot Studio runtime) | Declarative agent for M365 Copilot |
+|---|---|---|
+| Built where | Copilot Studio web app | Copilot Studio's "Microsoft 365 Copilot" page, or via [M365 Agents Toolkit](/microsoft/agents-toolkit/) |
+| Orchestration | Copilot Studio's orchestrator | **M365 Copilot's orchestrator** (not Studio's) |
+| Channels available | Any supported channel | Teams + M365 Copilot Chat only |
+| End-user license needed | None | **Microsoft 365 Copilot license required** |
+| Topics / node flows | Yes | No (declarative — instructions + knowledge + tools, no flow graph) |
+| Tool palette | Power Automate flows, custom connectors, MCP, REST API, Computer Use | Prebuilt connectors, REST API, MCP, prompt tools |
+| Where it appears | Main agents list | Separate "Microsoft 365 Copilot" agent list |
+
+The practical version: a **custom Copilot Studio agent** published to the Teams channel works for users **without** an M365 Copilot license. A **declarative agent** for M365 Copilot delivers a tighter integration into the M365 Copilot UI but requires an M365 Copilot license per end user.
+
+## Honest take
+
+Copilot Studio is one of the gentlest on-ramps to building a working AI agent. You can have something useful talking to your SharePoint site inside an afternoon, with no code at all, and the orchestrator behaves sensibly out of the box.
+
+The friction lives in three places:
+
+1. **Pricing modelling.** Copilot Credits stack per-turn, the M365 Copilot zero-rating changes the math significantly, and you only see the bill at end of period. Build a small load test before you commit.
+2. **The agent-vs-declarative-agent distinction.** Easy to publish to the wrong runtime and discover later that your end users need M365 Copilot licenses you didn't budget for.
+3. **Generative-vs-classic-mode drift.** Old agents built in classic mode don't auto-magic into generative behaviour; conversion is supported but generates topic descriptions automatically — review them before publishing.
+
+None of these are dealbreakers — but all three are worth understanding before you start.
+
+## What's next
+
+- **[Making a custom copilot](/microsoft/copilot-studio/making-a-custom-copilot/)** — end-to-end walkthrough.
+- **[M365 Agents Toolkit](/microsoft/agents-toolkit/)** — the pro-code alternative for declarative agents.
+- **[Declarative agents](/microsoft/declarative-agents/)** — the manifest format Copilot Studio generates when you publish to M365 Copilot.
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — how MCP wires into Studio agents and the rest of the stack.

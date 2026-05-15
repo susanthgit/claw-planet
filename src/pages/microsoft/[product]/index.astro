@@ -1,0 +1,280 @@
+---
+/**
+ * /microsoft/[product]/ — product hub.
+ *
+ * Lists every entry tagged vendor:"microsoft" + product:<product> across the
+ * shared content collections. The 6 products are hard-coded so getStaticPaths
+ * always renders the 6 hubs even before all entries land.
+ *
+ * Entry filenames follow `microsoft-<product>-<slug>.mdx`; the short slug is
+ * extracted by stripping that prefix.
+ *
+ * Mirrors /google/[product]/index.astro from Batch C (15 May 2026).
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// Astro 5 evaluates getStaticPaths in a separate scope; inline the keys.
+export async function getStaticPaths() {
+  const PRODUCT_KEYS = ['agents-toolkit', 'copilot-studio', 'foundry', 'github-copilot', 'declarative-agents', 'mcp'];
+  return PRODUCT_KEYS.map(product => ({ params: { product } }));
+}
+
+const PRODUCT_META: Record<string, { title: string; code: string; lede: string; description: string }> = {
+  'agents-toolkit': {
+    title: 'Microsoft 365 Agents Toolkit (ATK)',
+    code: 'ATK',
+    lede: `The Microsoft 365 Agents Toolkit — formerly Teams Toolkit — is the <strong>VS Code extension + CLI</strong> that scaffolds projects for Microsoft 365 Copilot. It generates declarative agents, API plugins, and MCP plugins, validates manifests, provisions Entra app registrations, and publishes to your tenant or AppSource. Free and open-source on <a href="https://github.com/OfficeDev/microsoft-365-agents-toolkit">github.com/OfficeDev/microsoft-365-agents-toolkit</a>. Pages below are <strong>sourced</strong> from <a href="https://learn.microsoft.com/microsoftteams/platform/toolkit/visual-studio-code-overview">learn.microsoft.com</a> and the toolkit's GitHub repo.`,
+    description: 'M365 Agents Toolkit — overview, scaffolding a declarative agent. Sourced from learn.microsoft.com and github.com/OfficeDev.',
+  },
+  'copilot-studio': {
+    title: 'Copilot Studio',
+    code: 'CPS',
+    lede: `Copilot Studio is Microsoft's <strong>low-code agent builder</strong> for designing topic-driven and generative agents that publish to Microsoft 365 Copilot, Teams, the web, and other channels. It's a graphical maker portal: drag-and-drop topics, attach knowledge sources, wire in connectors, test in a preview chat, publish. Pages below are <strong>sourced</strong> from <a href="https://learn.microsoft.com/microsoft-copilot-studio">learn.microsoft.com/microsoft-copilot-studio</a>.`,
+    description: 'Copilot Studio — overview, making a custom copilot. Sourced from learn.microsoft.com/microsoft-copilot-studio.',
+  },
+  'foundry': {
+    title: 'Azure AI Foundry',
+    code: 'FDY',
+    lede: `Azure AI Foundry is Microsoft's <strong>managed model + agent platform on Azure</strong> — model catalogue, Agent Service, evaluations, observability, and a portal that wraps it all. Rebranded from Azure AI Studio in late 2024 / early 2025, with a flatter resource model that replaces the prior Hub-and-Project split. Pages below are <strong>sourced</strong> from <a href="https://learn.microsoft.com/azure/ai-foundry">learn.microsoft.com/azure/ai-foundry</a>.`,
+    description: 'Azure AI Foundry — what it is, the rebrand, model catalogue, Agent Service. Sourced from learn.microsoft.com.',
+  },
+  'github-copilot': {
+    title: 'GitHub Copilot',
+    code: 'GHC',
+    lede: `GitHub Copilot is the <strong>IDE + Chat + CLI coding assistant</strong> from GitHub. It runs inside VS Code, Visual Studio, JetBrains, Xcode, Neovim, Eclipse, and the terminal; the model picker now spans Claude, GPT, and Gemini families. Pages below are <strong>sourced</strong> from <a href="https://docs.github.com/copilot">docs.github.com/copilot</a>. Note: this page covers the developer surface — Microsoft 365 Copilot is the <em>productivity</em> surface and is documented separately under <a href="/microsoft/declarative-agents/">Declarative Agents</a> and <a href="/microsoft/copilot-studio/">Copilot Studio</a>.`,
+    description: 'GitHub Copilot — surfaces, tiers, models, customisation files. Sourced from docs.github.com/copilot.',
+  },
+  'declarative-agents': {
+    title: 'Declarative Agents for M365 Copilot',
+    code: 'DA',
+    lede: `Declarative Agents are the <strong>manifest-based agent format that runs inside Microsoft 365 Copilot Chat</strong>. You author a JSON manifest (name, description, instructions, conversation_starters, capabilities, actions) and Microsoft 365 Copilot does the orchestration. No code path for the LLM — the &ldquo;declarative&rdquo; in the name is the point. Pages below are <strong>sourced</strong> from <a href="https://learn.microsoft.com/microsoft-365-copilot/extensibility/overview-declarative-agent">learn.microsoft.com/microsoft-365-copilot/extensibility</a>.`,
+    description: 'Declarative Agents — manifest schema, capabilities, distribution. Sourced from learn.microsoft.com.',
+  },
+  'mcp': {
+    title: 'MCP across Microsoft surfaces',
+    code: 'MMS',
+    lede: `Model Context Protocol — the open <a href="https://modelcontextprotocol.io">MCP</a> standard from Anthropic — is now wired into <strong>multiple Microsoft surfaces</strong>: VS Code (agent mode), GitHub Copilot, Copilot Studio (MCP as an action source), the Microsoft 365 Agents Toolkit (scaffolding MCP plugins for M365 Copilot), and Azure AI Foundry's Agent Service. Status differs per surface — some GA, some preview. Pages below are <strong>sourced</strong> from official Microsoft Learn docs across each surface.`,
+    description: 'MCP for Microsoft — per-surface support, status (GA vs preview), auth shapes, transports. Sourced from learn.microsoft.com.',
+  },
+};
+
+const { product } = Astro.params;
+const meta = PRODUCT_META[product as string];
+
+const collections = ['explainers', 'setups', 'use-cases', 'gotchas'];
+type Entry = { num: string; title: string; href: string; description: string; state: string; date: string };
+const entries: Entry[] = [];
+for (const col of collections) {
+  const all = await getCollection(col as any);
+  for (const e of all as any[]) {
+    if (e.data.vendor !== 'microsoft') continue;
+    if (e.data.product !== product) continue;
+    if (e.data.status !== 'published') continue;
+    const fullSlug = e.id.replace(/\.mdx?$/, '');
+    const shortSlug = fullSlug.replace(new RegExp(`^microsoft-${product}-`), '');
+    entries.push({
+      num: e.data.sectionNumber,
+      title: e.data.title,
+      href: `/microsoft/${product}/${shortSlug}/`,
+      description: e.data.description,
+      state: e.data.verificationState,
+      date: e.data.lastReviewedAt,
+    });
+  }
+}
+entries.sort((a, b) => a.num.localeCompare(b.num));
+
+const sourcedCount = entries.filter(e => e.state === 'sourced').length;
+const triedCount = entries.filter(e => e.state === 'tried' || e.state === 'verified').length;
+const plannedCount = entries.filter(e => e.state === 'planned' || e.state === 'disputed').length;
+---
+
+<BaseLayout
+  title={`${meta.title} · Microsoft — Claw`}
+  description={meta.description}
+  ogImage="/og/home.png"
+>
+  <section class="product-hub">
+    <div class="crumb">
+      <a href="/microsoft/">Microsoft</a>
+      <span>/</span>
+      <span class="num">{meta.code}</span>
+    </div>
+
+    <h1>{meta.title}</h1>
+    <p class="lede" set:html={meta.lede}></p>
+
+    <div class="counts">
+      <span class="count-pill count-sourced"><strong>{sourcedCount}</strong> sourced</span>
+      {triedCount > 0 && <span class="count-pill count-tried"><strong>{triedCount}</strong> tried</span>}
+      {plannedCount > 0 && <span class="count-pill count-planned"><strong>{plannedCount}</strong> planned</span>}
+    </div>
+
+    {entries.length === 0 ? (
+      <p class="empty">No entries yet. Batch D is mid-build — check back shortly.</p>
+    ) : (
+      <ul class="entries">
+        {entries.map(e => (
+          <li class="entry-row">
+            <a href={e.href}>
+              <div class="entry-line">
+                <span class="entry-num">{e.num}</span>
+                <span class="entry-title">{e.title}</span>
+                <span class={`entry-state state-${e.state}`}>{e.state}</span>
+              </div>
+              <p class="entry-desc">{e.description}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .product-hub { max-width: 760px; }
+
+  .crumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    letter-spacing: var(--ls-wide);
+  }
+  .crumb a { color: var(--ink-mute); text-decoration: none; }
+  .crumb a:hover { color: var(--claw); }
+  .crumb .num { color: var(--claw); font-weight: 600; }
+
+  .product-hub h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    max-width: 680px;
+    margin-bottom: 20px;
+  }
+  .lede :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .lede :global(a:hover) { color: var(--claw); text-decoration-color: var(--claw); }
+  .lede :global(strong) { color: var(--ink); font-weight: 700; }
+  .lede :global(code) {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--paper-warm);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  .counts {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .count-pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: var(--ls-wide);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    background: var(--canvas);
+    text-transform: uppercase;
+  }
+  .count-pill strong { font-weight: 700; }
+  .count-sourced { color: var(--amber); }
+  .count-tried { color: var(--olive); }
+  .count-planned { color: var(--claw); }
+
+  .empty {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    color: var(--ink-mid);
+    font-size: 14px;
+  }
+
+  .entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-faint);
+  }
+  .entry-row {
+    border-bottom: 1px solid var(--rule-faint);
+  }
+  .entry-row a {
+    display: block;
+    padding: 16px 0;
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--dur-base) var(--ease);
+  }
+  .entry-row a:hover {
+    background: var(--paper-warm);
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .entry-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .entry-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 500;
+    letter-spacing: var(--ls-wide);
+  }
+  .entry-title {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    flex: 1;
+  }
+  .entry-state {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid currentColor;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: 600;
+    background: var(--canvas);
+  }
+  .state-sourced { color: var(--amber); }
+  .state-tried, .state-verified { color: var(--olive); }
+  .state-planned, .state-disputed { color: var(--claw); }
+  .entry-desc {
+    font-size: 13.5px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+    margin: 6px 0 0;
+  }
+
+  @media (max-width: 640px) {
+    .product-hub h1 { font-size: 26px; }
+    .lede { font-size: 15px; }
+  }
+</style>

@@ -1,0 +1,218 @@
+---
+title: "Making a custom copilot in Copilot Studio"
+section: "Copilot Studio"
+sectionNumber: "CPS.2"
+description: "End-to-end walkthrough — sign into Copilot Studio, create a generative agent, attach a SharePoint knowledge source, add an action, test in the preview pane, publish to Teams + M365 Copilot. No code. About 30 minutes for a first useful agent."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com/microsoft-copilot-studio (fundamentals + authoring-create-edit-topics + knowledge-add-knowledge + publication-fundamentals-publish-channels + advanced-generative-actions + agent-extend-action-mcp) as of 15 May 2026. Walkthrough described against the public docs for the May 2026 maker portal. Public sources only. Page flips to tried with a session log when Sush ships a non-trivial generative agent end-to-end."
+lastReviewedAt: "2026-05-15"
+estimatedTimeMinutes: 30
+sources:
+  - "https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-get-started"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/authoring-create-edit-topics"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/knowledge-add-knowledge"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/advanced-generative-actions"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/publication-fundamentals-publish-channels"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp"
+vendor: "microsoft"
+product: "copilot-studio"
+---
+
+A walkthrough from "I have a Copilot Studio license" to "my colleagues can chat with my agent in Teams." About 30 minutes for a first useful agent if your tenant is already wired up; longer if you hit licensing gates the first time.
+
+We'll build a **Repairs Hub** agent for field technicians — one that answers questions from a SharePoint knowledge base of repair runbooks, and calls a tool to look up open tickets.
+
+## Before you start — the licensing gate
+
+Copilot Studio is one of the easiest agent builders to start with — and one of the trickier ones to budget for. Confirm before you build:
+
+1. **Tenant licence**: your tenant has either a **prepaid Copilot Credit pack** ($200/month for 25,000 credits) **or** a **pay-as-you-go billing policy** in the Azure subscription connected to the tenant. Without one, you can build and test, but you can't publish.
+2. **Maker licence**: you have the **Copilot Studio User Licence** (free, admin-assigned). Check at [admin.microsoft.com](https://admin.microsoft.com) → **Billing** → **Licences** → look for "Copilot Studio User."
+3. **Power Platform environment**: your tenant has at least one Power Platform environment where Copilot Studio agents will live. Most tenants have a Default environment; you can also create a dedicated one in the [Power Platform admin centre](https://admin.powerplatform.microsoft.com).
+
+If you're testing in a Microsoft 365 Developer Program tenant, you can enable PAYG billing on a personal Azure subscription connected to the dev tenant.
+
+## Step 1 — Open the maker portal
+
+Browse to [copilotstudio.microsoft.com](https://copilotstudio.microsoft.com) and sign in with your work account. Top-right, confirm the environment selector shows the environment you want (Default is fine for first projects).
+
+The left nav has the main surfaces:
+- **Agents** — list of agents in this environment
+- **Library** — templates and samples
+- **Tools** — reusable tools / connectors
+- **Solutions** — Power Platform solutions (for moving agents between environments via ALM)
+
+## Step 2 — Create the agent
+
+Top-right of the **Agents** page, **+ New agent**.
+
+Two ways to create:
+- **Describe** (default — natural-language create) — describe what you want; Copilot Studio scaffolds name, instructions, conversation starters, and a couple of suggested topics.
+- **Configure** (manual) — type each field yourself.
+
+We'll use **Describe**. Type something like:
+
+> An assistant for field technicians who manage repair tickets. Should answer questions about how to do common repairs, find runbook procedures, and look up the status of open tickets assigned to them.
+
+Copilot Studio asks a few clarifying questions (name, tone, audience). When the scaffold appears:
+- **Name**: Repairs Hub
+- **Description**: Help technicians find runbooks and check ticket status.
+- **Instructions**: a few hundred words of scaffolded prompt — review and edit. Keep it specific and short.
+- **Tone**: Professional (we'll leave as scaffolded)
+- **Suggested topics + conversation starters** — Copilot Studio adds 4–6.
+
+Click **Create**. You land in the agent's overview page.
+
+## Step 3 — Confirm the orchestration mode
+
+In the overview page top-right click the **⋯ menu** → **Settings** → **Generative AI** → **Orchestration**. New agents default to **generative orchestration**, which is what you want for this walkthrough. Confirm "Use generative AI orchestration" is set to **Yes**.
+
+If it shows **No** (classic mode), switch it on. Classic mode is the only option on the Teams plan; on the standalone subscription it's a choice — new agents default to generative but classic can be set by the maker (or enforced by an admin at the environment level). For this walkthrough we want generative — the LLM should read tool/topic descriptions and pick which to call.
+
+## Step 4 — Add a SharePoint knowledge source
+
+Left nav of the agent → **Knowledge** tab → **+ Add knowledge**.
+
+Pick **SharePoint**. Paste the URL of a SharePoint site or document library where your team keeps repair runbooks:
+
+```
+https://contoso.sharepoint.com/sites/FieldOps/Documents/Runbooks
+```
+
+For a first build, paste the root site URL — the agent will index all accessible content under it (subject to the user's permissions, since retrieval is identity-scoped).
+
+Two important things to know:
+
+- **Generative mode supports up to 25 SharePoint URLs**; classic mode supports 4. We're in generative mode, so we have headroom.
+- **Auth is Entra ID** — the SharePoint connector runs as the *user* asking the question, so users only see content they already have access to. There's no document-level access-bypass.
+
+Name the knowledge source (e.g. "Field Ops Runbooks") and **Save**. Copilot Studio indexes the source in the background; you can start testing while it indexes.
+
+Repeat for any additional knowledge sources (file upload, public website URLs, Dataverse tables, enterprise connectors). For a first build, one source is enough.
+
+## Step 5 — Test the knowledge base
+
+Right-side **Test agent** pane. Try:
+
+> *How do I reset a thermostat after a power outage?*
+
+If your runbooks contain that procedure, you should see the agent respond with a grounded answer citing the runbook file. Use the **Activity Map** (toggle in the test pane) to see which knowledge source(s) got invoked.
+
+If the agent answers "I don't have that information" but you know the runbook exists:
+- Wait — indexing can take a few minutes.
+- Confirm the user you're testing as has SharePoint read access to the file.
+- Confirm the file is in a supported format (PDF, Word, PowerPoint, plain text).
+
+## Step 6 — Add a tool (an MCP server in this example)
+
+Knowledge is one half of an agent; **tools** are the other. Tools let the agent call external APIs to fetch live data or take actions.
+
+Left nav → **Tools** tab → **+ Add a tool** → **New tool**.
+
+Pick **Model Context Protocol**. The MCP onboarding wizard asks for:
+- **Server URL** — the Streamable HTTP endpoint of your MCP server (e.g. `https://repairs-hub.example.com/mcp`). Stdio MCP servers don't work in Copilot Studio — it's HTTP-only.
+- **Authentication** — three choices:
+  - **None** (anonymous)
+  - **API key** (header or query parameter)
+  - **OAuth 2.0** (dynamic discovery, dynamic, or manual)
+
+For a first build with a public test server, **None** is fine. For anything touching real data, pick **OAuth 2.0** with **Dynamic discovery** if your MCP server supports it.
+
+Hit **Connect**. The wizard validates the connection, lists the tools and resources the MCP server exposes, and creates a Power Platform custom connector under the hood.
+
+Once connected, every tool the MCP server exposes is now available to the generative orchestrator. The agent will call them when it decides they're relevant.
+
+> Cost note: each MCP tool invocation bills at the **agent action rate** — **5 Copilot Credits per call**. Test cycles can rack up credits quickly when iterating; consider turning the meter off in **Settings** → **Generative AI** during development, or build against a free MCP test endpoint first.
+
+If you don't have an MCP server handy, you can add other tool types instead — a **prebuilt connector** (e.g. Outlook, ServiceNow), a **custom connector**, a **REST API**, or an **agent flow** (a Power Automate flow that becomes a callable tool).
+
+## Step 7 — Test the agent end-to-end
+
+Back in the **Test agent** pane, try a question that should use both knowledge + tool:
+
+> *Show me my open repair tickets, and what's the standard procedure for ticket type 'Boiler-001'?*
+
+The orchestrator should:
+1. Call the MCP tool to fetch open tickets for the current user.
+2. Search the SharePoint knowledge source for the "Boiler-001" runbook.
+3. Compose a single response combining both.
+
+In the **Activity Map** you should see both calls. If only one happens, your tool descriptions or knowledge-source descriptions probably need tightening — the orchestrator uses them to decide what to call.
+
+## Step 8 — Configure security and authentication
+
+Left nav → **⋯ menu** → **Settings** → **Security** → **Authentication**.
+
+Pick one:
+- **No authentication** — anonymous agent (web channel only; not recommended for anything touching your tenant data).
+- **Authenticate with Microsoft** — Entra ID. Required for SharePoint / Teams / M365 Copilot channels. Users sign in with their work account; the agent runs in their identity.
+- **Authenticate manually** — custom OAuth (your own identity provider).
+
+For our use case (SharePoint runbooks, Teams channel), pick **Authenticate with Microsoft**.
+
+## Step 9 — Publish
+
+Top of the agent designer, **Publish** button. Confirm the version note (defaults to a timestamp). Click **Publish**. Takes a couple of minutes; you'll see a **Publishing** indicator.
+
+Publishing makes the agent available **to its connected channels** — but you still need to connect the channels.
+
+## Step 10 — Connect channels
+
+Left nav → **Channels** tab → list of available channels. For our walkthrough we want **Microsoft Teams + Microsoft 365 Copilot** (a single channel publishes to both surfaces).
+
+Click the channel → **Add channel** (or **Edit**) → confirm the agent name and icon → **Save**.
+
+For Teams + M365 Copilot specifically:
+- You'll be asked to **install the agent for yourself** first to test (sideloaded in Teams, available in M365 Copilot Chat agent picker).
+- After confirming it works, the channel page has a **"Availability"** option to make the agent **available to others**.
+- For org-wide rollout, the agent then needs admin approval through the **Microsoft 365 admin centre** → **Copilot** → **Integrated Apps**. Until an admin approves, only the maker can use it.
+
+Other channels you might also connect: **Web** (custom website embed), **SharePoint** (embed in a page), **WhatsApp** (GA since July 2025), **Facebook Messenger**. Each has its own connection wizard.
+
+## Step 11 — Test from Teams
+
+Open Teams. The agent should now appear in your **Apps** sidebar (or via search). Click it, send a message, confirm everything works in the real channel — not just the Test pane.
+
+Common differences between Test pane and Teams:
+- **Identity scoping is more visible in Teams** — your knowledge source only returns documents *you* can see; in the Test pane you're already running as you.
+- **Latency feels different** — Teams adds 1–2 seconds of UI delay vs the embedded Test pane.
+
+## Step 12 — Monitor
+
+Left nav → **Analytics** tab → view conversation volume, successful vs unanswered questions, the most-used topics, and **Copilot Credit consumption**. Use this to tune:
+- Knowledge sources that aren't matching (low retrieval frequency).
+- Topics that get triggered too often (probably broad trigger phrases).
+- Tools that fail (look for error spikes).
+
+## What goes wrong, and where to look
+
+| Symptom | First thing to check |
+|---|---|
+| Agent says "I don't know" to questions clearly in the runbook | SharePoint indexing not complete; user lacks access; file format unsupported |
+| Tool never gets called | Tool description too vague; orchestrator can't tell when it should be relevant |
+| Knowledge + tool both fire on every turn | Generative orchestration is too eager; tighten tool descriptions or add a topic to gate scope |
+| Sudden bill spike | Premium AI tool was called heavily (100 CC/10 responses); switch tier or rate-limit |
+| Agent works in Test but fails in Teams | Authentication mode is "None"; users need Entra |
+| "You don't have permission to add this app" in Teams | Org admin needs to approve the agent in M365 admin centre → Integrated Apps |
+| Copilot Credits exhausted at 125% capacity | Add a PAYG billing policy OR buy another prepaid pack |
+
+## Honest take
+
+Copilot Studio is genuinely the gentlest way into building a working agent inside Microsoft 365. From an empty agent to "answering technicians' SharePoint questions in Teams" is comfortably a half-day's work, no code.
+
+The friction lives in three places:
+
+1. **The licence + billing setup.** Getting a tenant to a state where you can publish (prepaid pack OR PAYG policy + maker licence + Power Platform environment) takes the longest, and varies wildly between dev tenants, customer tenants, and partner tenants.
+2. **The generative-vs-classic divide.** Old agents (and old blog posts) often assume classic mode. Generative is the default for new agents and is what you should build for. Don't mix-and-match unless you have a reason.
+3. **The Copilot Studio agent vs declarative agent decision.** "Publish to Teams + M365 Copilot channel" gets you a Copilot Studio agent (runs on Studio's orchestrator). "Publish to the M365 Copilot agent surface specifically" gets you a declarative agent (runs on M365 Copilot's orchestrator, requires Copilot licences for end users). The former is cheaper; the latter is tighter integration. Choose deliberately.
+
+For day-1 productivity inside an existing M365 tenant: Copilot Studio is hard to beat.
+
+## What's next
+
+- **[Copilot Studio overview](/microsoft/copilot-studio/)** — back to the licensing + capability reference.
+- **[Declarative agents](/microsoft/declarative-agents/)** — the manifest format if you decide to publish as a declarative agent instead.
+- **[M365 Agents Toolkit](/microsoft/agents-toolkit/)** — the pro-code alternative for building declarative agents.
+- **[MCP for Microsoft surfaces](/microsoft/mcp/)** — auth shapes + transport detail for the MCP tool you just wired in.

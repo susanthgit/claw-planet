@@ -1,0 +1,236 @@
+---
+title: "MCP across Microsoft surfaces, plainly"
+section: "MCP for Microsoft"
+sectionNumber: "MMS.1"
+description: "Where Model Context Protocol plugs into the Microsoft AI stack as of May 2026 — VS Code agent mode, GitHub Copilot, Copilot Studio, the M365 Agents Toolkit (declarative-agent plugins), Azure AI Foundry Agent Service, Windows AI Foundry. What's GA, what's preview, what's prerelease, and the per-surface auth + transport differences."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from learn.microsoft.com (microsoft-copilot-studio · microsoft-365-copilot · azure/ai-foundry · windows/ai/mcp), code.visualstudio.com (chat/mcp-servers · reference/mcp-configuration · v1.99 + v1.100 release notes), docs.github.com (copilot/concepts/about-mcp · copilot/how-tos/use-mcp-in-your-ide · copilot/how-tos/coding-agent/extend-coding-agent-with-mcp), and the microsoft/mcp catalogue repo as of 15 May 2026. All public sources only."
+lastReviewedAt: "2026-05-15"
+sources:
+  - "https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+  - "https://code.visualstudio.com/docs/copilot/reference/mcp-configuration"
+  - "https://docs.github.com/en/copilot/concepts/about-mcp"
+  - "https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp-in-your-ide/extend-copilot-chat-with-mcp"
+  - "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/mcp-add-existing-server-to-agent"
+  - "https://learn.microsoft.com/microsoft-365-copilot/extensibility/overview-plugins"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/model-context-protocol"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/how-to/mcp-authentication"
+  - "https://learn.microsoft.com/windows/ai/mcp/"
+  - "https://github.com/microsoft/mcp"
+vendor: "microsoft"
+product: "mcp"
+---
+
+## The thirty-second version
+
+**Model Context Protocol** — the [open standard from Anthropic](https://modelcontextprotocol.io) — is now wired into **several Microsoft surfaces**: VS Code (agent mode), GitHub Copilot in IDEs, the GitHub Copilot cloud coding agent, Copilot Studio (MCP as an action source for agents), the M365 Agents Toolkit (scaffolding MCP plugins for M365 Copilot declarative agents), Azure AI Foundry Agent Service, and Windows AI Foundry's on-device agent registry. Status differs per surface — most are GA; Windows AI Foundry ODR is prerelease.
+
+Three things to know up front:
+
+1. **Microsoft 365 Copilot itself does NOT call MCP servers directly.** M365 Copilot only consumes MCP through **declarative agents** that wrap an MCP server as a plugin action. This is a common source of confusion — there is no "M365 Copilot with built-in MCP support" feature flag.
+2. **Per-surface transport support differs.** VS Code supports Stdio + SSE + Streamable HTTP; Copilot Studio supports Streamable HTTP *only*; Foundry Agent Service is remote-only (HTTP); GitHub Copilot cloud agent supports all three. SSE is being deprecated industry-wide (Copilot Studio dropped it after August 2025).
+3. **Per-surface auth shapes also differ.** VS Code, Copilot Studio, and Foundry support OAuth 2.0; the GitHub Copilot cloud agent explicitly does **not** support OAuth (API keys / PATs only). Foundry adds Entra-managed-identity options no other surface has.
+
+## The per-surface picture
+
+### VS Code (agent mode) — MCP client
+
+- **Status:** ✅ GA in VS Code Stable since **v1.99 (March 2025)**; Streamable HTTP transport added in **v1.100 (April 2025)**.
+- **Role:** MCP **client** — VS Code's Copilot Chat agent mode loads MCP servers, lists their tools, and invokes them with user approval.
+- **Transport:** Stdio (`type: "stdio"`), SSE (`type: "sse"`), Streamable HTTP (`type: "http"`). VS Code tries Streamable HTTP first and falls back to SSE if not supported. Unix sockets and Windows named pipes also work via `unix:///…` and `pipe:///…` URIs.
+- **Auth:** Anonymous, API key (`headers` object on HTTP servers), OAuth 2.0 (handled via redirect flow with an "Auth" code lens), and sandboxed mode (macOS/Linux) for auto-approval.
+- **Config:** `.vscode/mcp.json` (workspace, source-controllable) or the user-profile `mcp.json` (personal, optional sync via Settings Sync). Microsoft also lets VS Code discover existing Claude Desktop configs via `chat.mcp.discovery.enabled`.
+- **Capabilities exposed:** Tools ✅ · Resources ✅ · Prompts ✅ · MCP Apps ✅ (interactive UI surfaces in Chat, blog announcement January 2026).
+- **Enterprise control:** GitHub org/enterprise policy "MCP servers in Copilot" gates access for Business/Enterprise; Free/Pro/Pro+ tiers are unaffected.
+
+The mcp.json shape:
+
+```json
+{
+  "inputs": [
+    { "type": "promptString", "id": "api-key", "description": "API Key", "password": true }
+  ],
+  "servers": {
+    "my-local": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"],
+      "env": { "API_KEY": "${input:api-key}" }
+    },
+    "my-remote": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "headers": { "Authorization": "Bearer ${input:api-key}" }
+    }
+  }
+}
+```
+
+> Common confusion: "MCP in VS Code" requires the **GitHub Copilot Chat** extension + agent mode selected in Chat. It's not part of base VS Code without the extension.
+
+### GitHub Copilot IDE (VS Code, Visual Studio, JetBrains, Xcode)
+
+- **Status:** ✅ GA; uses the same `.vscode/mcp.json` underneath VS Code; Visual Studio 17.14+ and JetBrains IDEs support remote MCP servers (OAuth or PAT).
+- The **GitHub MCP Registry** at [github.com/mcp](https://github.com/mcp) is a curated catalog — currently **⚠️ public preview**. Servers install into VS Code via the Extensions view `@mcp` search.
+- **Enterprise policy:** "MCP servers in Copilot" is **disabled by default** for Business/Enterprise organisations. Admins must enable it explicitly. Free/Pro/Pro+ plans are unaffected.
+
+### GitHub Copilot cloud agent (github.com — coding agent)
+
+- **Status:** ✅ GA.
+- **Role:** Separate from the IDE. The Copilot cloud agent runs asynchronously on GitHub.com to complete issues and PRs. It has its own MCP configuration, stored in repository settings (Settings → Copilot → Cloud agent → MCP configuration).
+- **Default servers:** GitHub MCP server ✅ and Playwright MCP server ✅ are pre-configured.
+- **Config key:** uses `mcpServers` object (not `servers` like VS Code). Supported types: `"local"`, `"stdio"`, `"http"`, `"sse"`.
+- **Auth:** API keys / PATs via `env` object with **`COPILOT_MCP_`-prefixed** secrets/variables. ⚠️ **Does NOT support OAuth** for remote MCP servers — explicitly stated in docs.
+- **Capabilities:** Tools only ✅ · Resources ❌ · Prompts ❌.
+- **Approval model:** ⚠️ Tools execute **autonomously without user approval** — docs warn explicitly. Strong recommendation to allowlist specific read-only tools via the `tools` array.
+
+> Common confusion: Copilot cloud agent MCP ≠ VS Code agent mode MCP. The cloud agent runs in a sandboxed CI environment on GitHub.com; the IDE agent runs locally. They share no config.
+
+### Copilot Studio
+
+- **Status:** ✅ GA (August 2025); see [Copilot Studio](/microsoft/copilot-studio/).
+- **Role:** MCP **client** — connects custom agents to external MCP servers. Each tool/resource published by a connected MCP server becomes available to the agent's orchestrator. Server changes propagate dynamically.
+- **Transport:** **Streamable HTTP only.** SSE transport was deprecated in MCP spec 2025-03-26 and dropped by Copilot Studio after August 2025. No Stdio.
+- **Auth (three options in the wizard):** None / API key (header or query parameter) / OAuth 2.0, with three OAuth sub-options:
+  - *Dynamic discovery* — OAuth Dynamic Client Registration + discovery (simplest)
+  - *Dynamic* — DCR without discovery (you provide Authorization + Token URL templates)
+  - *Manual* — full Client ID / Secret / Auth URL / Token URL / Refresh URL / Scopes
+- **Capabilities:** Tools ✅ · Resources ✅ · Prompts ❌.
+- **Billing:** Each MCP tool call is billed at the **agent action rate** (5 Copilot Credits per call), no MCP-specific surcharge.
+
+Under the hood, MCP servers become Power Platform custom connectors — you can certify and publish an MCP-backed connector for cross-tenant use through the Power Platform connector catalogue.
+
+### M365 Copilot — via Declarative Agents + ATK
+
+- **Status:** ✅ GA. See [Declarative Agents](/microsoft/declarative-agents/).
+- **The fundamental constraint:** *"Plugins are only supported as actions within declarative agents. They are not enabled in Microsoft 365 Copilot [standalone]."* — Microsoft Learn. The M365 Copilot orchestrator never calls MCP servers directly; a declarative agent wrapper is always required.
+- **Two directions, both supported:**
+  1. **Consuming external MCP servers**: register an existing MCP server in a declarative agent's `actions` array. [ATK](/microsoft/agents-toolkit/) can generate the plugin package from an existing MCP server spec.
+  2. **Building a new MCP server with ATK**: ATK scaffolds a new MCP server starter project and packages it as a declarative-agent plugin. (The `build-mcp-plugin` learn URL is currently a 404; content moved into `overview-plugins` and `build-declarative-agents-add-skills`.)
+- **Tool support:** ATK and Kiota can both generate plugin packages from MCP server specs.
+
+### Azure AI Foundry Agent Service
+
+- **Status:** ✅ GA for the core (Python SDK, JS SDK, Java SDK, REST API). ⚠️ C# / .NET SDK is preview. ⚠️ Hosted agents, Toolboxes, and Azure DevOps MCP Server in the Add Tools catalog are all preview.
+- **Role:** MCP is a first-class tool type (`MCPTool` / `type: "mcp"`). Foundry agents call remote MCP endpoints at runtime.
+- **Transport:** Remote only (Streamable HTTP). No Stdio.
+- **Auth shapes** (stored in project connections, not hardcoded):
+
+| Method | Sharing | Notes |
+|---|---|---|
+| Key-based (API key, PAT, bearer token) | Shared across agents | Stored as `Authorization: Bearer …` in a project connection |
+| Microsoft Entra — agent identity | Shared, per published agent | Agent gets a unique identity after publishing; pre-publish agents share the project identity |
+| Microsoft Entra — project managed identity | Shared, all agents in the project | |
+| OAuth identity passthrough (OBO) | Per user | Managed OAuth (Microsoft-managed app) or custom OAuth (BYO app registration) |
+| Unauthenticated | Shared | For servers not requiring auth |
+
+- **Public vs private endpoints:** public works with Basic or Standard agent setup; private endpoints require Standard Agent Setup with a virtual network and a dedicated MCP subnet (Microsoft.App/environments delegation).
+- **Approval model:** agents support `require_approval: "always"` — pauses and requests human approval before invoking a tool call. Recommended for write operations.
+
+A Python snippet:
+
+```python
+from azure.ai.agents.models import MCPTool
+
+tool = MCPTool(
+    server_label="github",
+    server_url="https://api.githubcopilot.com/mcp",
+    require_approval="always",
+    project_connection_id="my-mcp-connection",
+)
+```
+
+**Foundry Toolboxes (preview)** bundle multiple tools (Web Search, Code Interpreter, MCP servers, OpenAPI tools, Agent-to-Agent) into a single MCP-compatible endpoint that any MCP client can consume. The Toolbox handles credential injection for the individual tools it wraps.
+
+### Windows AI Foundry — On-device Agent Registry (ODR)
+
+- **Status:** ⚠️ Prerelease. Docs explicitly warn that "some information relates to prereleased product that might change substantially before commercial release."
+- **Role:** A secure local registry that lets Windows apps discover and use MCP servers installed on the device. Built-in MCP connectors for File Explorer and Windows Settings. `odr.exe` is the CLI management tool.
+- **Security:** MCP servers run in contained (sandboxed) environments by default. Admin control via Windows Settings + Microsoft Intune. Logging and auditability for interactions.
+- **Compatible clients:** VS Code GitHub Copilot agent mode, Visual Studio GitHub Copilot agent mode, plus the Microsoft Agent Framework for custom builds.
+
+## Cross-surface reference
+
+### Transport support
+
+| Surface | Stdio | SSE | Streamable HTTP |
+|---|---|---|---|
+| VS Code (agent mode) | ✅ (v1.99, Mar 2025) | ✅ (v1.99) + fallback | ✅ (v1.100, Apr 2025) |
+| GitHub Copilot cloud agent | ✅ (`"local"`/`"stdio"`) | ✅ (`"sse"`) | ✅ (`"http"`) |
+| Copilot Studio | ❌ | ❌ (dropped Aug 2025) | ✅ **only** transport |
+| Foundry Agent Service | ❌ (remote only) | ❌ (remote only) | ✅ |
+| M365 Copilot (via DA + ATK) | depends on plugin | depends | ✅ typical |
+| Windows ODR | ✅ | — | — |
+
+### Auth support
+
+| Surface | Anonymous | API key / PAT | OAuth 2.0 | Entra / Managed Identity |
+|---|---|---|---|---|
+| VS Code | ✅ | ✅ (headers) | ✅ (redirect / code lens) | — |
+| GitHub Copilot cloud agent | ✅ | ✅ (env / secrets) | ❌ Not supported | — |
+| Copilot Studio | ✅ | ✅ (header or query) | ✅ (DCR-discovery, DCR-manual, fully-manual) | via manual OAuth |
+| Foundry Agent Service | ✅ | ✅ (project connection) | ✅ (OBO managed + custom) | ✅ Agent + project MI |
+| Windows ODR | via OS containment | — | — | Windows auth |
+
+### Capability exposure
+
+| Surface | Tools | Resources | Prompts | MCP Apps |
+|---|---|---|---|---|
+| VS Code | ✅ | ✅ | ✅ | ✅ |
+| GitHub Copilot cloud agent | ✅ | ❌ | ❌ | — |
+| Copilot Studio | ✅ | ✅ | ❌ | — |
+| Foundry Agent Service | ✅ | (varies) | (varies) | — |
+| M365 Copilot (DA + ATK) | ✅ | (via DA capabilities) | — | — |
+| Windows ODR | ✅ | — | — | — |
+
+## Microsoft's first-party MCP servers
+
+The canonical catalogue lives at [github.com/microsoft/mcp](https://github.com/microsoft/mcp). The shipping list as of May 2026:
+
+| Server | Status | Type | Notes |
+|---|---|---|---|
+| **Azure MCP Server** | ✅ GA | Local (Stdio) | 40+ Azure services. VS Code extension, NuGet, npm, PyPI, Docker, MCPB. Works in VS 2022/2026, JetBrains, Eclipse. |
+| **Microsoft Fabric MCP Server** | ⚠️ Public Preview | Local (Stdio) | AI-assisted development for Fabric workloads. |
+| **Playwright MCP** | ✅ GA | — | Default in GitHub Copilot cloud agent. |
+| **NuGet MCP Server** | — | — | Hosted in `NuGet/Home`. |
+| **GitHub MCP Server** | ✅ GA | Remote | `https://api.githubcopilot.com/mcp` — OAuth/PAT. |
+| **Microsoft SQL (MSSQL)** | — | — | `aka.ms/MssqlMcp`. |
+| **Microsoft Clarity** | — | — | `microsoft/clarity-mcp-server`. |
+| **Microsoft Learn** | — | — | Various. |
+| **M365 productivity** (Calendar, Mail, User, Teams, Copilot Chat, Word, OneDrive, SharePoint Lists, …) | various | various | Catalogued in `microsoft/mcp` README. |
+| **Microsoft Dataverse, Dev Box, Admin Center, Sentinel** | various | various | Listed in the catalogue. |
+| **Azure DevOps MCP Server** | ⚠️ Preview | Local | Available from the Foundry "Add Tools" catalog. |
+| **Markitdown MCP** | — | — | Document conversion. |
+
+The `microsoft/mcp` repo is the canonical Microsoft MCP catalog (a registry / index for all Microsoft-published servers). There is no separate "MCP Marketplace" product from Microsoft. The broader **GitHub MCP Registry** at [github.com/mcp](https://github.com/mcp) is the community catalog (public preview).
+
+## Naming distinctions — what to memorise
+
+| Term | What it actually means |
+|---|---|
+| "MCP server in VS Code" | A local or remote MCP server configured in `.vscode/mcp.json`, used by Copilot Chat agent mode in the IDE. |
+| "MCP plugin for M365 Copilot" | An MCP server wrapped in a plugin manifest, registered as an action **within a declarative agent**. M365 Copilot never calls MCP directly. |
+| "MCP server for Copilot Studio" | A remote Streamable-HTTP MCP server connected via the MCP onboarding wizard; becomes a tool in a Studio agent. |
+| "MCP tool in Foundry Agent Service" | An `MCPTool` configured in code/portal pointing at a remote MCP endpoint; Foundry calls it with approval flow. |
+| "Copilot cloud agent MCP" | MCP servers configured in repository Settings for the asynchronous Copilot coding agent on GitHub.com. |
+| "GitHub MCP server" | First-party server at `https://api.githubcopilot.com/mcp` maintained by GitHub; exposes GitHub APIs as MCP tools. Different from "MCP support in GitHub Copilot IDE." |
+| "ATK building MCP plugins" | ATK scaffolds an MCP server starter project + plugin manifest; can also consume existing MCP specs to scaffold packages. |
+| "Foundry Toolboxes" | A Foundry abstraction that bundles tools (including MCP servers) into a single MCP-compatible endpoint — not itself an MCP server. |
+
+## Honest take
+
+Microsoft's MCP coverage is **broad** — it ships across more first-party surfaces than any other vendor's stack today. But the per-surface differences are real. Don't assume a server that works in VS Code will work in Copilot Studio (transport mismatch — Stdio vs Streamable-HTTP-only). Don't assume the same auth model works everywhere (the GitHub Copilot cloud agent's lack of OAuth catches teams every month). And don't assume "M365 Copilot supports MCP" — it doesn't, directly; you need a declarative agent wrapper.
+
+The current direction of travel is good: Streamable HTTP is winning over SSE; first-party servers (Azure MCP, GitHub MCP, Playwright) are stable and well-maintained; Foundry's Entra-managed-identity option is genuinely better than the Anthropic/OpenAI norm.
+
+For day-1 prototyping inside the Microsoft stack: start in VS Code with `.vscode/mcp.json` and the Azure MCP server, get comfortable with the protocol, then port to whichever Microsoft surface your product lives on.
+
+## What's next
+
+- **[M365 Agents Toolkit](/microsoft/agents-toolkit/)** — for building MCP plugins for M365 Copilot.
+- **[Copilot Studio](/microsoft/copilot-studio/)** — for wiring MCP servers into low-code agents.
+- **[Azure AI Foundry](/microsoft/foundry/)** — for Agent Service's MCP tool type.
+- **[Declarative Agents](/microsoft/declarative-agents/)** — for the manifest format that wraps MCP plugins for M365 Copilot.
