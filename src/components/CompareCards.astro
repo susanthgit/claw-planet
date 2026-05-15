@@ -52,9 +52,10 @@ const { cards } = Astro.props;
     gap: 16px;
   }
 
-  /* With exactly 4 cards, pin to 2×2 from 880px up to 1199px to avoid 3+1 orphan, */
-  /* then expand to 4×1 at wide viewports. */
-  @media (min-width: 880px) and (max-width: 1199px) {
+  /* With exactly 4 cards: pin to 2x2 across the entire mid-range (641-1199px) to */
+  /* close the orphan zone where auto-fit could produce 3+1 at ~860-1080px depending */
+  /* on the sidebar layout; then expand to 4-wide at >=1200px. */
+  @media (min-width: 641px) and (max-width: 1199px) {
     .cc-grid { grid-template-columns: repeat(2, 1fr); }
   }
   @media (min-width: 1200px) {

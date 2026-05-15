@@ -36,14 +36,14 @@ export const updates: Update[] = [
     tag: 'RELEASE',
     title: 'Claude Code 2.1.142 — claude agents flags · Fast-mode Opus 4.7',
     href: 'https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md',
-    meta: 'Anthropic\'s `@anthropic-ai/claude-code` 2.1.142 (npm registry, 14 May 2026) adds eight new `claude agents` flags (--add-dir · --settings · --mcp-config · --plugin-dir · --permission-mode · --model · --effort · --dangerously-skip-permissions) for configuring dispatched background sessions. Fast mode now defaults to Claude Opus 4.7 (was Opus 4.6); pin to 4.6 with `CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE=1`. Note: npm install is deprecated — use `curl -fsSL https://claude.ai/install.sh | bash`.',
+    meta: 'Anthropic\'s `@anthropic-ai/claude-code` 2.1.142 (npm registry, 14 May 2026; on the `latest`/`next` channel — `stable` lags at 2.1.132) adds eight new `claude agents` flags (--add-dir · --settings · --mcp-config · --plugin-dir · --permission-mode · --model · --effort · --dangerously-skip-permissions) for configuring dispatched background sessions. Fast mode now defaults to Claude Opus 4.7 (was Opus 4.6); pin to 4.6 with `CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE=1`. Note: npm install is deprecated per the current README — use `curl -fsSL https://claude.ai/install.sh | bash`.',
   },
   {
     date: '2026-05-12',
     tag: 'RELEASE',
     title: 'Gemini CLI 0.42.0 — Gemma 4 enabled by default',
-    href: 'https://www.geminicli.com/docs/changelogs',
-    meta: 'Google Gemini CLI 0.42.0 (npm registry, 12 May 2026) enabled Gemma 4 models by default for all users via the Gemini API. Also adds Auto Memory Inbox (a canonical-patch contract for skill management) and Voice Mode wave animations with privacy/compliance UX warnings for the Gemini Live backend. Free tier: 1,000 req/day on a personal Google OAuth account; AI Studio API key is a separate path with its own daily cap.',
+    href: 'https://github.com/google-gemini/gemini-cli/releases/tag/v0.42.0',
+    meta: 'Google Gemini CLI 0.42.0 (npm registry, 12 May 2026) enabled Gemma 4 models by default for all users via the Gemini API. Also adds Auto Memory Inbox (a canonical-patch contract for seamless skill management) and Voice Mode wave animations with privacy/compliance UX warnings for the Gemini Live backend. Free tier: 1,000 req/day on a personal Google OAuth account (60 req/min cap); same daily cap via an AI Studio API key with explicit model-selection control.',
   },
   {
     date: '2026-05-08',

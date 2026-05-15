@@ -74,6 +74,36 @@ const stateClassMap = {
 const stateLabel = stateLabels[entry.data.verificationState] ?? '';
 const stateClass = stateClassMap[entry.data.verificationState] ?? '';
 
+// Map seeAlso section-number refs to the right destination URL. For §7.x (Compare)
+// refs, route to the specific compare page slug; for other section prefixes, route
+// to the section index page. Falls back to the in-page `#sec-N` anchor if neither
+// applies (the legacy behaviour, kept for safety).
+const compareEntriesAll = await getCollection('compares');
+const compareSlugBySection: Record<string, string> = {};
+for (const e of compareEntriesAll as any[]) {
+  if (e.data.section === 'Compare' && e.data.status === 'published') {
+    compareSlugBySection[e.data.sectionNumber] = e.id.replace(/\.mdx?$/, '');
+  }
+}
+const sectionHrefByPrefix: Record<string, string> = {
+  '1': '/openclaw/overview/',
+  '2': '/openclaw/setup/',
+  '3': '/openclaw/connections/',
+  '4': '/openclaw/plugins/',
+  '5': '/openclaw/use-cases/',
+  '6': '/openclaw/security/',
+  '8': '/updates/',
+  '9': '/openclaw/resources/',
+  '10': '/openclaw/faq/',
+};
+function seeAlsoHref(ref: string): string {
+  if (ref.startsWith('7.') && compareSlugBySection[ref]) {
+    return `/compare/${compareSlugBySection[ref]}/`;
+  }
+  const prefix = ref.split('.')[0];
+  return sectionHrefByPrefix[prefix] ?? `#sec-${prefix}`;
+}
+
 const entryFile = `src/content/compares/${entry.id}`;
 const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`;
 ---
@@ -125,7 +155,7 @@ const editHref = `https://github.com/susanthgit/claw-planet/edit/main/${entryFil
         <h3>See also</h3>
         <ul>
           {entry.data.seeAlso.map((ref) => (
-            <li><a href={`#sec-${ref.split('.')[0]}`}>§ {ref}</a></li>
+            <li><a href={seeAlsoHref(ref)}>§ {ref}</a></li>
           ))}
         </ul>
       </section>

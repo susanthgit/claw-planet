@@ -45,7 +45,7 @@ If you only remember one thing per CLI:
 
 - **Claude Code** — Anthropic's premier coding agent. Subscription-first (Pro/Max/Team/Enterprise OAuth). The most polished plan/permission model of the four (`plan` / `acceptEdits` / `auto` modes cycled with Shift+Tab). Recently moved off npm to a curl-installer as the recommended path.
 - **Codex CLI** — OpenAI's terminal coder. OS-enforced sandbox (`workspace-write` default, network off, web search defaults to a cached index). Strong default safety posture, less mode-switching ceremony. ChatGPT-account-first; the old $5 free credit is gone.
-- **Gemini CLI** — Google's terminal coder. The only one of the four with a **meaningful no-cost tier** (1,000 req/day on a personal Google account or an AI Studio API key). The widest sandbox backend menu (Seatbelt, Docker, Podman, Windows Native, gVisor, LXC). Plan Mode is first-class and routes Pro for planning + Flash for implementation.
+- **Gemini CLI** — Google's terminal coder. The only one of the four with a **meaningful no-cost tier** — 1,000 req/day on a personal Google account (no card needed), or the same daily cap via an AI Studio API key with explicit model-selection control. The widest sandbox backend menu (Seatbelt, Docker, Podman, Windows Native, gVisor, LXC). Plan Mode is first-class and routes Pro for planning + Flash for implementation.
 - **GitHub Copilot CLI** — GitHub's terminal coder. **Renamed in October 2025** — the old `gh-copilot` extension is deprecated; the current product is the standalone `copilot-cli` binary. **Defaults to Claude Sonnet 4.5** (not a GitHub-owned model). Ships with GitHub's MCP server pre-wired. The CLI that's easiest to use if your work already lives on github.com.
 
 ## Where each wins
@@ -64,7 +64,7 @@ If you only remember one thing per CLI:
 
 ### Gemini CLI
 
-1. **The free tier that's actually free.** A personal Google account (OAuth) gets you 1,000 requests/day — no card, no plan. An AI Studio API key is a separate path with a smaller free cap (Flash-only). Either way, of the four, this is the one a student or a beginner can pick up without paying anything.
+1. **The free tier that's actually free.** A personal Google account (OAuth) gets you 1,000 requests/day — no card, no plan. An AI Studio API key gives you the same daily cap with explicit model-selection control. Either way, of the four, this is the one a student or a beginner can pick up without paying anything.
 2. **The widest sandbox menu.** macOS Seatbelt for native isolation. Docker/Podman for cross-platform. **Windows Native Sandbox** (uses `icacls` to set Low Mandatory Level on files — note that changes are persistent after the sandboxed session, unlike VM snapshots). gVisor for Linux user-space-kernel isolation. LXC for full-system containers. If your security posture cares about which mechanism is doing the isolating, Gemini CLI lets you choose.
 3. **Plan Mode with intelligent model routing.** Plan mode is enabled by default; when active, Gemini routes the heavier Pro model for the planning phase and the cheaper Flash for execution. You get plan-quality reasoning without paying Pro rates for every line of generated code.
 
@@ -90,8 +90,6 @@ If you only remember one thing per CLI:
 - **No Shift+Tab mode cycling.** Modes are set with flags at startup or with `/permissions` mid-session — less ergonomic than the cycle-and-go model.
 
 ### Gemini CLI
-
-- **MCP support across stdio, SSE, and Streamable HTTP** is documented at [geminicli.com/docs/tools/mcp-server](https://www.geminicli.com/docs/tools/mcp-server). Earlier reviews flagged HTTP/SSE as unconfirmed; current canonical docs confirm all three transports plus OAuth-aware configuration.
 - **Trusted Folders is off by default.** Some readers expect a "this folder is trusted" prompt on first launch — Gemini CLI doesn't ask one unless you opt in via `settings.json`. Documented behaviour, but easy to misread as "no trust system."
 - **Windows Native Sandbox is persistent.** Unlike Docker or Seatbelt, the `icacls` integrity-level changes survive after the sandbox session ends. Useful but surprising; readers should know.
 

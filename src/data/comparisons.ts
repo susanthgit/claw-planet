@@ -227,7 +227,7 @@ export const comparisons: Record<string, Comparison> = {
           },
           'gemini-api': {
             value: 'Context caching — serving fee + storage fee/hour',
-            note: 'Flash-Lite (cheapest GA): $0.025/MTok serve + $1.00/MTok/hr storage. Pro: $0.125-$0.25 serve + $4.50/MTok/hr storage. Specific 2.5 Flash serve rate moves with each pricing update — verify current value.',
+            note: '2.5 Flash-Lite: $0.01/MTok serve + $1.00/MTok/hr storage. 2.5 Flash: $0.03/MTok serve + $1.00/MTok/hr storage (as of May 2026 — verify before committing). 2.5 Pro: $0.125-$0.25 serve + $4.50/MTok/hr storage.',
             sourceRefs: ['gem-pricing'],
           },
           'foundry': {
@@ -261,8 +261,8 @@ export const comparisons: Record<string, Comparison> = {
             sourceRefs: ['gem-models'],
           },
           'foundry': {
-            value: 'Text · Vision · Audio (GPT-4o audio) · Video in (GPT-5 family)',
-            note: 'Sora-2 is a video-generation model (output), not an input modality. Computer use is GA via computer-use-preview on Responses API.',
+            value: 'Text · Vision · Audio (GPT-4o audio family)',
+            note: 'GPT-5 series native input is text + image only (per Azure models docs). Sora-2 is video generation/output, not input. For video input, route to Gemini models via the Foundry catalogue or use Azure Video Indexer separately. Computer use is GA via computer-use-preview on Responses API.',
             sourceRefs: ['fdy-models'],
           },
         },
@@ -347,7 +347,8 @@ export const comparisons: Record<string, Comparison> = {
           },
           'declarative-agents': {
             value: 'Required (except web-search-only or instruction-only)',
-            note: 'Or Copilot Chat with pay-as-you-go enabled for shared tenant data',
+            note: 'Per Microsoft cost-considerations: instruction-only and web-search-only agents are exempt — accessible via Copilot Chat at no extra cost. Other capabilities need M365 Copilot licence or tenant pay-as-you-go for shared tenant data.',
+            sourceRefs: ['ms-cost', 'ms-da-manifest'],
           },
           'custom-engine-agents': {
             value: 'Not required',
@@ -441,9 +442,9 @@ export const comparisons: Record<string, Comparison> = {
         key: 'appsource',
         label: 'AppSource publishing',
         cells: {
-          'copilot-studio':       { value: 'Yes',  note: 'Publish via Teams Developer Portal', sourceRefs: ['ms-cps-what'] },
+          'copilot-studio':       { value: 'Tenant catalogue only',  note: 'Standalone Copilot Studio agents publish to the tenant catalogue; commercial AppSource path requires DA-mode authoring via ATK', sourceRefs: ['ms-cps-what'] },
           'declarative-agents':   { value: 'Yes',  note: 'Packaged as a Teams app; published via Teams Developer Portal', sourceRefs: ['ms-da-overview'] },
-          'custom-engine-agents': { value: 'Yes',  note: 'Teams SDK · M365 Agents SDK · Foundry-via-ATK · Copilot Studio paths are all eligible', sourceRefs: ['ms-cea-overview'] },
+          'custom-engine-agents': { value: 'Yes (via Teams SDK · Agents SDK · Foundry-via-ATK)',  note: 'Copilot Studio standalone agents are tenant-catalogue-only; commercial AppSource requires the pro-code paths above', sourceRefs: ['ms-cea-overview'] },
         },
       },
       {
@@ -558,8 +559,8 @@ export const comparisons: Record<string, Comparison> = {
             sourceRefs: ['codex-auth'],
           },
           'gemini-cli': {
-            value: '1,000 req/day (personal Google OAuth) · 250 req/day (AI Studio API key, Flash-only)',
-            note: 'OAuth path needs no API key; AI Studio key is a separate path with a smaller cap',
+            value: '1,000 req/day on personal Google OAuth (60 req/min cap) or AI Studio API key',
+            note: 'Both free-tier paths give the same daily cap; OAuth uses no API key, AI Studio key gives model-selection control',
             sourceRefs: ['gemini-readme'],
           },
           'copilot-cli': {
@@ -678,18 +679,18 @@ export const comparisons: Record<string, Comparison> = {
         label: 'Default model',
         cells: {
           'claude-code': {
-            value: 'Claude Sonnet 4.6 (auto-mode uses Opus 4.6/4.7 on eligible plans)',
-            note: 'Switch via /model · --model · ANTHROPIC_MODEL env',
+            value: 'Claude Sonnet 4.6 (auto-mode uses Opus 4.7 on eligible plans)',
+            note: 'Fast-mode default bumped to Opus 4.7 in 2.1.142 (CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE=1 pins back to 4.6); switch via /model · --model · ANTHROPIC_MODEL env',
             sourceRefs: ['cc-auth'],
           },
           'codex-cli': {
-            value: 'gpt-5.5 (recommended); gpt-5.3-codex for coding specialist',
-            note: 'Switch via /model · -m flag · config.toml',
+            value: 'gpt-5.5 (recommended); gpt-5.4 (alt flagship); gpt-5.4-mini (fast); gpt-5.3-codex (coding specialist)',
+            note: 'Also gpt-5.3-codex-spark research preview (Pro subs only). Switch via /model · -m flag · config.toml',
             sourceRefs: ['codex-docs'],
           },
           'gemini-cli': {
-            value: 'Gemini 3 family (Flash + Pro); Gemma 4 also enabled by default since v0.42.0',
-            note: 'Plan mode auto-routes Pro for planning, Flash for implementation',
+            value: 'gemini-2.5-pro (stable channel); gemini-3-pro-preview (preview channel)',
+            note: 'Gemma 4 also enabled by default via Gemini API since v0.42.0; plan mode auto-routes Pro for planning, Flash for implementation',
             sourceRefs: ['gemini-readme'],
           },
           'copilot-cli': {
