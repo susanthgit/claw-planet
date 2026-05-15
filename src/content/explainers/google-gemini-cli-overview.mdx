@@ -24,7 +24,7 @@ Gemini CLI is **Google's terminal coding agent**. You install it via npm, run `g
 Three things to know:
 
 1. **Open source, TypeScript / Node-based, Apache-2.0.** The CLI binary itself is free. Built on Node.js 20+; runs on macOS 15+, Windows 11 24H2+, and Ubuntu 20.04+. Pre-installed in Cloud Shell and Cloud Workstations.
-2. **A documented free tier that's unusually useful for tinkering.** Sign in with a personal Google account and you get **1,000 model requests per day** at no cost — no card required, no credit timer. (For comparison: Claude Code has no free tier; Codex CLI's Free tier only covers exploration on quick coding tasks — productive use needs a ChatGPT Plus/Pro subscription or an OpenAI API key. The old $5 trial credit is gone.)
+2. **A documented free tier that's unusually useful for tinkering.** Sign in with a personal Google account and you get **1,000 model requests per day** at no cost — no card required, no credit timer. (For comparison: Claude Code has no free tier; Codex CLI's Free tier only covers exploration on quick coding tasks — productive use needs a paid plan (Go, Plus, or Pro) or an OpenAI API key. The old $5 trial credit is gone.)
 3. **Speaks MCP — as a client.** It connects to MCP servers (filesystems, GitHub, databases, browser automation, your own) over Stdio, SSE, and Streamable HTTP. There's no `gemini mcp-server` mode — Gemini CLI itself isn't exposed as a server other agents can call.
 
 ## A real example
@@ -62,9 +62,9 @@ Three things fall out of the design:
 | Vendor | Google | OpenAI | Anthropic | Microsoft / GitHub |
 | Language | TypeScript / Node 20+ | Rust | Not open source | Not open source |
 | Licence | Apache-2.0 (open) | Apache-2.0 (open) | Proprietary | Proprietary |
-| Default model | `gemini-2.5-pro` (stable channel) | not publicly stated | Claude Sonnet 4.6 | GPT-4o (via Copilot) |
+| Default model | `gemini-2.5-pro` (stable channel) | not publicly stated | Claude Sonnet 4.6 | Claude Sonnet 4.5 (per README) |
 | Context window | 1M tokens | ~200K | 1M | 128K |
-| Free tier | **1,000 req/day** (personal Google account) | Free tier (explore-only); Plus/Pro for productive use | None | Limited (Copilot Free tier) |
+| Free tier | **1,000 req/day** (personal Google account) | Free tier (explore-only); paid plans Go/Plus/Pro for productive use | None | Limited (Copilot Free tier) |
 | Sandbox | Optional (6 backends, OFF by default) | Built-in (per-OS, ON by default) | None | None |
 | MCP | Client (Stdio + SSE + HTTP, OAuth-aware) | Client | Client | Limited |
 | Subagents | No native primitive | Not confirmed for the CLI | Yes | No |
