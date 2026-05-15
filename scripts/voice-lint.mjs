@@ -2,9 +2,10 @@
 /**
  * voice-lint.mjs — Sush voice guardrail + scope guardrail + source citation gate.
  *
- * Scans public-facing content (.astro, .mdx) for forbidden marketing words,
- * forbidden OUT-list signals (multi-vendor expansion v0b), and enforces a
- * Microsoft public-source-citation rule on entries tagged `vendor: "microsoft"`.
+ * Scans public-facing content (.astro, .mdx, .md, plus .ts data files) for
+ * forbidden marketing words, forbidden OUT-list signals (multi-vendor
+ * expansion v0b), and enforces a Microsoft public-source-citation rule on
+ * entries tagged `vendor: "microsoft"`.
  *
  * Forbidden list sources: ~/.copilot/plain-ai-voice-guardrail.md and the
  * Claw Planet playbook (voice guardrails section + scope guardrails section).
@@ -16,6 +17,14 @@
  * What's NOT scanned:
  *   - Files in scripts/, docs/, .github/, node_modules/, dist/, .astro/
  *   - This file itself (it lists the forbidden words; would self-trigger)
+ *
+ * .ts scope (set 2026-05-15, Claw v0b · Phase 1.1 Session 4 · Track D.2):
+ *   - src/data/*.ts files are public-facing (comparisons.ts feeds /compare/
+ *     matrices, updates.ts feeds /updates/ + RSS, toolRegistry.ts feeds tool
+ *     labels). Voice rules apply equally to those strings. Word-boundary
+ *     regex already handles CamelCase identifiers like robustChecker (no
+ *     \b match). For false positives in comments or test fixtures, use the
+ *     `voice-lint:ignore` annotation on the same line.
  */
 
 import fs from 'node:fs/promises';
@@ -23,11 +32,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// SCAN_DIRS is now a list of { dir, exts } so each directory can target a
+// specific file-extension set. `.ts` is only walked in `src/data/` to avoid
+// false positives from build-script-style files elsewhere.
 const SCAN_DIRS = [
-  path.join(ROOT, 'src', 'pages'),
-  path.join(ROOT, 'src', 'components'),
-  path.join(ROOT, 'src', 'layouts'),
-  path.join(ROOT, 'src', 'content'),
+  { dir: path.join(ROOT, 'src', 'pages'),      exts: ['.astro', '.mdx', '.md'] },
+  { dir: path.join(ROOT, 'src', 'components'), exts: ['.astro', '.mdx', '.md'] },
+  { dir: path.join(ROOT, 'src', 'layouts'),    exts: ['.astro', '.mdx', '.md'] },
+  { dir: path.join(ROOT, 'src', 'content'),    exts: ['.astro', '.mdx', '.md'] },
+  { dir: path.join(ROOT, 'src', 'data'),       exts: ['.ts'] },
 ];
 
 // Marketing voice — original list (always enforced).
@@ -124,8 +138,8 @@ function extractSources(src) {
 
 const findings = [];
 const microsoftViolations = [];
-for (const dir of SCAN_DIRS) {
-  const files = await walk(dir, ['.astro', '.mdx', '.md']);
+for (const { dir, exts } of SCAN_DIRS) {
+  const files = await walk(dir, exts);
   for (const f of files) {
     const src = await fs.readFile(f, 'utf8');
     const rel = path.relative(ROOT, f).replaceAll('\\', '/');

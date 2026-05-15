@@ -690,7 +690,7 @@ export const comparisons: Record<string, Comparison> = {
           },
           'gemini-cli': {
             value: 'gemini-2.5-pro (stable channel); gemini-3-pro-preview (preview channel)',
-            note: 'Gemma 4 also enabled by default via Gemini API since v0.42.0; plan mode auto-routes Pro for planning, Flash for implementation',
+            note: 'Per Gemini CLI docs: Auto (Gemini 3) routes between gemini-3-pro-preview and gemini-3-flash-preview; on the API side, gemini-3-pro-preview redirects to gemini-3.1-pro-preview since 2026-03-09. Gemma 4 also enabled by default via Gemini API since v0.42.0; plan mode auto-routes Pro for planning, Flash for implementation',
             sourceRefs: ['gemini-readme'],
           },
           'copilot-cli': {

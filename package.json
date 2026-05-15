@@ -24,6 +24,8 @@
     "check:links": "node scripts/integrity-check.mjs",
     "audit:claims": "node scripts/audit-claims.mjs",
     "audit:verification": "node scripts/audit-verification-states.mjs",
+    "audit:blurbs": "node scripts/audit-blurbs.mjs",
+    "audit:blurbs:strict": "node scripts/audit-blurbs.mjs --strict",
     "smoke": "node scripts/smoke-check.mjs",
     "deploy": "npm run build:no-search && node scripts/deploy.mjs",
     "deploy:nobuild": "node scripts/deploy.mjs"
