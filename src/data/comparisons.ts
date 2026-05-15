@@ -684,7 +684,7 @@ export const comparisons: Record<string, Comparison> = {
             sourceRefs: ['cc-auth'],
           },
           'codex-cli': {
-            value: 'gpt-5.5 (recommended); gpt-5.4 (alt flagship); gpt-5.4-mini (fast); gpt-5.3-codex (coding specialist)',
+            value: 'gpt-5.5 (recommended); gpt-5.4 (alt high-end); gpt-5.4-mini (fast); gpt-5.3-codex (coding specialist)',
             note: 'Also gpt-5.3-codex-spark research preview (Pro subs only). Switch via /model · -m flag · config.toml',
             sourceRefs: ['codex-docs'],
           },

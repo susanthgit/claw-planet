@@ -14,7 +14,7 @@ const { entryFile, lastUpdated } = Astro.props;
 const editHref = entryFile
   ? `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`
   : 'https://github.com/susanthgit/claw-planet';
-const dateText = lastUpdated ?? '2026-05-08';
+const dateText = lastUpdated ?? '—';
 const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '';
 ---
 

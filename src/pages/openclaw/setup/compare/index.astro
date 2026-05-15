@@ -9,6 +9,10 @@ const setups = all
   .filter((e: any) => e.data.section === 'Setup' && e.data.vendor === 'openclaw' && e.data.status === 'published')
   .sort((a: any, b: any) => a.data.sectionNumber.localeCompare(b.data.sectionNumber));
 
+const latestSetupDate = setups.length > 0
+  ? setups.reduce((max: string, s: any) => (s.data.lastReviewedAt > max ? s.data.lastReviewedAt : max), setups[0].data.lastReviewedAt)
+  : '—';
+
 const stateLabel: Record<string, string> = {
   'planned': 'planned',
   'sourced': 'sourced',
@@ -36,7 +40,7 @@ function timeText(min?: number) {
 <BaseLayout
   title="§ 2.0 Setup compare — pick your environment"
   description="Side-by-side comparison of all 6 setup paths. Hardware, runtime version, time-to-first-message, verification state. Pick the row that fits, then jump to the full setup page."
-  lastUpdated="2026-05-08"
+  lastUpdated={latestSetupDate}
 >
   <SectionHead num="2.0" title="Setup compare" verb="6 paths · auto-generated from front matter" />
   <SectionBlurb>

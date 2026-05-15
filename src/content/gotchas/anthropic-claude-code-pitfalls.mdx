@@ -53,7 +53,7 @@ Watch for:
 
 ## 3. Context-window blowouts
 
-Claude has a fixed context window (200K tokens at time of writing for the API; subscription tiers may differ). When you fill it, the model starts forgetting earlier parts of the conversation.
+Claude has a fixed context window per model — **1M tokens** for Sonnet 4.6 and Opus 4.7, **200K** for Haiku 4.5. Subscription tiers may differ; verify which model your subscription is currently serving. When you fill it, the model starts forgetting earlier parts of the conversation.
 
 Symptoms:
 

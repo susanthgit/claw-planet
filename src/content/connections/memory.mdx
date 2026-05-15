@@ -5,8 +5,8 @@ sectionNumber: "3.5"
 description: "What the agent remembers. Three memory engines (built-in / Honcho / QMD), active vs long-term memory, and how to think about persistence."
 status: "published"
 verificationState: "sourced"
-verificationNote: "Sourced from docs.openclaw.ai/concepts/memory and the three engine sub-pages. Specific examples of memory shaping are inferred from typical agent runtime patterns."
-lastReviewedAt: "2026-05-07"
+verificationNote: "Sourced from docs.openclaw.ai/concepts/memory and the three engine sub-pages. Specific examples of memory shaping are inferred from typical agent runtime patterns. Per-vendor context-window numbers (line 47) verified against Anthropic + Microsoft Foundry public docs."
+lastReviewedAt: "2026-05-15"
 category: "memory"
 sources:
   - "https://docs.openclaw.ai/concepts/memory"
@@ -15,6 +15,8 @@ sources:
   - "https://docs.openclaw.ai/concepts/memory-qmd"
   - "https://docs.openclaw.ai/concepts/memory-search"
   - "https://docs.openclaw.ai/concepts/active-memory"
+  - "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+  - "https://learn.microsoft.com/azure/ai-foundry/openai/concepts/models"
 seeAlso:
   - "1.2"
   - "3.3"
@@ -44,7 +46,7 @@ The context the model can see in the **current session's prompt window**. Includ
 - Workspace bootstrap files (SOUL.md, AGENTS.md, USER.md, etc. — see [§1.2 Concepts](/openclaw/overview/concepts/))
 - Memory snippets injected by the [active memory system](https://docs.openclaw.ai/concepts/active-memory)
 
-Active memory is **constrained by the model's context window**. Claude 3.5 Sonnet has 200K tokens; GPT-4o has 128K. Big numbers but they fill faster than you'd think — a long conversation plus heavy workspace files plus injected memory plus a long tool result can hit the limit.
+Active memory is **constrained by the model's context window** — and that varies by model. Claude Sonnet 4.6 is 1M tokens, Haiku 4.5 is 200K. GPT-5 has a 400K-token context window (with up to 272K usable for input). Big numbers but they fill faster than you'd think — a long conversation plus heavy workspace files plus injected memory plus a long tool result can hit the limit.
 
 [Compaction](https://docs.openclaw.ai/concepts/compaction) is the runtime's way of summarising older turns to keep active memory under the limit.
 
