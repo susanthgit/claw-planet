@@ -49,7 +49,7 @@ Here's the flow when you message your agent on Slack with *"What's on my calenda
 2. The channel hands the message to the **Gateway**.
 3. The Gateway looks up your **session** (or creates a new one) and routes the message to the **agent runtime**.
 4. The agent runtime loads the **workspace files** (SOUL, AGENTS, USER, etc.) into the system prompt.
-5. The system prompt + your message + any active memory go to the configured **model** (e.g. `anthropic/claude-3-5-sonnet`).
+5. The system prompt + your message + any active memory go to the configured **model** (e.g. `anthropic/claude-sonnet-4-6`).
 6. The model decides this needs the calendar tool. It returns a tool call.
 7. The agent runtime invokes the **tool** (could be MCP-bridged, could be built-in `exec` calling a script).
 8. Tool result goes back to the model for synthesis.

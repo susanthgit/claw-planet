@@ -74,20 +74,20 @@ If a configured default provider no longer exposes the configured default model,
 
 > This section is opinion as of 2026-05. The model landscape changes fast — vendors ship new model generations and shift pricing roughly quarterly. Verify against current provider docs, pricing pages, and your own workload tests before locking in.
 
-The boring answer first: **start on Sonnet, set a cheap fallback, and only reach for Opus / GPT-5.5 / Gemini Pro when your actual workload proves it needs them.** Most of the picks below are corner cases on top of that.
+The boring answer first: **start on Sonnet, set an explicit fallback, and only reach for Opus / GPT-5.5 / Gemini Pro when your actual workload proves it needs them.** Most of the picks below are corner cases on top of that.
 
 ### For agentic work (tool use, multi-step reasoning)
 
 - **`anthropic/claude-sonnet-4-6`** — Anthropic's recommended default for production: a balance of speed and intelligence with 1M-token context. Start here unless cost or latency pushes you elsewhere.
 - **`anthropic/claude-opus-4-7`** — when correctness matters more than cost. Anthropic's heaviest tier for complex reasoning and agentic coding. 1M context. Roughly 1.7× the Sonnet price on input, 1.7× on output.
 - **`openai/gpt-5.5`** — OpenAI's heavy-reasoning tier per GitHub Copilot's model list — multi-step problem solving and architecture-level analysis.
-- **`google/gemini-3.1-pro-preview`** — Google's current Pro preview (the docs default for new Gemini 3 code). For a stable fallback, use `google/gemini-2.5-pro` — a previous generation (1M context), supported until 16 October 2026 shutdown.
+- **`google/gemini-3.1-pro-preview`** — Google's current Gemini 3 Pro preview. For a stable fallback, use `google/gemini-2.5-pro` — a previous generation (1M context), supported until 16 October 2026 shutdown.
 
 ### For cost-sensitive chat (no heavy tool use)
 
 - **`anthropic/claude-haiku-4-5`** — Anthropic's fastest and cheapest tier. 200K context (not 1M). Surprisingly capable for light tool use and batch classification.
 - **`openai/gpt-5-mini`** — one of three OpenAI models included at zero premium-request cost on paid GitHub Copilot plans (the other two are GPT-4.1 and GPT-4o); pay-per-token via the OpenAI API directly. A reliable cheap default for low-stakes tasks.
-- **`google/gemini-3.1-flash-lite`** — Google's lightest Gemini 3 tier, stable since 7 May 2026. A low-cost option for high-volume chat and simple classification; verify current pricing before relying on it as the cheap default. Stable Gemini 2.5 alternative: `google/gemini-2.5-flash`.
+- **`google/gemini-3.1-flash-lite`** — Google's lightest Gemini 3 tier, stable since 7 May 2026. A low-cost option for high-volume chat and simple classification; verify current pricing before relying on it as the cheap default. Stable Gemini 2.5 alternative: `google/gemini-2.5-flash` (same 16 October 2026 shutdown as 2.5 Pro).
 
 ### For privacy / offline (local)
 
