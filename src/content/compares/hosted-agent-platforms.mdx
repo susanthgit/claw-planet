@@ -1,0 +1,197 @@
+---
+title: "Agent platforms — managed runtimes and open frameworks"
+section: "Compare"
+sectionNumber: "7.5"
+description: "Four cross-vendor agent platforms a production builder picks between when deciding where the agent loop runs. Microsoft Foundry Agent Service · Google Vertex AI Agents · OpenAI Agents SDK · Microsoft Copilot Studio."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from canonical vendor docs (learn.microsoft.com/azure/ai-foundry/agents, cloud.google.com/vertex-ai/generative-ai/docs/agent-builder, openai.github.io/openai-agents-python, learn.microsoft.com/microsoft-copilot-studio) on 16 May 2026. SDK versions verified via PyPI + GitHub releases at HEAD. Foundry pricing values are JavaScript-rendered ($-) on the Azure pricing page — we describe what you pay for in words. Copilot Studio MCP support (Tools + Resources yes; Prompts no) sourced from the docs and reflected in our existing Copilot Studio overview page."
+lastReviewedAt: "2026-05-16"
+against: "Microsoft Foundry Agent Service · Google Vertex AI Agents · OpenAI Agents SDK · Microsoft Copilot Studio"
+depth: "deep"
+sources:
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/overview"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/concepts/tool-catalog"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/concepts/hosted-agents"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/concepts/limits-quotas-regions"
+  - "https://azure.microsoft.com/pricing/details/foundry-agent-service/"
+  - "https://cloud.google.com/vertex-ai/generative-ai/docs/agent-builder/overview"
+  - "https://pypi.org/project/google-adk/"
+  - "https://github.com/google/adk-python/releases"
+  - "https://google.github.io/adk-docs/tools-custom/mcp-tools/"
+  - "https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing"
+  - "https://openai.github.io/openai-agents-python/"
+  - "https://openai.github.io/openai-agents-python/mcp/"
+  - "https://openai.github.io/openai-agents-python/models/"
+  - "https://openai.github.io/openai-agents-python/tracing/"
+  - "https://github.com/openai/openai-agents-python/releases"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/billing-licensing"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/publication-fundamentals-publish-channels"
+seeAlso:
+  - "7.3"
+  - "7.4"
+vendor: "cross-vendor"
+---
+
+import ComparisonMatrix from '@components/ComparisonMatrix.astro';
+
+## What this comparison is — and the asymmetry to notice first
+
+Four cross-vendor agent platforms a production builder picks between when deciding where the agent loop runs:
+
+- **Microsoft Foundry Agent Service** — the managed agent runtime *inside* Microsoft Foundry. Microsoft hosts the loop. Prompt agents (GA, serverless), Workflow agents (preview), Hosted agents (preview, container-based).
+- **Google Vertex AI Agents** — Agent Development Kit (ADK, Apache 2.0) to build, **Agent Runtime** to deploy on Google's managed Cloud Run-based infrastructure. Google hosts the loop.
+- **OpenAI Agents SDK** — open framework (MIT). *You* host the agent loop wherever you deploy your Python or Node code. OpenAI hosts only the model API and the hosted tools (web search, code interpreter, file search, ComputerTool, HostedMCP).
+- **Microsoft Copilot Studio** — low-code agent builder. Microsoft hosts the loop on Power Platform — or you can publish as a declarative agent to M365 Copilot, which then runs on the M365 Copilot orchestrator.
+
+> ⚠️ **The asymmetry to notice up front.** Three of the four are managed runtimes (Microsoft and Google host the agent loop). **OpenAI Agents SDK is a framework, not a hosted runtime** — the agent loop logic runs on your own compute. That makes it the open-source path of the four, with the trade-off that you operate the host. The matrix below has a "Hosting model" row that names this explicitly per platform.
+
+This is the **"who runs your agent"** cut. It is **NOT** a model-quality benchmark and **NOT** a per-vendor agent-feature dump — for those, click into each vendor's product overview page from the matrix.
+
+> ⚠️ **Where is Assistants API?** Not a column here. OpenAI's current SDK docs route builders to the Responses API + Agents SDK, and the Agents SDK uses the Responses API by default. As of 16 May 2026, no hard Assistants API shutdown date was verifiable from canonical docs (`platform.openai.com` blocks static fetches). We picked Agents SDK as the column because that's the current path; if you maintain an Assistants-API workload, check `platform.openai.com/docs/assistants` directly for migration guidance.
+
+## Name map — what old names mean now
+
+The four platforms have renamed themselves in the last 12-24 months. The matrix uses the **current** names; the table below points you back to the old ones you'll still see in URLs, SDK imports, and older blog posts.
+
+| Platform | Old name(s) | Current name | What changed |
+|---|---|---|---|
+| **Microsoft Foundry Agent Service** | Azure AI Agent Service | **Foundry Agent Service** | The umbrella "Microsoft Foundry" dropped the "Azure AI" prefix during 2025 (Build era). Agent runtime followed. Doc URL path still says `/azure/ai-foundry/agents/`. |
+| **Google Vertex AI Agents** | Vertex AI Agent Builder · Agent Platform · Agent Engine · Agentspace | **Gemini Enterprise Agent Platform** (umbrella) · **Agent Runtime** (deploy layer) · **Gemini Enterprise** (consume layer) | The umbrella, the runtime, and the consumer app all renamed during 2025–2026. SDK imports still say `agent_engines`. URL paths still say `/vertex-ai/`, `/agent-builder/`, `/agentspace/`. |
+| **OpenAI Agents SDK** | Swarm (experimental) | **Agents SDK** (production) | Not a clean rename chain. Swarm was an experiment OpenAI describes the Agents SDK as a production-ready upgrade of. Separately: **Assistants API** is an older hosted API surface OpenAI now positions as legacy in favor of the Responses API. The Agents SDK uses the Responses API by default. |
+| **Microsoft Copilot Studio** | Power Virtual Agents (PVA) | **Microsoft Copilot Studio** | Renamed November 2023. The Teams app for *classic* (non-generative) chatbots reaches end-of-life June 2026. |
+
+## Microsoft Foundry vs Foundry Agent Service — they're not two products
+
+```text
+Microsoft Foundry  ← the umbrella platform (covered in §7.4)
+  └─ Foundry Agent Service  ← the managed agent runtime inside it (this page)
+```
+
+§7.4 [Direct model APIs](/compare/direct-model-apis/) covers Foundry as the Azure-governed platform for raw model calls. This page narrows to Foundry's **Agent Service** — the agent runtime that sits on top of the Foundry model catalogue. Same Azure subscription; different layer of the stack.
+
+## How §7.3 differs from this page
+
+[§7.3 M365 extensibility paths](/compare/m365-extensibility-paths/) asks: **"which Microsoft 365 build path?"** (Copilot Studio vs Declarative Agents vs Custom Engine Agents). This page asks: **"which vendor hosts or shapes the agent loop?"** Same product (Copilot Studio) appears in both — different decision axis.
+
+<ComparisonMatrix slug="hosted-agent-platforms" />
+
+## Where each wins
+
+### Microsoft Foundry Agent Service
+
+1. **Model breadth inside one runtime.** 1,900+ models in the Foundry catalogue — Azure OpenAI GPT-5 series, Anthropic Claude, xAI Grok, Llama, DeepSeek, Mistral, MAI-DS-R1, gpt-oss, Phi — all reachable from a single agent definition. None of the other three sit on a model catalogue this wide. Useful when you don't want to switch platforms to evaluate Claude vs Llama vs GPT-5 in the same agent.
+2. **Azure-native identity and governance inherited automatically.** Microsoft Entra ID for both agent-to-vendor and end-user auth, On-Behalf-Of (OBO) passthrough to downstream services, Azure RBAC for agent access, Azure Monitor + Application Insights for tracing, VNet isolation. If your org's compliance posture already lives in Azure, Foundry Agent Service inherits it.
+3. **Multiple agent shapes for different workload profiles.** Prompt agents (GA, serverless, thread-based) for chat-style; Workflow agents (preview) for orchestrated multi-step; Hosted agents (preview, container-based) for filesystem + long-horizon work with VM-isolated sandboxes per session. Three shapes in one platform.
+4. **Two protocol options.** Responses protocol (Azure OpenAI compatible — any OpenAI-style client works) and Invocations protocol (custom HTTP). Lets you adopt incrementally from an existing Azure OpenAI workload.
+
+### Google Vertex AI Agents
+
+1. **Apache 2.0 open-source build surface.** ADK (`google-adk`) is open source — Python, Java, and Go SDKs. You can read the orchestration code, pin specific versions, fork it. The only fully open-source build surface of the four.
+2. **The most symmetric MCP story.** Both client (`McpToolset`) AND server (explicit "Exposing ADK Tools via an MCP Server" pattern documented) — with both stdio and SSE transports. The other three are client-side comprehensive but only partial on the server side.
+3. **Memory Bank as a first-class long-term memory primitive.** Persistent memory across sessions (user preferences and facts). $0.25 per 1,000 memories per month for storage, plus $0.50 per 1,000 memories retrieved (first 1,000/month free). Foundry, OpenAI, and Copilot Studio leave long-term memory as a BYO problem.
+4. **Documented cold-start characteristics on Agent Runtime.** ~4.7s cold start with `min_instances=1`, ~0.4s warm, ~1.4s cold with `min_instances=10`. Configurable `min_instances` (0-10), `max_instances` (1-1000). Predictable runtime behaviour — Foundry and Copilot Studio don't publish equivalent numbers.
+
+### OpenAI Agents SDK
+
+1. **MIT-licensed open framework.** Lowest cognitive overhead of the four for "I just want to build an agent and run it on my own infra." `pip install openai-agents`, `Agent(...)`, `Runner.run()`, done. Read the source, pin the version, fork.
+2. **Provider-agnostic by design.** Default to OpenAI Responses API, but the same `Agent` class works with 100+ other LLMs via the `litellm` and `any-llm` extensions. You can also mix models per workflow (one agent on GPT-5, one on Claude). The agent loop logic is independent of the model vendor.
+3. **The widest MCP transport coverage as a client.** Four modes: `HostedMCPTool` (OpenAI executes the MCP server-side), `MCPServerStreamableHttp`, `MCPServerSse`, `MCPServerStdio`. Tool filtering, caching, approval policies. If your MCP server doesn't speak HTTP but only stdio, this is the SDK that handles it natively.
+4. **Built-in tracing to a hosted dashboard with no setup.** Every `Runner.run()` is auto-wrapped in a trace; LLM generations, tool calls, handoffs, guardrails are recorded; the OpenAI Traces dashboard shows them at `platform.openai.com/traces`. Custom processors for OTel, Langfuse, Logfire if you want to fan out.
+
+### Microsoft Copilot Studio
+
+1. **By far the widest channel surface.** Teams, M365 Copilot, SharePoint, Direct Line web embed, WhatsApp, Facebook Messenger, Slack, Telegram, Twilio/SMS, Line, Kik, Email, WeChat, Omnichannel for Customer Service. The other three are either developer-API surfaces (Vertex, OpenAI SDK) or M365-plus-a-few (Foundry).
+2. **Zero-rated for M365 Copilot licensed users when run B2E.** When the end user has an M365 Copilot license and the agent runs under that user's identity, **all** Copilot Studio billing meters — classic answers, generative answers, agent actions, tenant graph grounding, agent flow actions, AI tools, content processing — are zero-rated (with fair-use limits). For intranet / employee-facing agents inside an M365 Copilot tenant, this is a material cost difference.
+3. **No-code on-ramp.** Describe the agent in natural language in the maker portal, add knowledge sources, wire in connectors, test in the side panel, publish. No SDK to install, no deploy step, no CI pipeline. The gentlest path of the four to a working agent.
+4. **MCP support with Entra-aware OAuth.** The MCP onboarding wizard handles three auth modes including OAuth 2.0 with dynamic discovery, authorisation code with PKCE, and client credentials. Tools and Resources are supported (Prompts are not); SSE was dropped after August 2025, leaving Streamable HTTP as the only transport.
+
+## Where each lags
+
+### Microsoft Foundry Agent Service
+
+- **Pricing visibility.** The Azure pricing page renders vCPU/hour, GiB/hour, tool, and Code Interpreter session prices as JavaScript (`$-` in static HTML). You either eyeball the rendered page or use the Azure pricing calculator. There's no clean way to verify-current-pricing in CI.
+- **Several useful tools are still preview.** Image Generation, Browser Automation, Computer Use, SharePoint integration, Microsoft Fabric, A2A. If your scenario needs any of these, plan around the preview-availability risk.
+- **Hosted agents are preview.** The container-based Hosted agent mode (the closest equivalent to Vertex's Agent Runtime) is in public preview as of mid-May 2026. GA is the prompt-agent mode; long-horizon container workloads ride on the preview surface.
+- **SDK is closed-source.** `azure-ai-agents` and `@azure/ai-agents` ship from the Azure SDK monorepos but are MIT-licensed Microsoft-owned code shaped around the closed Foundry service.
+
+### Google Vertex AI Agents
+
+- **Cost at scale is dominated by sessions.** Google's own published scenarios: a Lightweight Agent (0.16 QPS, 3s avg, 1 vCPU/1 GiB) is ~$595/month; a Standard Agent (10 QPS, 5s avg, 2 vCPU/5 GiB) is $43,000+/month — and $19,440 of that is **sessions alone**. The session-event meter ($0.25 per 1,000 events) can dominate compute and tokens combined. Worth modelling before deploying.
+- **No built-in end-user channels.** No native Teams, Slack, or WhatsApp adapter on Agent Runtime. You front the REST endpoint with your own channel layer. Copilot Studio is the opposite end of this spectrum.
+- **The brand rename is mid-flight.** "Agent Builder is dead but the URL still says `agent-builder`. Agent Engine is dead but the SDK still imports `agent_engines`. Agentspace is dead but the docs URL still says `/agentspace/`." Expect another year of name drift across docs, SDKs, and blog posts.
+- **Agent Identity needs the v1beta1 API.** The new SPIFFE-based per-agent identity is documented but on the beta API surface; some docs render in non-English (Portuguese, Japanese, Spanish) depending on Google's redirect logic, which is a soft signal that the docs haven't fully stabilised.
+
+### OpenAI Agents SDK
+
+- **You operate the host.** No managed compute, no managed cold-start optimisation, no managed scaling. Whatever you deploy to — Cloud Run, Azure Functions, Lambda, a VM, your laptop — is on you. The trade-off for the open framework.
+- **No vendor-managed channels.** Same as Vertex but more so. No Teams adapter, no Slack adapter, no WhatsApp. Realtime via WebSocket, but the channel surface is whatever you build.
+- **No managed identity for the agent itself.** The agent authenticates to OpenAI via an API key in an env var. No per-agent Entra-style identity, no IAM-conditioned access. End-user auth is the developer's responsibility — the SDK doesn't define a layer for it.
+- **Still on 0.x versioning.** Production-ready per OpenAI's own positioning, but the package version (`0.17.2` as of 12 May 2026) hasn't crossed 1.0. If your shop blocks pre-1.0 dependencies, that's a real procurement question.
+- **Tracing unavailable under Zero Data Retention.** OpenAI's own tracing dashboard is the default backend; under a ZDR policy on OpenAI's APIs, tracing is unavailable. Custom processors (OTel, Langfuse, Logfire) work, but the out-of-the-box experience assumes data residency in OpenAI's environment.
+
+### Microsoft Copilot Studio
+
+- **No local dev path.** Test panel in the maker portal is the only way to exercise an agent. No `adk web`, no `Runner.run_sync()`, no local container — testing is portal-only.
+- **No code SDK.** Power Platform CLI and REST APIs exist, but the primary developer surface is the visual canvas. If your team's expectation is "agent-as-code in a repo", Copilot Studio isn't that.
+- **Model swap is restricted in low-code.** Low-code makers can't swap the underlying Azure OpenAI GPT model. The pro-code developer path mentions "Choice of language models" but the standard low-code experience uses Microsoft's managed stack.
+- **Credit pricing requires modelling.** Copilot Credits stack per turn, the M365 zero-rating changes the math significantly, and the bill arrives at end-of-period. Per-unit credit rates aren't in the docs page — they live in a separate Licensing Guide PDF. Build a small load test before committing to a tenant capacity tier.
+
+## Decision sketch
+
+```text
+Do you want a managed agent runtime, or do you want to host the loop yourself?
+  ├─ Host yourself (open framework) → OpenAI Agents SDK
+  └─ Managed runtime → continue
+        │
+        Is the end user inside Microsoft 365 / Teams?
+          ├─ Yes, primarily M365 Copilot users (B2E) → Copilot Studio (zero-rating + channels)
+          └─ No → continue
+               │
+               Where does the rest of your stack live?
+                 ├─ Microsoft Azure → Foundry Agent Service
+                 ├─ Google Cloud / open source preference → Vertex AI Agents
+                 └─ Mixed / undecided → continue
+                      │
+                      Do you need the widest model catalogue inside one runtime?
+                        ├─ Yes (1,900+ models, including Claude on Microsoft governance) → Foundry Agent Service
+                        └─ No, single-vendor model + symmetric MCP server-side → Vertex AI Agents
+```
+
+## Most teams end up using two
+
+The honest pattern: pick a *primary* platform for the channel + governance shape your scenario needs, and use a *secondary* for the cases where the primary is the wrong fit.
+
+- **Foundry Agent Service primary + Copilot Studio for M365-facing employee agents.** Common in Microsoft-shop enterprises. Foundry hosts the production agents that serve external systems; Copilot Studio handles intranet B2E scenarios where M365 zero-rating + channel coverage matter more than model choice.
+- **Vertex AI Agents primary + OpenAI Agents SDK for prototyping.** Common in AI-native teams on GCP. ADK + Agent Runtime for the production-managed workloads; Agents SDK locally to iterate on prompt + tool design without paying Agent Runtime session fees.
+- **OpenAI Agents SDK with HostedMCP + a managed deploy target.** Single vendor for SDK + model + tracing; you bring Cloud Run, Lambda, or App Service for hosting. The whole stack is open framework + per-token billing + your-own-compute.
+- **Copilot Studio for the user-facing chat + Foundry for the heavy-lifting agent it calls.** A Copilot Studio agent fronts the channel and credentials story; it delegates complex multi-step work to a Foundry Agent (via REST or MCP). Lets you keep Copilot Studio's pricing where it makes sense and Foundry's runtime where the work needs to happen.
+
+## What we are NOT claiming
+
+- **Which agent platform is "best."** Out of scope per [Claw's scope guardrails](/methodology/). Best depends on channel, governance, model preference, team skill, and budget shape.
+- **Specific dollar pricing for Foundry Agent Service.** JavaScript-rendered on Azure's pricing page; we name the meters but not the per-unit values.
+- **A clean rebrand chain for OpenAI agents.** Assistants API, Swarm, Responses API, and Agents SDK are *related* but not a single product lineage. We've laid out the name map but stop short of "X became Y became Z."
+- **That preview features will land on the same timeline as Foundry's GA path or Vertex's GA path.** Both vendors ship features in preview frequently; check the canonical docs for each tool you depend on.
+- **That MCP support is fungible across vendors.** The matrix says "yes" to MCP-client for all four, but the depth (transports, server-side support, prompts vs tools vs resources, GA vs preview) genuinely differs. Read the MCP-support row, not just the headline.
+
+## Honest take
+
+If you're Sush — Microsoft SE, Azure-baseline enterprise customers, M365 users on the other end — **Copilot Studio is the default for B2E scenarios** because of the channel surface + the zero-rating math + the no-code on-ramp for non-developer makers. **Foundry Agent Service** is the default for production-grade external workloads where model breadth + Azure governance matter more than channels.
+
+If I were starting fresh on Google Cloud with an open-source preference, **Vertex AI Agents** would be my primary. ADK being Apache 2.0 + Memory Bank being a first-class primitive + the symmetric MCP server-side story are real advantages. The cost-at-scale story is the trap — model the session-event meter before committing.
+
+If I had an existing OpenAI workload and wanted to consolidate around one vendor's tools, **OpenAI Agents SDK** is the cleanest path. MIT-licensed, provider-agnostic at its core, widest MCP transport coverage as a client. The trade-off is you operate the host — that's a real ops surface, not a "deploy to Cloud Run and forget" story.
+
+The trap to avoid across all four: picking on **hosting model** when the real lock-in is the **channel + governance** surface. The agent loop is portable across vendors with effort; the channel adapter (Teams · M365 Copilot · WhatsApp) and the identity story (Entra · GCP IAM · OpenAI API key) are where switching costs actually live.
+
+## What to read next
+
+- [§7.3 M365 extensibility paths](/compare/m365-extensibility-paths/) — the same Copilot Studio appears here, framed as "which M365 build path?" rather than "which agent runtime?"
+- [§7.4 Direct model APIs](/compare/direct-model-apis/) — Foundry as the model API platform (vs Claude API vs Gemini API). The companion compare to this page on the same Azure stack.
+- [Microsoft Foundry overview](/microsoft/foundry/) — the umbrella platform deep-dive.
+- [Vertex AI Agents overview](/google/vertex-ai-agents/) — ADK + Agent Runtime + Gemini Enterprise deep-dive.
+- [OpenAI Agents SDK overview](/openai/agents-sdk/) — primitives, tools, sessions, tracing, realtime.
+- [Copilot Studio overview](/microsoft/copilot-studio/) — channels, MCP, M365 zero-rating, agent shapes.

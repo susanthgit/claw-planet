@@ -712,6 +712,406 @@ export const comparisons: Record<string, Comparison> = {
       },
     ],
   },
+  'hosted-agent-platforms': {
+    title: 'Agent platforms — managed runtimes and open frameworks',
+    intro: 'Four cross-vendor agent platforms a production builder picks between when deciding where the agent loop runs. Three are managed runtimes (Microsoft and Google host the compute); OpenAI Agents SDK is an open framework you host yourself, with hosted tools and the model API delegated to OpenAI. This is the "who runs your agent" cut — not a model-quality benchmark.',
+    tools: ['foundry-agent-service', 'vertex-ai-agents', 'openai-agents-sdk', 'copilot-studio'],
+    sources: {
+      // Microsoft Foundry Agent Service
+      'fdy-agent-overview':  'https://learn.microsoft.com/azure/ai-foundry/agents/overview',
+      'fdy-tool-catalog':    'https://learn.microsoft.com/azure/ai-foundry/agents/concepts/tool-catalog',
+      'fdy-hosted-agents':   'https://learn.microsoft.com/azure/ai-foundry/agents/concepts/hosted-agents',
+      'fdy-limits':          'https://learn.microsoft.com/azure/ai-foundry/agents/concepts/limits-quotas-regions',
+      'fdy-agent-pricing':   'https://azure.microsoft.com/pricing/details/foundry-agent-service/',
+      'fdy-ai-foundry-pricing': 'https://azure.microsoft.com/pricing/details/ai-foundry/',
+      'fdy-py-sdk':          'https://pypi.org/project/azure-ai-agents/',
+      // Google Vertex AI Agents
+      'vai-overview':        'https://cloud.google.com/vertex-ai/generative-ai/docs/agent-builder/overview',
+      'vai-adk-py':          'https://pypi.org/project/google-adk/',
+      'vai-adk-releases':    'https://github.com/google/adk-python/releases',
+      'vai-mcp':             'https://google.github.io/adk-docs/tools-custom/mcp-tools/',
+      'vai-pricing':         'https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing',
+      // OpenAI Agents SDK
+      'oai-agents-docs':     'https://openai.github.io/openai-agents-python/',
+      'oai-agents-mcp':      'https://openai.github.io/openai-agents-python/mcp/',
+      'oai-agents-models':   'https://openai.github.io/openai-agents-python/models/',
+      'oai-agents-tracing':  'https://openai.github.io/openai-agents-python/tracing/',
+      'oai-agents-pypi':     'https://pypi.org/project/openai-agents/',
+      'oai-agents-releases': 'https://github.com/openai/openai-agents-python/releases',
+      // Microsoft Copilot Studio
+      'cps-what':            'https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio',
+      'cps-billing':         'https://learn.microsoft.com/microsoft-copilot-studio/billing-licensing',
+      'cps-mcp':             'https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp',
+      'cps-channels':        'https://learn.microsoft.com/microsoft-copilot-studio/publication-fundamentals-publish-channels',
+      'cps-triggers':        'https://learn.microsoft.com/microsoft-copilot-studio/authoring-triggers-about',
+    },
+    rows: [
+      {
+        key: 'hosting-model',
+        label: 'Hosting model',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Managed runtime — Microsoft hosts the loop',
+            note: '3 modes: Prompt agents (GA, serverless) · Workflow agents (preview) · Hosted agents (preview, container-based, per-session VM-isolated sandboxes). BYO VNet supported for Hosted agents.',
+            sourceRefs: ['fdy-agent-overview', 'fdy-hosted-agents'],
+          },
+          'vertex-ai-agents': {
+            value: 'Managed runtime — Cloud Run-based, fully managed',
+            note: 'Configurable: min_instances 0-10, max_instances 1-1000, container_concurrency default 9. Cold start ~4.7s with min_instances=1; ~1.4s with min_instances=10.',
+            sourceRefs: ['vai-overview'],
+          },
+          'openai-agents-sdk': {
+            value: 'Framework — developer hosts the agent loop',
+            note: 'OpenAI hosts only the model + hosted tools (web/code/file search · ComputerTool · HostedMCP). The agent loop logic runs in your Python or Node code wherever you deploy it.',
+            sourceRefs: ['oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'Managed runtime — Microsoft hosts on Power Platform',
+            note: 'Or publish as a declarative agent to M365 Copilot, which then runs on the M365 Copilot orchestrator instead. Two different runtimes for the same authoring tool.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'build-surface',
+        label: 'Primary build surface',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Python + JS SDK · closed-source',
+            note: '`azure-ai-agents` + `@azure/ai-agents`; also `azure-ai-projects` for project management. Agents defined via `PromptAgentDefinition` or a container image (Hosted agents).',
+            sourceRefs: ['fdy-py-sdk', 'fdy-tool-catalog'],
+          },
+          'vertex-ai-agents': {
+            value: 'Python + Java + Go SDK · Apache 2.0',
+            note: '`google-adk` (Python primary); `@google/adk-web` for the web dev UI only. Code-first `LlmAgent` / `BaseAgent` classes; "Agent Config" YAML option for no-code authoring.',
+            sourceRefs: ['vai-adk-py'],
+          },
+          'openai-agents-sdk': {
+            value: 'Python + JS/TS SDK · MIT',
+            note: '`openai-agents` + `@openai/agents`. Python class-based: `Agent(name, instructions, tools, mcp_servers, guardrails)` + `Runner.run()`. `@function_tool` decorator for Python functions.',
+            sourceRefs: ['oai-agents-pypi', 'oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'Low-code visual canvas — no code SDK',
+            note: 'Agent authoring via the maker portal (natural-language description or visual designer). Power Platform CLI + REST APIs exist but are not the primary developer surface.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'package-release',
+        label: 'Current package · release cadence',
+        cells: {
+          'foundry-agent-service': {
+            value: '`azure-ai-agents` on PyPI · tied to Azure platform releases',
+            note: 'SDK versioned with `/azure/ai-foundry/` docs. Specific PyPI version listed on the package page; check there before pinning.',
+            sourceRefs: ['fdy-py-sdk'],
+          },
+          'vertex-ai-agents': {
+            value: '`google-adk` 1.33.0 (8 May 2026) · weekly–monthly releases',
+            note: '2.0.0-beta.1 in parallel (`Workflow(BaseNode)` graph orchestration, `NodeRunner`). Java + Go ADKs released alongside.',
+            sourceRefs: ['vai-adk-releases'],
+          },
+          'openai-agents-sdk': {
+            value: '`openai-agents` 0.17.2 (12 May 2026) · weekly–bi-weekly releases',
+            note: 'Still on 0.x but positioned as production-ready. Session backends (Redis · MongoDB · SQLite) fixed in 0.17.1.',
+            sourceRefs: ['oai-agents-releases'],
+          },
+          'copilot-studio': {
+            value: 'N/A — SaaS release notes only',
+            note: 'No installable package. Release notes tracked on `learn.microsoft.com/microsoft-copilot-studio/whats-new`.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'local-dev',
+        label: 'Local dev path',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Yes — agents playground in portal; Hosted agents runnable locally',
+            note: 'MCP server integrations testable in the playground via chat. Full local round-trip before deploying.',
+            sourceRefs: ['fdy-agent-overview'],
+          },
+          'vertex-ai-agents': {
+            value: 'Yes — `adk web` UI + `adk run` CLI + `adk eval`',
+            note: 'Built-in local dev server with tracing and tool inspection. Full local execution before deploying to Agent Runtime.',
+            sourceRefs: ['vai-adk-py'],
+          },
+          'openai-agents-sdk': {
+            value: 'Yes — runs anywhere with `OPENAI_API_KEY`',
+            note: 'No cloud deploy needed for the SDK itself. Local sandbox via `UnixLocalSandboxClient`. Realtime via WebSocket.',
+            sourceRefs: ['oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'No — test panel in portal only',
+            note: 'Cannot run an agent outside Copilot Studio infrastructure. "Demo website" is for stakeholder preview, not production.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'model-surface',
+        label: 'Model surface',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Azure OpenAI GPT-5 series + Foundry catalogue (1,900+ models)',
+            note: 'Anthropic Claude · xAI Grok · Llama · DeepSeek · Mistral · MAI-DS-R1 · gpt-oss-120b · Phi. Region-pinned — not all models in all regions.',
+            sourceRefs: ['fdy-limits'],
+          },
+          'vertex-ai-agents': {
+            value: 'Gemini family primary; ADK is model-agnostic',
+            note: 'Claude (with thinking blocks since ADK v1.32.0) · 100+ LLMs via LiteLLM · Apigee LLM (`ApigeeLlm`).',
+            sourceRefs: ['vai-adk-py', 'vai-adk-releases'],
+          },
+          'openai-agents-sdk': {
+            value: 'OpenAI Responses API by default (`gpt-5.4-mini` default model)',
+            note: '100+ other LLMs via LiteLLM / any-llm extensions. Realtime via `gpt-realtime-2`. Mixing models across one workflow is supported.',
+            sourceRefs: ['oai-agents-models'],
+          },
+          'copilot-studio': {
+            value: 'Microsoft-managed Azure OpenAI GPT model',
+            note: 'Low-code makers cannot swap models. Pro-code developer path ("Full control") mentions choice of language models; standard experience uses Microsoft\'s managed LLM stack.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'tool-catalog',
+        label: 'Tool catalogue (built-in)',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Web search · Code Interpreter · File Search · Azure AI Search · Azure Functions · function calling',
+            note: 'Preview: Custom Code Interpreter · Image Generation · Browser Automation · Computer Use · SharePoint · Microsoft Fabric. Custom: MCP · OpenAPI · A2A.',
+            sourceRefs: ['fdy-tool-catalog'],
+          },
+          'vertex-ai-agents': {
+            value: '`google_search` · `code_execution` (sandboxed) · `ComputerUseToolset` · `load_web_page`',
+            note: 'BYO via native Python functions · OpenAPI spec tools · A2A protocol agents. Agent Registry catalogues tools + MCP servers org-wide.',
+            sourceRefs: ['vai-overview'],
+          },
+          'openai-agents-sdk': {
+            value: '`web_search` · `code_interpreter` · `file_search` · `ComputerTool` · `image_generation`',
+            note: 'All hosted tools execute on OpenAI\'s infrastructure via the Responses API. Function tools: any Python function via `@function_tool` or automatic schema generation.',
+            sourceRefs: ['oai-agents-models'],
+          },
+          'copilot-studio': {
+            value: 'Power Automate flows · Knowledge sources · 400+ Power Platform connectors · HTTP requests',
+            note: 'Topics for scripted flows; generative orchestration for LLM-driven flow. Event triggers via Power Automate connector library (SharePoint, OneDrive, Planner, scheduled, etc.).',
+            sourceRefs: ['cps-what', 'cps-triggers'],
+          },
+        },
+      },
+      {
+        key: 'mcp-support',
+        label: 'MCP support',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Client: yes · Server: partial (Toolbox) · Transport: Streamable HTTP only · Status: tool catalogue GA',
+            note: 'MCP auth: key · Entra · managed identity · OAuth OBO. Toolbox exposes an MCP-compatible endpoint that any MCP client can consume (not general-purpose server, but the closest equivalent inside Foundry). Docs describe HTTP-based endpoints exclusively; no SSE mention for MCP clients.',
+            sourceRefs: ['fdy-agent-overview', 'fdy-tool-catalog'],
+          },
+          'vertex-ai-agents': {
+            value: 'Client: yes · Server: yes · Transport: stdio + SSE · Status: GA since ADK v0.1.0',
+            note: 'Most symmetric MCP story of the four — explicit "Exposing ADK Tools via an MCP Server" pattern documented. `McpToolset` for the client side; tool filtering supported.',
+            sourceRefs: ['vai-mcp'],
+          },
+          'openai-agents-sdk': {
+            value: 'Client: yes (4 modes) · Server: not documented · Transport: stdio + SSE + Streamable HTTP + HostedMCP · Status: GA in 0.17.x',
+            note: '`HostedMCPTool` (OpenAI-side execution) · `MCPServerStreamableHttp` · `MCPServerSse` · `MCPServerStdio`. Tool filtering, caching, approval policies. SDK is consumer of MCP servers, not exposed as one.',
+            sourceRefs: ['oai-agents-mcp'],
+          },
+          'copilot-studio': {
+            value: 'Client: yes · Server: partial (connector publishing) · Transport: Streamable HTTP only · Status: GA (Aug 2025)',
+            note: 'Tools ✓ · Resources ✓ · Prompts ✗. SSE transport dropped after Aug 2025. No stdio (cloud-hosted SaaS, so local-process MCP is meaningless). MCP servers surfaced as Power Platform custom connectors; publish-for-cross-tenant supported.',
+            sourceRefs: ['cps-mcp'],
+          },
+        },
+      },
+      {
+        key: 'state-sessions',
+        label: 'State · sessions',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Threads + Runs (prompt agents) · Conversations + Sessions (Hosted agents)',
+            note: 'Up to 100K msgs/thread. Hosted agent `$HOME` filesystem persisted across idle periods; new compute provisioned on resume with state restored.',
+            sourceRefs: ['fdy-hosted-agents', 'fdy-limits'],
+          },
+          'vertex-ai-agents': {
+            value: 'Session rewind available in ADK; initial-state preservation fixed in v1.32.0',
+            note: 'Sessions persisted automatically when using the managed `VertexAiSessionService`; `InMemorySessionService` for local dev.',
+            sourceRefs: ['vai-adk-releases'],
+          },
+          'openai-agents-sdk': {
+            value: 'Session abstraction · backends: in-memory · SQLite · Redis · MongoDB',
+            note: 'Or use the OpenAI Responses API with `openai-conversations` session type for server-side conversation management. In-memory backend is the default; not persisted.',
+            sourceRefs: ['oai-agents-releases', 'oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'Per-conversation state · topic variables · 30 min inactivity timeout',
+            note: 'In-session state is automatic. No built-in cross-session long-term memory; BYO via Dataverse or SharePoint knowledge sources.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'memory',
+        label: 'Long-term memory',
+        cells: {
+          'foundry-agent-service': {
+            value: 'No dedicated long-term memory service',
+            note: 'BYO via File Search (vector stores) or Azure AI Search for RAG-style retrieval. Conversation history auto-persists; cross-session memory is not a first-class primitive.',
+            sourceRefs: ['fdy-agent-overview'],
+          },
+          'vertex-ai-agents': {
+            value: 'Memory Bank — persistent memory across sessions',
+            note: 'User preferences and facts stored per-agent. $0.25 per 1,000 memories per month (storage) · $0.50 per 1,000 memories returned (retrieval; first 1,000/month free). The most fully-baked long-term memory primitive of the four.',
+            sourceRefs: ['vai-overview', 'vai-pricing'],
+          },
+          'openai-agents-sdk': {
+            value: 'No dedicated long-term memory in the SDK',
+            note: 'BYO via vector stores or databases. Sessions cover working memory within a run; cross-session memory is the developer\'s responsibility.',
+            sourceRefs: ['oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'No dedicated memory primitive',
+            note: 'Knowledge sources (grounded RAG over SharePoint · uploaded files · web) partially substitute. No agent-specific user memory.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'tracing',
+        label: 'Tracing · observability',
+        cells: {
+          'foundry-agent-service': {
+            value: 'End-to-end tracing → Foundry portal + Application Insights',
+            note: 'OpenTelemetry integration for Hosted agents. Every model call, tool invocation, and decision traced. Application Insights connection string auto-injected.',
+            sourceRefs: ['fdy-hosted-agents', 'fdy-agent-overview'],
+          },
+          'vertex-ai-agents': {
+            value: 'OpenTelemetry + Cloud Trace → GCP Console Unified Trace Viewer',
+            note: 'Native OTel agentic metrics added in ADK v1.32.0. `adk web` for local trace inspection. Cloud Logging + Cloud Monitoring integrations.',
+            sourceRefs: ['vai-adk-releases', 'vai-overview'],
+          },
+          'openai-agents-sdk': {
+            value: 'Automatic tracing → `platform.openai.com/traces`',
+            note: 'Every `Runner.run()` wrapped in a `trace()`. Custom processors for OTel · Langfuse · Logfire. Unavailable under OpenAI Zero Data Retention policy.',
+            sourceRefs: ['oai-agents-tracing'],
+          },
+          'copilot-studio': {
+            value: 'Activity map (step-by-step) → Copilot Studio Analytics dashboard',
+            note: 'Export to Application Insights · Microsoft Purview audit logs · Microsoft Sentinel for admin monitoring + alerts.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+      {
+        key: 'identity',
+        label: 'Identity · auth',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Microsoft Entra ID (`DefaultAzureCredential`) · per-agent Entra identity',
+            note: 'OBO passthrough for user-level identity to downstream services. RBAC: Foundry User · Foundry Owner roles. End users auth via Entra automatically through Teams · M365 Copilot · Power Apps.',
+            sourceRefs: ['fdy-py-sdk', 'fdy-hosted-agents'],
+          },
+          'vertex-ai-agents': {
+            value: 'GCP IAM service accounts · per-agent Agent Identity',
+            note: 'End-user: API keys · 2LO/3LO OAuth · IAM conditions on sessions. Agent Gateway as the central policy enforcement point for tool calls.',
+            sourceRefs: ['vai-adk-releases', 'vai-overview'],
+          },
+          'openai-agents-sdk': {
+            value: 'OpenAI API key (`OPENAI_API_KEY` env var)',
+            note: 'No managed identity concept — developer holds and rotates the key. End-user auth is the developer\'s responsibility; the SDK doesn\'t define a layer for it.',
+            sourceRefs: ['oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'Microsoft Entra ID (Power Platform identity)',
+            note: 'End-user: Entra automatic in Teams/M365/Power Apps; "No authentication" option for anonymous access on a public link; certificate auth supported. Event triggers run under the maker\'s credentials.',
+            sourceRefs: ['cps-channels', 'cps-triggers'],
+          },
+        },
+      },
+      {
+        key: 'channels',
+        label: 'Channels · consumption',
+        cells: {
+          'foundry-agent-service': {
+            value: 'REST endpoint · Teams · M365 Copilot · Entra Agent Registry · A2A (preview)',
+            note: 'OpenResponses and Activity protocols for M365 publishing. Direct API consumption from any OpenAI-compatible SDK acting as a Responses-protocol client.',
+            sourceRefs: ['fdy-agent-overview', 'fdy-hosted-agents'],
+          },
+          'vertex-ai-agents': {
+            value: 'REST endpoint · Agent Registry · A2A protocol',
+            note: 'Developer-facing API surface. No built-in end-user channels (Teams · Slack · etc.) — you front the REST endpoint with your own app or channel adapter.',
+            sourceRefs: ['vai-overview'],
+          },
+          'openai-agents-sdk': {
+            value: 'Developer-managed REST API (BYO deploy: FastAPI · Cloud Run · Azure Functions · Lambda · …)',
+            note: 'No vendor channels. Realtime Agents via WebSocket transport. Channel and end-user-auth layer are both the developer\'s responsibility.',
+            sourceRefs: ['oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'Teams · M365 Copilot · SharePoint · Direct Line web · WhatsApp · Facebook · Slack · Telegram · Twilio/SMS · Line · Kik · Email · WeChat · Omnichannel for Customer Service',
+            note: 'Widest channel surface of the four. Custom website via Direct Line API (iframe or custom UI). Teams app store distribution. Mobile via Direct Line.',
+            sourceRefs: ['cps-channels'],
+          },
+        },
+      },
+      {
+        key: 'pricing-model',
+        label: 'Pricing model',
+        cells: {
+          'foundry-agent-service': {
+            value: 'No platform fee; pay for model tokens + agent compute + tools + Azure infra',
+            note: 'Hosted agents: vCPU/hour + GiB/hour; rates rendered as JavaScript on the pricing page (use the Azure pricing calculator). Microsoft Agent Pre-Purchase Plan for bulk ACUs at 5% / 10% / 15% off (20K / 100K / 500K tiers; documented on the broader Microsoft Foundry pricing page).',
+            sourceRefs: ['fdy-agent-pricing', 'fdy-ai-foundry-pricing'],
+          },
+          'vertex-ai-agents': {
+            value: 'Agent Runtime: $0.0864/vCPU-hr · $0.009/GiB-hr · $0.25/1K events · $0.25/1K memories/mo',
+            note: 'First 50 vCPU-hours + 100 GiB-hours free per month. Memory Bank retrieval billed separately at $0.50/1,000 memories returned (first 1,000/month free). Gemini API per-token billing separate. Two published scenarios: Lightweight (0.16 QPS) ~$595/mo · Standard (10 QPS) $43K+/mo — at scale, sessions dominate compute. Re-verify; Agent Runtime billing has restructured during 2025–2026.',
+            sourceRefs: ['vai-pricing'],
+          },
+          'openai-agents-sdk': {
+            value: 'SDK free (MIT); pay for your own hosting + OpenAI API per-token + hosted-tool charges',
+            note: 'Hosted tools (web_search · code_interpreter · file_search · HostedMCP) billed via the OpenAI API. Hosting cost depends entirely on where you run the agent.',
+            sourceRefs: ['oai-agents-docs'],
+          },
+          'copilot-studio': {
+            value: 'Copilot Credits (PAYG via Azure or 1-year prepaid pack)',
+            note: 'M365 Copilot licensed users (B2E, agent runs under user\'s identity): ALL meters zero-rated with fair-use limits. Standalone agents: per-event credits, complexity-dependent. 125% overage triggers enforcement at next attempt.',
+            sourceRefs: ['cps-billing'],
+          },
+        },
+      },
+      {
+        key: 'ga-status',
+        label: 'GA status',
+        cells: {
+          'foundry-agent-service': {
+            value: 'Core (prompt agents) + tool catalogue framework GA · Hosted agents preview · Workflow agents preview',
+            note: 'Some individual tools preview: Image Generation · Browser Automation · Computer Use · SharePoint · Microsoft Fabric · A2A.',
+            sourceRefs: ['fdy-limits', 'fdy-tool-catalog'],
+          },
+          'vertex-ai-agents': {
+            value: 'ADK + Agent Runtime + Memory Bank + Agent Gateway GA',
+            note: 'ADK v1.33.0 stable; 2.0.0-beta.1 in parallel (workflow graph orchestration). Some preview models in the Gemini 3.x family.',
+            sourceRefs: ['vai-overview', 'vai-adk-releases'],
+          },
+          'openai-agents-sdk': {
+            value: 'Production-ready in 0.17.x (still on 0.x versioning)',
+            note: 'OpenAI positions the Assistants API as legacy in favor of Responses API + Agents SDK. No hard Assistants shutdown date verifiable from canonical docs as of 16 May 2026.',
+            sourceRefs: ['oai-agents-docs', 'oai-agents-models'],
+          },
+          'copilot-studio': {
+            value: 'Core + MCP support + classic + generative answers GA · Agent flows (new format) preview',
+            note: 'Copilot Studio for Teams app for classic chatbots: end-of-life June 2026.',
+            sourceRefs: ['cps-what'],
+          },
+        },
+      },
+    ],
+  },
 };
 
 /**

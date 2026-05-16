@@ -33,6 +33,11 @@ export const toolRegistry = {
   'copilot-studio':       { label: 'Copilot Studio',         href: '/microsoft/copilot-studio/' },
   'declarative-agents':   { label: 'Declarative Agents',     href: '/microsoft/declarative-agents/' },
   'custom-engine-agents': { label: 'Custom Engine Agents',   href: '/microsoft/agents-toolkit/' },
+
+  // Hosted agent platforms — managed runtimes + open frameworks (compare: hosted-agent-platforms)
+  'foundry-agent-service': { label: 'Foundry Agent Service', href: '/microsoft/foundry/' },
+  'vertex-ai-agents':      { label: 'Vertex AI Agents',      href: '/google/vertex-ai-agents/' },
+  'openai-agents-sdk':     { label: 'OpenAI Agents SDK',     href: '/openai/agents-sdk/' },
 } satisfies Record<string, ToolMeta>;
 
 export type ToolKey = keyof typeof toolRegistry;
