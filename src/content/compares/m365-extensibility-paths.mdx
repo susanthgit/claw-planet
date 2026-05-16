@@ -88,7 +88,7 @@ Three practical ways to ship something useful inside Microsoft 365 Copilot:
 
 ### Custom Engine Agents
 
-- **You operate everything.** Azure AI Foundry costs (model + orchestration), Azure App Service (or equivalent), Azure Bot Service (channel routing), monitoring, scaling, patches. Of the three, this is the path with the highest operational floor.
+- **You operate everything.** Microsoft Foundry costs (model + orchestration), Azure App Service (or equivalent), Azure Bot Service (channel routing), monitoring, scaling, patches. Of the three, this is the path with the highest operational floor.
 - **Compliance is on you.** M365 Copilot's DLP/sensitivity/RAI inheritance doesn't extend to your custom orchestrator. You implement the data-handling guarantees yourself or via Foundry's guardrails.
 - **Longer ship time.** Even the Foundry-agent-to-M365 ATK template, which is the shortest custom-engine path, takes longer than declarative authoring — because you're shipping a service, not a manifest.
 

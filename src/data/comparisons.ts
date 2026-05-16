@@ -331,7 +331,7 @@ export const comparisons: Record<string, Comparison> = {
           },
           'custom-engine-agents': {
             value: 'Bring your own',
-            note: 'Semantic Kernel · LangChain · Azure Bot Service · Azure AI Foundry — your choice',
+            note: 'Semantic Kernel · LangChain · Azure Bot Service · Microsoft Foundry — your choice',
             sourceRefs: ['ms-cea-overview'],
           },
         },
@@ -371,7 +371,7 @@ export const comparisons: Record<string, Comparison> = {
           },
           'custom-engine-agents': {
             value: 'ATK is free; hosting billed separately',
-            note: 'Azure AI Foundry, App Service, Bot Service all billed independently',
+            note: 'Microsoft Foundry, App Service, Bot Service all billed independently',
           },
         },
       },
@@ -412,7 +412,7 @@ export const comparisons: Record<string, Comparison> = {
           },
           'custom-engine-agents': {
             value: 'Any — orchestrator can call any API, tool, or model',
-            note: 'M365 data via Microsoft Graph; Azure AI Foundry agents integratable via ATK template',
+            note: 'M365 data via Microsoft Graph; Microsoft Foundry agents integratable via ATK template (foundry-agent-to-m365)',
             sourceRefs: ['ms-cea-overview'],
           },
         },

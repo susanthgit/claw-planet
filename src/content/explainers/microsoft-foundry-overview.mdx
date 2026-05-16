@@ -1,8 +1,8 @@
 ---
-title: "Azure AI Foundry, plainly"
-section: "Azure AI Foundry"
+title: "Microsoft Foundry, plainly"
+section: "Microsoft Foundry"
 sectionNumber: "FDY.1"
-description: "Five-minute orientation to Azure AI Foundry — Microsoft's managed model + agent platform on Azure. The rebrand chain (ML Studio → AI Studio → AI Foundry → Microsoft Foundry), the new flat resource model, the model catalogue, Agent Service, and where it sits next to Azure OpenAI direct."
+description: "Five-minute orientation to Microsoft Foundry — Microsoft's managed model + agent platform on Azure. The rebrand chain (ML Studio → AI Studio → AI Foundry → Microsoft Foundry), the new flat resource model, the model catalogue, Agent Service, and where it sits next to Azure OpenAI direct."
 status: "published"
 verificationState: "sourced"
 verificationNote: "Compiled from learn.microsoft.com/azure/ai-foundry (what-is + architecture + concepts/foundry-models-overview + agents/overview + observability + rbac), pypi.org for azure-ai-projects + azure-ai-agents package metadata, and azure.microsoft.com/products/ai-foundry as of 15 May 2026. Public sources only. Page flips to tried with a session log when Sush runs an end-to-end Agent Service deploy on a personal Azure subscription."
@@ -28,7 +28,7 @@ product: "foundry"
 
 Three things to know up front:
 
-1. **The name has changed twice in two years.** Azure ML Studio (the legacy ML design canvas — separate product line, not in the Foundry rebrand chain) → Azure AI Studio (preview generative AI portal, 2023–2024) → Azure AI Foundry (GA rename at Microsoft Ignite, November 2024) → **Microsoft Foundry** (current name, Build 2025 era; "Azure AI" prefix dropped). Microsoft Learn's primary brand is now Microsoft Foundry; "Azure AI Foundry" persists in older docs, the URL path (`/azure/ai-foundry/`), and many code samples — both names refer to the same product. The portal URL `ai.azure.com` survived every rename.
+1. **The name has changed twice in two years.** Azure ML Studio (the legacy ML design canvas — separate product line, not in the Foundry rebrand chain) → Azure AI Studio (preview generative AI portal, 2023–2024) → Azure AI Foundry (GA rename at Microsoft Ignite, November 2024) → **Microsoft Foundry** (current name, late 2025; "Azure AI" prefix dropped — the `azure-ai-projects` SDK adopted the new brand at `2.0.0b1` in November 2025). Microsoft Learn's primary brand is now Microsoft Foundry; "Azure AI Foundry" persists in older docs, the URL path (`/azure/ai-foundry/`), and many code samples — both names refer to the same product. The portal URL `ai.azure.com` survived every rename.
 2. **Two resource models still coexist.** The old hub-and-project model (`Microsoft.MachineLearningServices` provider) is now labelled **Foundry (classic)** and gets no new investments. The new flat model (`Microsoft.CognitiveServices/accounts` Kind=AIServices, with `accounts/projects` sub-resources) is where everything new lands. Plan new work on the new model.
 3. **The platform itself has no platform fee.** You pay only for what you consume — tokens, hosted agent compute, evaluation runs, AI Search indexes, observability storage. Foundry sits on top of an Azure subscription you already have.
 
@@ -39,7 +39,7 @@ Three things to know up front:
 | Pre-2023 | Azure Machine Learning Studio | Legacy ML design canvas — separate product line, NOT in the Foundry rebrand chain (included for reader context only) |
 | 2023 – mid-2024 | Azure AI Studio (preview) | Unified generative AI portal, preview |
 | November 2024 (Ignite) | **Azure AI Foundry** | GA rename; "Azure AI Foundry" brand introduced |
-| 2025 (Build era) | **Microsoft Foundry** | Current name on some surfaces; "Azure AI" prefix dropped |
+| Late 2025 | **Microsoft Foundry** | Current name; "Azure AI" prefix dropped. The `azure-ai-projects` SDK adopted the new brand at `2.0.0b1` (November 2025); some surfaces still in transition. |
 
 What survived: the `ai.azure.com` portal URL, the model catalogue (which expanded), Azure OpenAI model access (now routed through Foundry endpoints).
 
@@ -62,7 +62,7 @@ Other Azure services you'll connect to a Foundry project — **Azure Storage** (
 
 Numbers floating around in Microsoft's own docs:
 
-- **"Over 1,900 models"** — the Learn docs ("What is Azure AI Foundry") and the Foundry Models overview page
+- **"Over 1,900 models"** — the Microsoft Foundry Learn docs (the `what-is-azure-ai-foundry` page; the URL slug kept the old name) and the Foundry Models overview page
 - **"More than 11,000 models"** — the Azure pricing page, which includes the broader Hugging Face Hub collection across inference tasks
 
 Conservative copy: "1,900+ curated models from Microsoft, OpenAI, Anthropic, xAI, Mistral, Meta, DeepSeek, Cohere, NVIDIA, plus the Hugging Face Hub." Avoid quoting "11,000" without noting the source.

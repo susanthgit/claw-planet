@@ -2,7 +2,7 @@
 title: "MCP across Microsoft surfaces, plainly"
 section: "MCP for Microsoft"
 sectionNumber: "MMS.1"
-description: "Where Model Context Protocol plugs into the Microsoft AI stack as of May 2026 — VS Code agent mode, GitHub Copilot, Copilot Studio, the M365 Agents Toolkit (declarative-agent plugins), Azure AI Foundry Agent Service, Windows AI Foundry. What's GA, what's preview, what's prerelease, and the per-surface auth + transport differences."
+description: "Where Model Context Protocol plugs into the Microsoft AI stack as of May 2026 — VS Code agent mode, GitHub Copilot, Copilot Studio, the M365 Agents Toolkit (declarative-agent plugins), Foundry Agent Service, Windows AI Foundry. What's GA, what's preview, what's prerelease, and the per-surface auth + transport differences."
 status: "published"
 verificationState: "sourced"
 verificationNote: "Compiled from learn.microsoft.com (microsoft-copilot-studio · microsoft-365-copilot · azure/ai-foundry · windows/ai/mcp), code.visualstudio.com (chat/mcp-servers · reference/mcp-configuration · v1.99 + v1.100 release notes), docs.github.com (copilot/concepts/about-mcp · copilot/how-tos/use-mcp-in-your-ide · copilot/how-tos/coding-agent/extend-coding-agent-with-mcp), and the microsoft/mcp catalogue repo as of 15 May 2026. All public sources only."
@@ -26,7 +26,7 @@ product: "mcp"
 
 ## The thirty-second version
 
-**Model Context Protocol** — the [open standard from Anthropic](https://modelcontextprotocol.io) — is now wired into **several Microsoft surfaces**: VS Code (agent mode), GitHub Copilot in IDEs, the GitHub Copilot cloud coding agent, Copilot Studio (MCP as an action source for agents), the M365 Agents Toolkit (scaffolding MCP plugins for M365 Copilot declarative agents), Azure AI Foundry Agent Service, and Windows AI Foundry's on-device agent registry. Status differs per surface — most are GA; Windows AI Foundry ODR is prerelease.
+**Model Context Protocol** — the [open standard from Anthropic](https://modelcontextprotocol.io) — is now wired into **several Microsoft surfaces**: VS Code (agent mode), GitHub Copilot in IDEs, the GitHub Copilot cloud coding agent, Copilot Studio (MCP as an action source for agents), the M365 Agents Toolkit (scaffolding MCP plugins for M365 Copilot declarative agents), Foundry Agent Service, and Windows AI Foundry's on-device agent registry. Status differs per surface — most are GA; Windows AI Foundry ODR is prerelease.
 
 Three things to know up front:
 
@@ -112,7 +112,7 @@ Under the hood, MCP servers become Power Platform custom connectors — you can 
   2. **Building a new MCP server with ATK**: ATK scaffolds a new MCP server starter project and packages it as a declarative-agent plugin. (The `build-mcp-plugin` learn URL is currently a 404; content moved into `overview-plugins` and `build-declarative-agents-add-skills`.)
 - **Tool support:** ATK and Kiota can both generate plugin packages from MCP server specs.
 
-### Azure AI Foundry Agent Service
+### Foundry Agent Service
 
 - **Status:** ✅ GA for the core (Python SDK, JS SDK, Java SDK, REST API). ⚠️ C# / .NET SDK is preview. ⚠️ Hosted agents, Toolboxes, and Azure DevOps MCP Server in the Add Tools catalog are all preview.
 - **Role:** MCP is a first-class tool type (`MCPTool` / `type: "mcp"`). Foundry agents call remote MCP endpoints at runtime.
@@ -232,5 +232,5 @@ For day-1 prototyping inside the Microsoft stack: start in VS Code with `.vscode
 
 - **[M365 Agents Toolkit](/microsoft/agents-toolkit/)** — for building MCP plugins for M365 Copilot.
 - **[Copilot Studio](/microsoft/copilot-studio/)** — for wiring MCP servers into low-code agents.
-- **[Azure AI Foundry](/microsoft/foundry/)** — for Agent Service's MCP tool type.
+- **[Microsoft Foundry](/microsoft/foundry/)** — for Agent Service's MCP tool type.
 - **[Declarative Agents](/microsoft/declarative-agents/)** — for the manifest format that wraps MCP plugins for M365 Copilot.
