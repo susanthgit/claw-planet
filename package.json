@@ -26,6 +26,7 @@
     "audit:verification": "node scripts/audit-verification-states.mjs",
     "audit:blurbs": "node scripts/audit-blurbs.mjs",
     "audit:blurbs:strict": "node scripts/audit-blurbs.mjs --strict",
+    "audit:blurbs:content": "node scripts/audit-blurbs.mjs --scope=content",
     "smoke": "node scripts/smoke-check.mjs",
     "deploy": "npm run build:no-search && node scripts/deploy.mjs",
     "deploy:nobuild": "node scripts/deploy.mjs"

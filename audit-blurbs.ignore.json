@@ -1,0 +1,42 @@
+[
+  {
+    "file": "src/content/explainers/anthropic-claude-api-models.mdx",
+    "line": 8,
+    "token": "Sonnet 4",
+    "context": "Model lineup as of",
+    "reason": "verificationNote prose describing the Sonnet 4 family generation; legitimate family-level reference",
+    "added": "2026-05-16"
+  },
+  {
+    "file": "src/content/explainers/anthropic-claude-api-models.mdx",
+    "line": 32,
+    "token": "Sonnet 5",
+    "context": "When Anthropic ships a new Sonnet",
+    "reason": "Hypothetical future-model example in teaching prose explaining how Anthropic versioning works",
+    "added": "2026-05-16"
+  },
+  {
+    "file": "src/content/explainers/anthropic-claude-api-models.mdx",
+    "line": 36,
+    "token": "Sonnet 4",
+    "context": "earlier Sonnet 4",
+    "reason": "Explicit family-level reference contrasting Sonnet 4.5/4.6 context-window behaviour",
+    "added": "2026-05-16"
+  },
+  {
+    "file": "src/content/explainers/google-ai-studio-overview.mdx",
+    "line": 29,
+    "token": "Gemini 1.5 Flash",
+    "context": "Gemini 1.5 Flash-001 (the last tunable model)",
+    "reason": "Historical citation — Gemini 1.5 Flash-001 was the last Google model to support fine-tuning in the public API",
+    "added": "2026-05-16"
+  },
+  {
+    "file": "src/content/explainers/google-notebooklm-overview.mdx",
+    "line": 80,
+    "token": "Gemini 1.5 Pro",
+    "context": "June 2024 global-expansion blog post",
+    "reason": "Historical citation — Google's June 2024 NotebookLM launch blog named Gemini 1.5 Pro as the underlying model at that time",
+    "added": "2026-05-16"
+  }
+]

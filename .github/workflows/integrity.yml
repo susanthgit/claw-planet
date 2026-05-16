@@ -9,7 +9,8 @@ name: Integrity check
 #   2. audit-blurbs --strict    cheap fail-fast on LEGACY model citations across
 #                                5 vendor hubs + 4 product hubs + 3 src/data/*.ts
 #                                files. INFO findings never block.
-#                                Inline escape hatch: audit-blurbs:ignore (same-line annotation).
+#                                Inline escape hatch: audit-blurbs:ignore (same-line annotation, .astro/.ts only).
+#                                Sidecar escape hatch: audit-blurbs.ignore.json (for .mdx prose — context-substring guard).
 #   3. audit-verification       verifies the 5-state verification contract on .mdx frontmatter
 #                                (planned · sourced · tried · verified · disputed).
 #   4. build:no-search          Astro build without Pagefind (required precondition for
