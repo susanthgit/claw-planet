@@ -48,7 +48,7 @@ export interface Comparison {
 export const comparisons: Record<string, Comparison> = {
   'direct-model-apis': {
     title: 'Direct model APIs',
-    intro: 'Three direct model API surfaces a production builder picks between — Anthropic\'s Claude API, Google\'s Gemini API, and Microsoft Foundry (which wraps Azure OpenAI plus 1,900+ partner models). OpenAI\'s direct API is intentionally excluded — Claw has no /openai/api/ page; builders wanting raw OpenAI models in production typically go through Foundry (covered here) or the OpenAI Python SDK directly.',
+    intro: 'Three direct model API surfaces a production builder picks between — Anthropic\'s Claude API, Google\'s Gemini API, and Microsoft Foundry (which wraps Azure OpenAI plus 1,900+ partner models). OpenAI\'s own API at api.openai.com is deliberately outside this comparison: Claw doesn\'t publish an /openai/api/ page. Use Foundry for Azure-governed OpenAI models, or OpenAI\'s docs for the direct API.',
     tools: ['claude-api', 'gemini-api', 'foundry'],
     sources: {
       'ant-getting-started': 'https://docs.anthropic.com/en/api/getting-started',

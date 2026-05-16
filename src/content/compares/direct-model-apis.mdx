@@ -2,11 +2,11 @@
 title: "Direct model APIs — Claude API · Gemini API · Microsoft Foundry"
 section: "Compare"
 sectionNumber: "7.4"
-description: "Three direct model API surfaces a production builder picks between. Claude API · Gemini API · Microsoft Foundry. OpenAI's direct API is out of scope here — Foundry covers the Azure-governed path to GPT-5 and the broader Foundry catalogue."
+description: "Three direct model API surfaces a production builder picks between today: Claude API · Gemini API · Microsoft Foundry. OpenAI's own API is deliberately outside Claw's scope; use Foundry for Azure-governed GPT-5, or OpenAI's docs for api.openai.com."
 status: "published"
 verificationState: "sourced"
-verificationNote: "Vendor pages were fetched 15 May 2026. Pricing pages render dollar values as JavaScript on Foundry's side — exact MTok values for Azure-direct GPT models couldn't be pinned from static HTML. All other facts sourced from canonical docs."
-lastReviewedAt: "2026-05-15"
+verificationNote: "Scope-wording reviewed 16 May 2026; vendor data fetched 15 May 2026. Pricing pages render dollar values as JavaScript on Foundry's side — exact MTok values for Azure-direct GPT models couldn't be pinned from static HTML. All other facts sourced from canonical docs."
+lastReviewedAt: "2026-05-16"
 against: "Anthropic Claude API · Google Gemini API · Microsoft Foundry"
 depth: "deep"
 sources:
@@ -24,6 +24,7 @@ sources:
   - "https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/sdk-overview"
   - "https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/how-to/use-foundry-models-claude"
   - "https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models"
+  - "https://platform.openai.com/docs"
 seeAlso:
   - "7.1"
   - "7.2"
@@ -41,7 +42,7 @@ Three direct model API surfaces a production builder is most likely to pick betw
 - **Google Gemini API** — raw model API for the Gemini family (2.5 Pro/Flash stable; 3.1 Pro Preview; 3.1 Flash-Lite GA since May 2026).
 - **Microsoft Foundry** — Azure platform-as-a-service that hosts 1,900+ models including Microsoft's GPT-5 series, Claude, Mistral, Llama, and more. Foundry supersedes the older "Azure AI Studio" / "Azure AI Foundry" brand and wraps Azure OpenAI — the GPT-5 series runs as Azure Direct Models within Foundry, and existing Azure OpenAI resources can be upgraded to Foundry resources preserving endpoints, API keys, and state. Standalone Azure OpenAI still exists for simple completions workloads.
 
-> ⚠️ **OpenAI's direct API is intentionally excluded from this comparison.** Claw has no `/openai/api/` page — Sush prioritised the five OpenAI surfaces he actually uses (Agents SDK · Codex CLI · Apps SDK · Atlas · Custom GPTs). Builders wanting raw OpenAI models in production today typically go through Foundry (covered here, since Foundry hosts the GPT-5 / GPT-5.4 / GPT-5.5 families) or call `api.openai.com` directly with the OpenAI Python SDK. We'll add an OpenAI direct-API page if that becomes a primary surface Sush works in. Until then, this is honest about scope.
+> ⚠️ **OpenAI's direct API is intentionally excluded from this comparison.** Claw deliberately doesn't publish an `/openai/api/` page. If you want OpenAI's own API, use [OpenAI's docs](https://platform.openai.com/docs); if you want GPT-5 under Azure governance, use [Foundry](/microsoft/foundry/). The five OpenAI pages on Claw (Agents SDK · Codex CLI · Apps SDK · Atlas · Custom GPTs) are the surfaces Sush actually works in. A thin page that mostly repeats OpenAI's docs would add noise, not help.
 
 This is **NOT** a model-quality comparison. Which model writes the best summary or hits the highest HumanEval score is out-of-scope per [Claw's scope guardrails](/methodology/). This is the API-shape comparison: what does the SDK look like, what auth do you need, how does streaming work, what do you pay for what.
 
@@ -135,7 +136,7 @@ The honest pattern: pick a *home* API for the workload you ship + a *secondary* 
 
 - **Which model is "best."** Out of scope per Claw scope. Quality varies by task, prompt, language, modality, latency budget, and model version.
 - **Specific dollar pricing for Foundry-deployed models.** JavaScript-rendered on Azure's pricing page; we link to it but don't quote specific MTok values that would go stale.
-- **OpenAI's direct API is comparable.** It's deliberately excluded; readers wanting OpenAI in production should go to [Foundry](/microsoft/foundry/) (for the Azure-governed path) or `api.openai.com` directly (which we don't cover on Claw yet).
+- **OpenAI's direct API is comparable.** It's deliberately excluded; readers wanting OpenAI in production should go to [Foundry](/microsoft/foundry/) (for the Azure-governed path) or `api.openai.com` directly (which Claw deliberately doesn't cover — use OpenAI's docs for that path).
 - **That SDK versions or model names won't change.** Anthropic ships SDK versions monthly; Google rotates preview models faster than that; Foundry's catalogue adds models almost weekly. Versions on this page are current as of 15 May 2026.
 
 ## Honest take
@@ -156,3 +157,4 @@ The trap to avoid: picking a vendor based on a quarter's pricing differential. T
 - [Anthropic Claude API overview](/anthropic/claude-api/) — the Claude API deep-dive
 - [Google Gemini API overview](/google/gemini-api/) — the Gemini API deep-dive
 - [Microsoft Foundry overview](/microsoft/foundry/) — the Foundry deep-dive
+- [OpenAI vendor hub on Claw](/openai/) — Agents SDK, Codex CLI, Apps SDK, Atlas, and Custom GPTs. Not OpenAI's own API; use OpenAI's docs for that.
