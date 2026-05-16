@@ -59,6 +59,10 @@
  *   keep mandatory suffix); explicit bare-Bison LEGACY entries; gemma3/gemma4
  *   added to KNOWN_CURRENT for Ollama tag form; walkContent() result cached
  *   when --scope=content active).
+ * Revised 2026-05-16 (Claw v0b · Phase 1.1 Session 8 — Gemma prose detection
+ *   added to HUMAN_RE; gemma3n family detection via tight n-suffix grouping
+ *   `gemma-?\d+(?:(?:\.\d+)|n)?...`; gemma3n + gemma-3n added to KNOWN_CURRENT
+ *   (Ollama two-forms convention); --scope=all undocumented alias removed).
  */
 
 import fs from 'node:fs/promises';
@@ -71,8 +75,7 @@ const MODE = process.argv.includes('--strict') ? 'strict' : 'warn';
 // advisory-only pass. The default 12-file gate stays the CI-blocking
 // surface; content-scope hits are ALWAYS exit 0 regardless of --strict.
 // LEGACY hits in content are reported but never block.
-const INCLUDE_CONTENT = process.argv.includes('--scope=content')
-  || process.argv.includes('--scope=all');
+const INCLUDE_CONTENT = process.argv.includes('--scope=content');
 
 // Bump when refreshing the lists below. Audit-blurbs warns if you run it more
 // than 90 days after this date — that's the prompt to re-sweep current models.
@@ -263,14 +266,22 @@ const KNOWN_CURRENT_MODELS = new Set([
   // forms. Same convention as the llama-3.2 / llama3.2 / qwen-2.5 / qwen2.5
   // pairs below (Ollama tag form `ollama pull gemma3:4b`). Added Session 7
   // after the regex broadening (`gemma-?\d+(?:\.\d+)?...`) made bare
-  // `gemma3` / `gemma4` detectable. Forward-looking entries for unreleased
-  // qwen3 / llama3.3 are deliberately NOT pre-listed — KNOWN_CURRENT means
-  // "verified current", not "plausible future". They surface as INFO when
-  // first authored and get added in the next freshness sweep.
+  // `gemma3` / `gemma4` detectable. Session 8 added `gemma3n` / `gemma-3n`
+  // (the selective-parameter-activation family at ollama.com/library/gemma3n
+  // — canonical tags `gemma3n:e2b` and `gemma3n:e4b`, 2B/4B effective sizes
+  // running on everyday devices). Detected via the tight n-suffix grouping
+  // `gemma-?\d+(?:(?:\.\d+)|n)?` added to API_ID_RE — see Bison-style
+  // alternation pattern from Session 7. Forward-looking entries for
+  // unreleased qwen3 / llama3.3 / gemma5 / gemma4n are deliberately NOT
+  // pre-listed — KNOWN_CURRENT means "verified current", not "plausible
+  // future". They surface as INFO when first authored and get added in the
+  // next freshness sweep.
   'gemma-4',
   'gemma4',
   'gemma-3',
   'gemma3',
+  'gemma-3n',
+  'gemma3n',
   // Local model examples used in Claw — hyphenated canonical AND Ollama
   // no-hyphen tag forms. Ollama tag convention is `<family><X.Y>` (no hyphen
   // between letters and digits), e.g. `ollama pull llama3.2:3b`. Listing the
@@ -360,13 +371,26 @@ const SKIP_PRODUCT_SLUGS = new Set([
 // cushman) keep mandatory `-\d{3}` to avoid INFO noise on partial citations
 // like `text-davinci` or `code-cushman` (incomplete strings that aren't
 // real legacy IDs — per Session 7 rubber-duck #2).
+//
+// Session 8 Fix: gemma branch uses tight n-suffix grouping
+// `gemma-?\d+(?:(?:\.\d+)|n)?` to detect the `gemma3n` family
+// (Ollama selective-parameter-activation family at
+// ollama.com/library/gemma3n) without opening the false-positive class
+// that a broad `[a-z]*` tail would introduce. The alternation
+// `(?:(?:\.\d+)|n)?` accepts either dotted-decimal version (gemma3.5)
+// OR a single trailing `n` (gemma3n) — but NOT both stacked. For
+// `gemma3.5n` specifically, the regex backtracks the optional alternation
+// to empty after the `\b` check fails on `.5n`, and matches only `gemma3`
+// (classify → KNOWN_CURRENT silent). Acceptable since `gemma3.5n` is not
+// a real Gemma family form. Same backtrack pattern as HUMAN_RE Gemma
+// branch. Mirrors Bison-style alternation pattern from Session 7.
 const API_ID_RE = new RegExp(
   String.raw`\b(` +
     String.raw`claude-(?:sonnet|opus|haiku)-\d+(?:-\d+)+(?:-[a-z0-9]+)*` +
   String.raw`|claude-(?:3|2)(?:[\.-]\d+)?(?:-(?:sonnet|opus|haiku))?(?:-[a-z0-9]+)*` +
   String.raw`|gpt-\d+(?:\.\d+)?(?:-[a-z0-9]+)*` +
   String.raw`|gemini-\d+(?:\.\d+)?(?:-[a-z0-9]+)*` +
-  String.raw`|gemma-?\d+(?:\.\d+)?(?:-[a-z0-9]+)*` +
+  String.raw`|gemma-?\d+(?:(?:\.\d+)|n)?(?:-[a-z0-9]+)*` +
   String.raw`|llama-?\d+(?:\.\d+)?(?:b)?` +
   String.raw`|qwen-?\d+(?:\.\d+)?(?:b)?` +
   String.raw`|(?:text|code|chat|codechat)-(?:(?:davinci|curie|babbage|ada|cushman)-\d{3}|bison(?:-\d{3})?)` +
@@ -377,6 +401,16 @@ const API_ID_RE = new RegExp(
 );
 
 // Human-prose form. Case-sensitive (Title Case for vendor families).
+// Session 8 added `Gemma\s+\d+(?:(?:\.\d+)|n)?` to catch prose like
+// "Gemma 4 enabled by default" (in src/data/updates.ts + comparisons.ts).
+// Tight n-suffix grouping mirrors API_ID_RE gemma branch — for a stacked
+// form like `Gemma 3.5n`, the regex backtracks: it tries `.5` first then
+// fails the `\b` boundary (next char `n` is a word char), backtracks the
+// optional alternation to empty, then matches only `Gemma 3` and lets the
+// trailing `.5n` fall outside the match. classify() then treats the match
+// as `gemma-3` → KNOWN_CURRENT (silent). Acceptable since `Gemma 3.5n` is
+// not a real Gemma family form as of 2026-05; if Google releases such a
+// variant, add it to KNOWN_CURRENT explicitly.
 const HUMAN_RE = new RegExp(
   String.raw`\b(` +
     String.raw`Claude\s+(?:Sonnet|Opus|Haiku)\s+\d+(?:\.\d+)?` +
@@ -386,6 +420,7 @@ const HUMAN_RE = new RegExp(
   String.raw`|GPT-?\d+(?:\.\d+)?(?:[oO])?(?:[\s-](?:mini|Codex|Turbo))?` +
   String.raw`|Gemini\s+\d+(?:\.\d+)?\s+(?:Pro|Flash|Flash-Lite)(?:\s+Preview)?` +
   String.raw`|Gemini\s+\d+\.\d+\s+(?:Pro|Flash)` +
+  String.raw`|Gemma\s+\d+(?:(?:\.\d+)|n)?` +
   String.raw`|PaLM(?:\s*2)?` +
   String.raw`)\b`,
   'g',
