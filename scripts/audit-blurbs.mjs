@@ -53,6 +53,12 @@
  * Revised 2026-05-16 (Claw v0b · Phase 1.1 Session 6 — Ollama no-hyphen tags;
  *   explicit OpenAI legacy text-IDs replace bare curie/davinci/babbage/bison;
  *   sidecar suppression with context guard).
+ * Revised 2026-05-16 (Claw v0b · Phase 1.1 Session 7 — gemma-?\d+(?:\.\d+)?
+ *   regex consistency with sibling llama-?/qwen-? shape; bare-Bison detection
+ *   via narrowed prefixed-branch (Bison suffix optional, OpenAI/Codex roots
+ *   keep mandatory suffix); explicit bare-Bison LEGACY entries; gemma3/gemma4
+ *   added to KNOWN_CURRENT for Ollama tag form; walkContent() result cached
+ *   when --scope=content active).
  */
 
 import fs from 'node:fs/promises';
@@ -167,11 +173,29 @@ const LEGACY_MODELS = new Set([
   // Bare suffixed forms still on OpenAI's Completions API surface as of 2026-05
   'davinci-002',
   'babbage-002',
-  // Google PaLM 2 / Bison family (legacy chat & text completion models)
+  // Google PaLM 2 / Bison family (legacy chat & text completion models).
+  // Both the bare form (e.g. `text-bison` — the canonical Vertex AI retired
+  // model ID per Google's model-versioning page) AND the `-001` hyphen-
+  // suffix variant (sometimes appears in content copied from OpenAI's
+  // naming convention) are listed (Session 7 C2.5 fix). NOTE: the real
+  // Vertex AI versioned form uses `@001` (at-sign), e.g. `text-bison@001`;
+  // that is caught via the bare `text-bison` LEGACY entry because `@` is a
+  // \b word boundary so the match terminates at `text-bison` and classify()
+  // direct-hits LEGACY. The prefixed branch in API_ID_RE matches Bison
+  // without suffix because the `text-`/`chat-`/`code-`/`codechat-` prefix
+  // already provides false-positive boundary protection — unlike Marie
+  // Curie / Charles Babbage prose, no English/proper-noun usage of bison
+  // appears as `text-bison` or `code-bison`. classify()'s suffix-strip
+  // fallback does NOT cover bare bison forms (peels to `text` then `chat`,
+  // neither listed) — so explicit bare entries are required.
   'text-bison-001',
   'chat-bison-001',
   'code-bison-001',
   'codechat-bison-001',
+  'text-bison',
+  'chat-bison',
+  'code-bison',
+  'codechat-bison',
   // Google — pre-Gemini-2.5
   'gemini-1.5-pro',
   'gemini-1.5-flash',
@@ -235,20 +259,40 @@ const KNOWN_CURRENT_MODELS = new Set([
   'gemini-3.1-flash-lite',
   'gemini-2.5-pro',
   'gemini-2.5-flash',
-  // Google open-weights
+  // Google open-weights — hyphenated canonical AND Ollama no-hyphen tag
+  // forms. Same convention as the llama-3.2 / llama3.2 / qwen-2.5 / qwen2.5
+  // pairs below (Ollama tag form `ollama pull gemma3:4b`). Added Session 7
+  // after the regex broadening (`gemma-?\d+(?:\.\d+)?...`) made bare
+  // `gemma3` / `gemma4` detectable. Forward-looking entries for unreleased
+  // qwen3 / llama3.3 are deliberately NOT pre-listed — KNOWN_CURRENT means
+  // "verified current", not "plausible future". They surface as INFO when
+  // first authored and get added in the next freshness sweep.
   'gemma-4',
+  'gemma4',
   'gemma-3',
+  'gemma3',
   // Local model examples used in Claw — hyphenated canonical AND Ollama
   // no-hyphen tag forms. Ollama tag convention is `<family><X.Y>` (no hyphen
   // between letters and digits), e.g. `ollama pull llama3.2:3b`. Listing the
   // tag form explicitly is the right call here vs adding a hyphen-stripping
   // variants() transform — simpler, smaller blast radius, easier to audit in
   // Pass-2 SME. Add new entries when new Ollama-tagged families land.
+  //
+  // Verified Session 7 (Pass-2 P2-TOOLING-02 closure) against TWO sources:
+  //   1. ollama.com/library/<name> pages — Pass-1 source. Each shows
+  //      `ollama run <name>` and `"model": "<name>"` in the canonical
+  //      copy/paste block (no hyphen).
+  //   2. ollama/ollama GitHub README at HEAD — Pass-2 second source. README
+  //      uses `ollama run gemma3` and `model='gemma3'` directly in the
+  //      "Chat with a model" Python/JS examples. Same no-hyphen convention.
+  // Both sources agree on the no-hyphen tag form. Add new entries when new
+  // families land, and verify both sources for the same convention.
   'llama-3.2',
   'llama3.2',
   'llama-3.1',
   'llama3.1',
   'llama-4',
+  'llama4',
   'qwen-2.5',
   'qwen2.5',
 ]);
@@ -300,22 +344,32 @@ const SKIP_PRODUCT_SLUGS = new Set([
 // the animal `bison`) that triggered false positives. Real OpenAI/PaLM-2
 // legacy references use either:
 //   (a) the canonical text-/code-/chat-/codechat-NAME-### form (e.g.
-//       text-davinci-003) — caught by the dedicated prefixed branch.
+//       text-davinci-003) — caught by the dedicated prefixed branch. The
+//       prefix itself provides the false-positive boundary (no prose uses
+//       `text-curie` for Marie Curie), so prefix-protected names can drop
+//       the `-\d{3}` suffix where vendor convention permits.
 //   (b) the bare NAME-### form (e.g. davinci-002, babbage-002) — still on
 //       OpenAI's Completions API as of 2026-05; caught by a separate
 //       suffixed-only branch added in Session 6 Pass-2. The `-\d{3}` suffix
 //       requirement avoids the Marie-Curie/Charles-Babbage false-positive
 //       class because those proper nouns don't have a numeric-3-digit tail.
+//
+// Session 7 Fix C2.5: Bison gets `(?:-\d{3})?` (optional suffix) inside the
+// prefixed branch so bare `text-bison`/`chat-bison`/`code-bison` (Vertex AI
+// shorthand) are caught. OpenAI/Codex roots (davinci/curie/babbage/ada/
+// cushman) keep mandatory `-\d{3}` to avoid INFO noise on partial citations
+// like `text-davinci` or `code-cushman` (incomplete strings that aren't
+// real legacy IDs — per Session 7 rubber-duck #2).
 const API_ID_RE = new RegExp(
   String.raw`\b(` +
     String.raw`claude-(?:sonnet|opus|haiku)-\d+(?:-\d+)+(?:-[a-z0-9]+)*` +
   String.raw`|claude-(?:3|2)(?:[\.-]\d+)?(?:-(?:sonnet|opus|haiku))?(?:-[a-z0-9]+)*` +
   String.raw`|gpt-\d+(?:\.\d+)?(?:-[a-z0-9]+)*` +
   String.raw`|gemini-\d+(?:\.\d+)?(?:-[a-z0-9]+)*` +
-  String.raw`|gemma-\d+(?:-[a-z0-9]+)*` +
+  String.raw`|gemma-?\d+(?:\.\d+)?(?:-[a-z0-9]+)*` +
   String.raw`|llama-?\d+(?:\.\d+)?(?:b)?` +
   String.raw`|qwen-?\d+(?:\.\d+)?(?:b)?` +
-  String.raw`|(?:text|code|chat|codechat)-(?:davinci|curie|babbage|ada|bison|cushman)-\d{3}` +
+  String.raw`|(?:text|code|chat|codechat)-(?:(?:davinci|curie|babbage|ada|cushman)-\d{3}|bison(?:-\d{3})?)` +
   String.raw`|(?:davinci|curie|babbage|ada|cushman)-\d{3}` +
   String.raw`|palm(?:-2)?` +
   String.raw`)\b`,
@@ -553,6 +607,11 @@ async function walkContent() {
   return out.map(f => path.relative(ROOT, f).replaceAll('\\', '/'));
 }
 
+// Cache content paths once when --scope=content is active (Session 7 P2-TOOLING-04).
+// Previously walkContent() ran twice — once for the scan loop, once for the
+// sidecar in-scope diagnostics. Compute here, reuse below.
+const contentPaths = INCLUDE_CONTENT ? await walkContent() : [];
+
 const legacyHits = [];
 const infoHits = [];
 const contentLegacyHits = [];
@@ -614,7 +673,6 @@ for (const rel of SCAN_PATHS) {
 }
 
 if (INCLUDE_CONTENT) {
-  const contentPaths = await walkContent();
   for (const rel of contentPaths) {
     if (await scanFile(rel, contentLegacyHits, contentInfoHits)) scannedContentFiles++;
   }
@@ -636,7 +694,6 @@ if (sidecar.length > 0) {
   // run) are correctly NOT flagged — they're inactive-by-design, not stale.
   const scannedSet = new Set(SCAN_PATHS.map(p => p.replaceAll('\\', '/')));
   if (INCLUDE_CONTENT) {
-    const contentPaths = await walkContent();
     for (const p of contentPaths) scannedSet.add(p);
   }
   const inScope = sidecar.filter(e => scannedSet.has(e.file));
