@@ -10,8 +10,10 @@ Operational templates for the two-pass parallel-agent SME pattern used in every 
 | File | When | Used by |
 |---|---|---|
 | [`claim-packet.md`](./claim-packet.md) | **Before any content edit.** Lists files touched, claims to verify, sibling-page greps, sources A and B. Hands the planning to a future-me reading the session journal. | You, at the planning step |
-| [`sme-pass-1.md`](./sme-pass-1.md) | **Pass-1 agent prompt.** Verify your initial drop against canonical Source A. Lands findings as P0/P1/P2 + verified-clean. | `task` tool dispatch (research agent) |
-| [`sme-pass-2.md`](./sme-pass-2.md) | **Pass-2 agent prompt.** Verify Pass-1's *corrections* against an independent Source B. **This is where the streak compounds.** | `task` tool dispatch (research agent) |
+| [`sme-pass-1.md`](./sme-pass-1.md) | **Content Pass-1 agent prompt.** Verify content edits against canonical Source A. Lands findings as P0/P1/P2 + verified-clean. | `task` tool dispatch (research agent) |
+| [`sme-pass-2.md`](./sme-pass-2.md) | **Content Pass-2 agent prompt.** Verify Pass-1's *corrections* against an independent Source B. **This is where the streak compounds.** | `task` tool dispatch (research agent) |
+| [`sme-pass-1-tooling.md`](./sme-pass-1-tooling.md) | **Tooling Pass-1 agent prompt.** Verify script changes (regex, classifiers, build gates) against vendor sources + regex-coverage trace tables. Used when changing `scripts/*.mjs` files. | `task` tool dispatch (research agent) |
+| [`sme-pass-2-tooling.md`](./sme-pass-2-tooling.md) | **Tooling Pass-2 agent prompt.** Verify Pass-1's tooling changes for internal consistency — sibling-script coupling, strict-mode invariant, sidecar interaction, code-vs-comment, backward-compat. | `task` tool dispatch (research agent) |
 
 ## How to use
 
@@ -25,7 +27,15 @@ Operational templates for the two-pass parallel-agent SME pattern used in every 
 - They do **not** auto-dispatch agents. The `task` tool is the dispatcher — these are the prompts you paste into it.
 - They do **not** apply fixes. Every correction is reviewed before commit.
 - They are **not** a Node script. Earlier session designs proposed `scripts/sme-validation.mjs`; the cost/benefit of formalising this as code is poor until 3+ more sessions confirm the placeholders are stable. (See `learning-docs/docs/reference/claw-v0b-followups-prompt.md` § Session 5 for the duck rationale.)
-- They are **not** a tooling-design SME. Verifying new scripts, classifier logic, regex patterns, or audit-script embedded assumptions requires a **separate tooling-SME pass** (Session 4 lesson: Track D.1's model-classification lists needed independent fact-checking that a content-SME pass wouldn't have caught — "the script ran without crashing" ≠ validated). When changing `audit-blurbs.mjs` / `voice-lint.mjs` / similar, write a dedicated tooling-design prompt instead of reusing these templates.
+
+## Content vs tooling SME — pick the right pair
+
+The four template files come in two pairs:
+
+- **Content pair** (`sme-pass-1.md` + `sme-pass-2.md`) — for `.mdx` / `.astro` / `.ts` content changes where readers see the output. Sources A and B are different vendor doc surfaces.
+- **Tooling pair** (`sme-pass-1-tooling.md` + `sme-pass-2-tooling.md`) — for `scripts/*.mjs` build-time tooling changes (regex, classifier lists, CI gates). Pass-1 verifies vendor sources + regex-coverage trace; Pass-2 verifies internal consistency (sibling-script coupling, strict-mode invariant, sidecar interaction, code-vs-comment, backward-compat).
+
+The tooling pair was formalised 2026-05-16 (Session 8 — 3rd reuse threshold) after Sessions 6 + 7 used adapted one-off prompts of the same shape. If you're changing a script, use the tooling pair — the content pair's "do not propose tooling-level changes" anti-pattern is the wrong instruction for tooling reviews.
 
 ## Cross-reference
 
