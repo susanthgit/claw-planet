@@ -35,6 +35,20 @@
  *         "added":    "2026-05-16",               // YYYY-MM-DD
  *         "reviewAfter": "2027-05-16"             // optional; default = added + 365d
  *       }, ...]
+ *     EXAMPLE — `context` MUST be a verbatim, case-sensitive substring of
+ *     the source line, NOT a description of why the token is OK:
+ *       Source line:  Until June 2024, Gemini 1.5 Pro was the default.
+ *       ✓ CORRECT     "context": "June 2024"            (literally in the line)
+ *       ✓ CORRECT     "context": "Gemini 1.5 Pro was"   (also literally in the line)
+ *       ✗ WRONG       "context": "june 2024"            (wrong case — won't suppress)
+ *       ✗ WRONG       "context": "historical citation"  (describes intent — not in line)
+ *       ✗ WRONG       "context": "before the rebrand"   (describes context — not in line)
+ *     The matcher runs `lineText.includes(context)` — case-sensitive, no
+ *     normalisation. A description-style or wrong-case `context` silently
+ *     fails to suppress (the unused-sidecar diagnostic at end-of-run will
+ *     flag it, but only after a CI failure has already happened).
+ *     Tip: copy the substring out of the actual source line.
+ *
  *     Hit at file F line L token T is suppressed iff there exists entry where
  *     e.file === F AND e.token.toLowerCase() === T.toLowerCase() AND the
  *     hit's current-line-text contains e.context. Line number is informational
@@ -63,6 +77,13 @@
  *   added to HUMAN_RE; gemma3n family detection via tight n-suffix grouping
  *   `gemma-?\d+(?:(?:\.\d+)|n)?...`; gemma3n + gemma-3n added to KNOWN_CURRENT
  *   (Ollama two-forms convention); --scope=all undocumented alias removed).
+ * Revised 2026-05-17 (Claw v0b · Phase 1.1 Session 13 — sidecar schema
+ *   comment gains a worked CORRECT/WRONG example clarifying that `context`
+ *   is a case-sensitive verbatim substring of the source line, not a
+ *   description of intent; the matcher is `lineText.includes(e.context)`.
+ *   Comment-only polish; no behaviour change. Surfaced after Session 11
+ *   added a sidecar entry with a description-style context that silently
+ *   failed to suppress.).
  */
 
 import fs from 'node:fs/promises';
