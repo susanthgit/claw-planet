@@ -128,7 +128,7 @@ Under the hood, MCP servers become Power Platform custom connectors — you can 
 | Unauthenticated | Shared | For servers not requiring auth |
 
 - **Public vs private endpoints:** public works with Basic or Standard agent setup; private endpoints require Standard Agent Setup with a virtual network and a dedicated MCP subnet (Microsoft.App/environments delegation).
-- **Approval model:** agents support `require_approval: "always"` — pauses and requests human approval before invoking a tool call. Recommended for write operations.
+- **Approval model:** `require_approval` defaults to `"always"` — agents pause and request human approval before every tool call unless the developer opts out per-tool with `"never"` or `{"never":[...tools...]}`. Recommended to leave on `"always"` for write operations.
 
 A Python snippet:
 

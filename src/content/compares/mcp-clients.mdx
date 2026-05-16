@@ -1,0 +1,255 @@
+---
+title: "MCP hosts and clients — where you plug an MCP server in"
+section: "Compare"
+sectionNumber: "7.6"
+description: "Eight applications and runtimes that can connect to MCP servers — a chat desktop, a CLI, an IDE, a third-party AI editor, a low-code agent builder, two managed runtimes, and an autonomous cloud agent. Where each speaks MCP cleanly, where each lags, and which one runs tool calls without asking."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from canonical vendor docs (modelcontextprotocol.io, docs.anthropic.com, code.visualstudio.com, learn.microsoft.com, docs.github.com) on 17 May 2026. Cursor's documentation site is fully JavaScript-rendered and not statically parseable — capability cells for Cursor say 'Not confirmed' where canonical Cursor docs were unreachable, and the page note explains why. The MCP spec and its clients change fast: re-verify transport + capability + GA claims against canonical sources before relying on them in production."
+lastReviewedAt: "2026-05-17"
+against: "Claude Desktop · Claude Code · VS Code · Cursor · Copilot Studio · GitHub Copilot CLI · Foundry Agent Service · GitHub Copilot cloud agent"
+depth: "deep"
+sources:
+  - "https://modelcontextprotocol.io/specification"
+  - "https://modelcontextprotocol.io/clients"
+  - "https://www.anthropic.com/news/model-context-protocol"
+  - "https://modelcontextprotocol.io/quickstart/user"
+  - "https://modelcontextprotocol.io/docs/develop/connect-local-servers"
+  - "https://modelcontextprotocol.io/docs/develop/connect-remote-servers"
+  - "https://docs.anthropic.com/en/docs/claude-code/mcp"
+  - "https://docs.anthropic.com/en/docs/claude-code/overview"
+  - "https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+  - "https://code.visualstudio.com/docs/copilot/reference/mcp-configuration"
+  - "https://code.visualstudio.com/updates/v1_101"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/agent-extend-action-mcp"
+  - "https://learn.microsoft.com/microsoft-copilot-studio/mcp-add-existing-server-to-agent"
+  - "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers"
+  - "https://docs.github.com/en/copilot/concepts/about-mcp"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/model-context-protocol"
+  - "https://learn.microsoft.com/azure/ai-foundry/agents/how-to/mcp-authentication"
+  - "https://docs.github.com/en/copilot/how-tos/agents/copilot-coding-agent/extending-copilot-coding-agent-with-mcp"
+  - "https://docs.github.com/en/copilot/concepts/agents/cloud-agent/mcp-and-cloud-agent"
+  - "https://www.cursor.com/changelog"
+seeAlso:
+  - "7.2"
+  - "7.5"
+vendor: "cross-vendor"
+---
+
+import ComparisonMatrix from '@components/ComparisonMatrix.astro';
+
+## What this comparison is — and the asymmetry to notice first
+
+Eight applications and runtimes that can connect to MCP servers. They fall into six shapes:
+
+- **Chat desktop** — Anthropic Claude Desktop. The reference MCP host shipped with the original Nov 2024 launch.
+- **Coding CLIs** — Anthropic Claude Code, GitHub Copilot CLI. Terminal-native MCP hosts that wire MCP servers into a daily coding session.
+- **IDEs** — VS Code (with the GitHub Copilot extension), Cursor (Anysphere's VS Code fork). MCP support inside the editor's agent mode.
+- **Low-code agent builder** — Microsoft Copilot Studio. MCP-as-a-tool inside a no-code agent canvas.
+- **Managed agent runtime** — Microsoft Foundry Agent Service. MCP-as-a-tool inside a server-side managed agent loop.
+- **Autonomous cloud agent** — GitHub Copilot cloud agent (the coding-agent surface that runs in GitHub Actions / GitHub.com, distinct from the Copilot CLI). MCP-as-a-tool inside an autonomous loop that opens PRs.
+
+This is the **"where do I plug my MCP server in?"** cut. It is **NOT** the same question as §7.2 (which CLI fits my coding job?) or §7.5 (who hosts the agent loop?). The dimensions that matter here are transport coverage, capability depth (Tools / Resources / Prompts / Sampling / Roots), auth modes for remote servers, config location and scope, and — most importantly — the **approval / autonomy model**.
+
+> ⚠️ **The asymmetry to notice up front.** Seven of the eight clients require some form of human approval before running an MCP tool call — either a per-call prompt, a per-session trust gesture, or an app-developer-implemented approval callback. **One does not.** The GitHub Copilot cloud agent calls MCP tools autonomously with no per-call approval surface. The official docs explicitly note this. That makes the approval/autonomy row on the matrix the page's single most important reading — it's worth more than the transport or capability cells when you're deciding whether to expose write-capable MCP tools to a given client.
+
+> ⚠️ **About the words "host" and "client".** In the MCP specification, *host* is the LLM-side application and *client* is the per-server connection it manages. Most of the eight here are hosts that implement an internal client; Foundry Agent Service and Copilot Studio are managed runtimes that *also* expose their own tools as an MCP-compatible endpoint (so they act as both client and server). The matrix collapses this into an **Acts as** row to keep the framing concrete. This page compares applications and runtimes that connect to MCP servers — not MCP server frameworks.
+
+> ⚠️ **Cursor caveat up front.** Cursor's docs site (`docs.cursor.com`) is fully JavaScript-rendered as of 17 May 2026, which means static fetching returns an empty shell. Cursor is included because no honest "where to plug in MCP" comparison can omit it, but several Cursor cells in the matrix say **"Not confirmed"** — that's deliberate. The cross-references we have come from `docs.github.com/en/copilot/concepts/about-mcp` (which lists Cursor in its remote-MCP availability matrix) and Cursor's own changelog. When Cursor publishes a parseable canonical reference for MCP capability depth, we'll update.
+
+## Where each lands on the map
+
+The six shapes again, with one-sentence identities:
+
+- **Claude Desktop** — Anthropic's official chat host. macOS + Windows only. Stdio is the only local transport; remote MCP is via the claude.ai Custom Connectors browser flow that syncs to the desktop app.
+- **Claude Code** — Anthropic's CLI coding agent. The richest OAuth implementation of the eight (RFC 9728, DCR, CIMD), three-tier server scope (local / project / user), and the most-mature MCP-host CLI today.
+- **VS Code (Copilot extension)** — Microsoft's editor MCP host. Tools GA since v1.99 (Mar 2025); Resources + Prompts + Sampling + Auth GA in v1.101 (May 2025). Per-workspace `.vscode/mcp.json` makes team-shared config straightforward.
+- **Cursor** — Anysphere's VS Code-fork code editor. MCP is in Agent mode. Most facts here are sourced from secondary references; the canonical docs aren't statically verifiable.
+- **Copilot Studio** — Microsoft's low-code agent builder. Streamable HTTP only (SSE removed Aug 2025), Tools + Resources but NOT Prompts, the most GUI-friendly OAuth wizard of the eight.
+- **GitHub Copilot CLI** — Microsoft's terminal MCP host. Built-in GitHub MCP server; per-user global config only (no project scope).
+- **Foundry Agent Service** — Microsoft's managed Azure agent runtime. The only client with Entra managed identity for MCP (no shared secret to rotate). Approval plumbing is on the app developer — `require_approval="always"` is the **default value**.
+- **GitHub Copilot cloud agent** — GitHub's autonomous coding agent. Per-repo MCP config in the GitHub UI; static-token auth only (no OAuth); zero per-call approval.
+
+## How §7.6 differs from §7.2 and §7.5
+
+[§7.2 CLI coding agents](/compare/cli-coding-agents/) compares **CLIs as coding tools** — install method, default model, plan/permission model, sandbox philosophy, free tier. MCP support is one row among many, and only the four CLIs are in scope.
+
+[§7.5 Agent platforms](/compare/hosted-agent-platforms/) compares **who hosts the agent loop** — managed runtime vs framework, model surface, channel coverage, pricing model. MCP support is one row, and only the four agent platforms are in scope.
+
+This page compares **where you plug an MCP server in** across six different shapes of host/runtime. Daily-driver CLIs sit next to managed Azure runtimes sit next to chat desktops. The matrix dimensions are specific to MCP: transports, capability depth, auth modes for remote servers, config location and scope, approval/autonomy. The four MCP-related cells you'd find scattered across §7.2 and §7.5 are consolidated here as proper rows with full coverage.
+
+<ComparisonMatrix slug="mcp-clients" />
+
+## Where each wins
+
+### Claude Desktop
+
+1. **Reference MCP host.** The Nov 2024 launch shipped with Claude Desktop as the canonical implementation. The `modelcontextprotocol.io` quickstart guide is written *for* this app. If your goal is to learn MCP itself, Claude Desktop is the gentlest starting point.
+2. **Full capability surface.** Tools, Resources, Prompts, Sampling, Roots — Anthropic's reference docs list Claude Desktop as supporting all four primitives. Most other hosts implement Tools first and add the rest later.
+3. **Custom Connectors browser flow for remote OAuth.** You authenticate to the remote server in claude.ai (browser), the connector syncs to the Desktop app, and you're done. No copy-paste-tokens, no callback-port wrangling.
+
+### Claude Code
+
+1. **Richest OAuth implementation of the eight.** RFC 9728 Protected Resource Metadata, Dynamic Client Registration, CIMD (Client ID Metadata Documents), `--callback-port`, `headersHelper` scripts for rotating creds, scope pinning. If your MCP server has a serious OAuth posture, Claude Code speaks it natively.
+2. **Three-tier server scope.** Local (per-project private, in `~/.claude.json`), project (per-project shared, in `.mcp.json` at project root, VCS-committable), user (global). Plus an enterprise-managed fourth tier. The richest scoping story of the eight — clean for solo work *and* team configs.
+3. **All three transports + the project-scope security prompt.** Stdio, SSE, Streamable HTTP — full coverage. And the first time a project-scoped `.mcp.json` is loaded, Claude Code surfaces an explicit approval prompt so a hostile MCP server can't sneak into a teammate's session.
+
+### VS Code (with the Copilot extension)
+
+1. **Per-workspace MCP config baked into a real editor.** `.vscode/mcp.json` is team-shareable, VCS-committable, and renders next to the rest of the workspace config. The MCP servers your project needs ship with the repo.
+2. **Auto-discovery of Claude Desktop config.** `chat.mcp.discovery.enabled` imports `claude_desktop_config.json` so any server you wired up for Claude Desktop appears in VS Code too — without duplicating config.
+3. **Full GA capability surface from v1.101.** Tools (v1.99), Resources, Prompts, Auth (DCR — both spec versions, GitHub OAuth native, Entra OIDC), and experimental Sampling. The most-mature IDE MCP host today.
+
+### Cursor
+
+1. **Cross-platform AI-first editor that speaks MCP in Agent mode.** Three transports (stdio, SSE, Streamable HTTP), OAuth or PAT for remote, the VS Code fork heritage. If your team is on Cursor already, the path to MCP is short.
+2. **All three operating systems.** macOS, Windows, Linux. No platform gap.
+3. **Listed in `docs.github.com` remote-MCP availability matrix.** GitHub's own MCP concept docs cite Cursor as a supported remote-MCP editor — a cross-reference that compensates partially for the unverifiable canonical Cursor docs.
+
+### Copilot Studio
+
+1. **GUI-friendly OAuth wizard.** Three OAuth modes (Dynamic discovery with full DCR + auto-discovery, Dynamic DCR with manual endpoints, fully Manual). All inside the maker portal — no JSON-on-disk required. For non-developer makers wiring up an MCP server, this is the gentlest path of the eight.
+2. **MCP servers as Power Platform connectors.** Once a server is connected, it appears in the same connector model as the 400+ existing Power Platform connectors. Publishable for cross-tenant use via the Power Platform certification process.
+3. **Resources support alongside Tools.** Many lightweight MCP hosts implement only Tools; Copilot Studio supports both Tools and Resources. (Prompts is the gap — see "Where each lags".)
+
+### GitHub Copilot CLI
+
+1. **GitHub MCP server pre-wired.** No config; the CLI knows your GitHub auth and the GitHub MCP server appears in `/mcp` automatically. The "I want to ask Copilot CLI about my PRs" use case works on minute one.
+2. **All three transports.** Stdio (`type: "local"`), Streamable HTTP (`type: "http"`), SSE (`type: "sse"`, legacy). Same `type` keys as the GHC cloud agent — consistent within the GitHub Copilot family.
+3. **Interactive `/mcp add` inside the CLI.** Tab-navigated form for adding a new server without editing JSON. Good for muscle-memory iteration.
+
+### Foundry Agent Service
+
+1. **Entra managed identity for MCP.** Alone among the eight. The agent identity authenticates to the MCP server via Entra-issued tokens — no API key in a vault, no rotation pipeline. If your MCP server lives behind an Entra-protected endpoint, Foundry is the path of least resistance.
+2. **Multi-SDK MCP surface.** Python, C#, JavaScript, Java, and REST — all GA for the MCP `MCPTool` integration. (.NET SDK is preview.) Whichever stack your service runs on, you can call MCP from the Foundry Agent.
+3. **Private MCP via Azure Container Apps.** With Standard Agent Setup, MCP servers can run inside a VNet on a dedicated MCP subnet. End-to-end private, no internet egress required.
+
+### GitHub Copilot cloud agent
+
+1. **MCP for an autonomous code-writing agent.** The cloud agent picks up an issue, reads the repo, and works MCP tools into its plan — without you watching. For repo automation use cases (run my deploy MCP, log into my observability MCP, file a PR), this is the only client of the eight that runs the loop end-to-end without a human in the seat.
+2. **GitHub MCP + Playwright MCP pre-wired.** Both available out of the box; the Playwright server is sandboxed to localhost for safe browser automation. Zero setup for the two highest-value default servers.
+3. **Per-repo config with org/enterprise overrides.** The repo Settings → Copilot → Cloud agent UI takes a JSON blob. Org/enterprise admins can ship custom agent configs in YAML that apply across repos.
+
+## Where each lags
+
+### Claude Desktop
+
+- **No Linux build.** macOS and Windows only. The reference MCP host doesn't run on the OS most dev tooling targets.
+- **Stdio is the only local transport.** Remote MCP is via the claude.ai Custom Connectors browser flow — there's no native Streamable HTTP client in the Desktop app itself.
+- **Per-tool approval prompts cannot be bulk-approved.** Every tool call surfaces a dialog. Good for safety; high friction for chatty servers.
+- **Versioning is opaque.** Auto-update only; the canonical docs don't pin specific versions, and the app surfaces no release-notes feed.
+
+### Claude Code
+
+- **`workspace` is a reserved server name.** Config files using `workspace` are skipped at load time, and Claude Code shows a warning asking you to rename the server. Not silent, but easy to miss in CI or a busy terminal session.
+- **stdio servers don't auto-reconnect.** Local process lifecycle is yours to manage. HTTP/SSE reconnect with exponential backoff (up to 5 attempts).
+- **`${VAR}` substitution fails hard on unset env vars.** No default-value syntax in `.mcp.json` env interpolation — a missing variable aborts server startup.
+- **CLI-first.** No GUI option for adding servers; you either edit JSON or use `claude mcp add`. Fine for developers; a wall for non-developer users.
+
+### VS Code
+
+- **Stdio sandboxing is macOS + Linux only.** Windows users run all local MCP servers unsandboxed. Tool calls still require confirmation per call, but the OS-level isolation is missing.
+- **Org-level MCP policy is off by default for Copilot Business / Enterprise.** Admins must explicitly enable the "MCP servers in Copilot" org policy. In a locked-down enterprise tenant, MCP may be invisible until someone files a request.
+- **HTTP-first transport order can't be forced to SSE-only.** VS Code tries Streamable HTTP first and auto-falls back to SSE. There's no way to pin it to SSE.
+- **Sampling is experimental.** The API may change. Production servers shouldn't depend on it yet.
+
+### Cursor
+
+- **Docs site is JS-rendered.** Capability depth beyond Tools (Resources, Prompts, Sampling, Roots) is not verifiable from canonical sources. Several matrix cells therefore say "Not confirmed".
+- **No formal MCP-feature GA date.** The current "Cursor 3" era (May 2026 changelog) is the closest version anchor available; specific MCP-capability GA milestones are not surfaced in any single canonical document.
+- **MCP only in Agent mode.** Regular chat doesn't get MCP tools.
+- **Outside the 5-vendor universe Claw publishes about.** We include Cursor because the practitioner's "which client?" answer must include it, but we don't have a Cursor product page to link from the matrix header — the header points to the Cursor docs URL instead.
+
+### Copilot Studio
+
+- **No Prompts.** Tools and Resources are supported; the Prompts primitive is explicitly omitted. MCP servers that publish Prompt templates lose that capability when consumed by Copilot Studio.
+- **No stdio.** SaaS — local-process MCP servers cannot be used without a tunnelling proxy. Architecturally appropriate; operationally a non-trivial gap for "I want my local MCP server in my low-code agent".
+- **SSE removed after Aug 2025.** Any SSE-only MCP server you wired up in early 2025 has to be re-fronted with Streamable HTTP.
+- **Cross-tenant MCP requires Power Platform connector certification.** Publishing an MCP-backed agent for other tenants is a multi-week process.
+
+### GitHub Copilot CLI
+
+- **No project-scoped MCP config.** Only the global `~/.copilot/mcp-config.json`. Teams that want different MCP servers per project should use VS Code or Claude Code instead.
+- **OAuth PKCE / DCR for arbitrary MCP servers not documented.** The CLI MCP reference covers static headers and the built-in GitHub auth. If your remote server needs DCR, you're outside the documented surface.
+- **Resources / Prompts / Sampling not documented for the MCP client side.** Tools is the surfaced primitive. Depth beyond Tools is uncertain.
+- **Per-tool calls run without prompting once allowlisted.** Approval is at the allowlist-config step, not at runtime. Fine for read-only tools; carries weight for write-capable ones.
+
+### Foundry Agent Service
+
+- **Approval plumbing is on the app developer.** `require_approval="always"` is the **default value** — the user-facing approval UX is yours to build. Forget the callback and the agent stalls forever. Opt out with `"never"` or a `{"never":[...tools...]}` allowlist for specific tools you trust.
+- **Tools is the surfaced capability.** Resources and Prompts aren't in the SDK docs. Foundry Toolboxes (preview) may surface more on the server side; depth there changes with the preview API.
+- **Private MCP needs Standard Agent Setup + VNet + dedicated MCP subnet.** Non-trivial infrastructure.
+- **OAuth identity passthrough is single-tenant only.** Users must be in the same Entra tenant as the Foundry project — cross-tenant scenarios don't pass identity through.
+
+### GitHub Copilot cloud agent
+
+- **Zero per-tool-call approval.** Tools run autonomously, by design. The docs explicitly warn: "Copilot will be able to use the tools provided by the server autonomously." Allowlist read-only servers; reach for write-capable tools only when the autonomy is the point.
+- **No OAuth for remote MCP.** Static tokens or API keys only. Enterprise MCP servers that mandate OAuth (Salesforce-style) cannot be wired here.
+- **Tools only.** Resources and Prompts are explicitly NOT supported. Servers that publish either lose those features.
+- **Secret names are constrained.** Only repo secrets prefixed with `COPILOT_MCP_` are accessible via variable substitution in the MCP config blob.
+
+## Decision sketch
+
+```text
+Are you a developer or a low-code maker?
+  ├─ Low-code maker → Copilot Studio (GUI OAuth wizard, no stdio)
+  └─ Developer → continue
+        │
+        Where do you spend the day?
+          ├─ Chat / desktop conversation → Claude Desktop (no Linux)
+          ├─ Terminal → continue (Claude Code vs Copilot CLI)
+          │       ├─ Anthropic-first, rich OAuth, team config → Claude Code
+          │       └─ GitHub-first, GitHub MCP pre-wired, single-user → Copilot CLI
+          ├─ Editor → continue (VS Code vs Cursor)
+          │       ├─ VS Code already + per-workspace config → VS Code
+          │       └─ Cursor already + Agent mode → Cursor (verify capabilities at run time)
+          └─ Server-side / programmatic → continue
+                  │
+                  Do you want a human in the loop?
+                    ├─ Yes (managed runtime, you implement approval UX) → Foundry Agent Service
+                    └─ No (autonomous, repo-scoped) → GitHub Copilot cloud agent
+```
+
+## Most teams end up using two
+
+The honest pattern: pick one MCP host for daily interactive work and one for unattended / programmatic work. They serve different jobs.
+
+- **Claude Code + Foundry Agent Service.** Claude Code in the terminal for human-in-the-loop coding tasks (richest OAuth + three-tier scope); Foundry Agent Service for production agents that need Entra managed identity to call MCP servers behind enterprise auth. Common in Microsoft-shop teams with an Anthropic-friendly developer base.
+- **VS Code + GHC cloud agent.** VS Code for the interactive surface (per-workspace `.vscode/mcp.json` so the whole team gets the same MCP wiring); the cloud agent for autonomous PR-writing work over those same MCP servers. The repo's `.vscode/mcp.json` and the repo's cloud-agent MCP config can converge on the same server allowlist.
+- **Copilot Studio + Foundry Agent Service.** Copilot Studio as the channel-fronting agent in Teams / M365; Foundry as the heavy-lifting agent it delegates to via REST. MCP servers wired in both places: lightweight retrieval in Copilot Studio, write-capable workflows in Foundry under managed identity.
+- **Claude Desktop + Claude Code.** For a solo developer on Anthropic's stack — Desktop for exploratory chat with MCP servers, Code for the actual coding session. `chat.mcp.discovery.enabled` even lets VS Code import your Claude Desktop server config if you add a third surface later.
+
+## What we are NOT claiming
+
+- **Which MCP host is "best."** Out of scope per [Claw's scope guardrails](/methodology/). Best depends on team shape, OS coverage, identity story, and whether the agent runs autonomously.
+- **Cursor's exact MCP capability matrix.** Cursor docs are JS-rendered and not statically verifiable. We took what `docs.github.com` and the Cursor changelog say; depth beyond Tools is marked "Not confirmed" until canonical docs become parseable.
+- **That "more transports = better."** SSE is upstream-deprecated; Streamable HTTP is the forward path. Wide transport coverage helps for legacy compatibility but is not a quality signal on its own.
+- **That preview features will land on the same timeline as GA features.** Foundry Toolboxes, .NET SDK MCP support, VS Code sampling, and the GitHub MCP Registry are all preview. Verify before depending.
+- **Anthropic-vs-OpenAI-vs-Microsoft-vs-Google MCP "leadership."** Two of the eight are Anthropic, four are Microsoft, one is Anysphere, one is Microsoft-via-GitHub. The distribution reflects who has shipped MCP host surfaces — not who is "winning" MCP.
+- **That every team needs MCP.** Plenty of useful agent work doesn't need MCP at all. If a vendor's built-in tools cover the job, skip MCP for now.
+
+## Honest take
+
+If you're a developer with Anthropic's stack as your default — **Claude Code is the most-mature MCP-host CLI today**. Three-tier scope, richest OAuth, full capability surface, all three transports. The `workspace` reserved-name behaviour is the easiest thing to trip over (warning is shown but easy to miss in CI).
+
+If you're a developer with GitHub as your default and want the GitHub MCP server pre-wired with zero config — **Copilot CLI is the path of least resistance**. The single-user-global config is a real limitation for teams; if that bites, the same family's VS Code surface gives you per-workspace config without losing the GitHub auth integration.
+
+If you're a low-code maker wiring an MCP server into a customer-facing agent — **Copilot Studio is the only realistic option here**. The OAuth wizard is the gentlest of the eight. The Prompts gap and the SSE-removal are real but workable.
+
+If your scenario is server-side and you need Entra managed identity so there's no API key to rotate — **Foundry Agent Service is the path**. The catch is the approval plumbing — `require_approval="always"` is the **default value** and the user-facing approval UX falls on you.
+
+If you want an autonomous PR-writing loop that picks up issues and works MCP tools without a human watching — **GitHub Copilot cloud agent is the only one of the eight that does this**. The cost is the zero-approval autonomy plus the no-OAuth-for-remote limitation. Allowlist read-only servers; treat write-capable tools as a deliberate decision, not a default.
+
+The trap to avoid across all eight: choosing on transport breadth when the real lock-in is the **approval model**. The transports converge on Streamable HTTP over time; the approval and autonomy posture is what determines what's *safe* to wire up. Read the approval row before the transports row.
+
+## What to read next
+
+- [§7.2 CLI coding agents](/compare/cli-coding-agents/) — Claude Code, Codex CLI, Gemini CLI, Copilot CLI compared on coding ergonomics. The MCP rows are summarised there too, scoped to the four CLIs.
+- [§7.5 Agent platforms](/compare/hosted-agent-platforms/) — Foundry Agent Service, Vertex AI Agents, OpenAI Agents SDK, Copilot Studio as agent runtimes. MCP support is one row of many.
+- [Claude Code overview](/anthropic/claude-code/) — the CLI's full feature surface.
+- [Copilot Studio overview](/microsoft/copilot-studio/) — channels, MCP, M365 zero-rating.
+- [GitHub Copilot overview](/microsoft/github-copilot/) — the CLI surface; the cloud-agent surface deserves its own product page (queued).
+- [Microsoft Foundry overview](/microsoft/foundry/) — the umbrella platform; agent service is the runtime layer.
+- [Microsoft MCP overview](/microsoft/mcp/) — MCP as a primitive across the Microsoft stack.
+- [MCP specification](https://modelcontextprotocol.io/specification) — the canonical spec.
+- [MCP clients matrix](https://modelcontextprotocol.io/clients) — modelcontextprotocol.io's own per-client capability matrix.
