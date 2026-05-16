@@ -5,19 +5,22 @@
  * Tag classes:
  *  - default: news (no extra class)
  *  - 'release' (olive)
- *  - 'advisory' (claw red)
+ *  - 'advisory' / 'cve' (claw red)
+ *  - 'deprecated' (mute)
  */
+
+import type { UpdateTag } from '@data/updates';
 
 export interface Props {
   date: string;
-  tag: 'NEWS' | 'RELEASE' | 'ADVISORY';
+  tag: UpdateTag;
   href?: string;
   title: string;
   meta?: string;
 }
 
 const { date, tag, href = '#', title, meta } = Astro.props;
-const tagClass = tag === 'RELEASE' ? 'release' : tag === 'ADVISORY' ? 'advisory' : '';
+const tagClass = tag.toLowerCase();
 ---
 
 <div class="update-row">
@@ -52,7 +55,9 @@ const tagClass = tag === 'RELEASE' ? 'release' : tag === 'ADVISORY' ? 'advisory'
     font-weight: 600;
   }
   .update-tag.release { color: var(--olive); }
-  .update-tag.advisory { color: var(--claw); }
+  .update-tag.advisory,
+  .update-tag.cve { color: var(--claw); }
+  .update-tag.deprecated { color: var(--ink-mute); }
 
   .update-title { font-size: 14px; line-height: 1.5; }
   .update-title small {
