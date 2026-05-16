@@ -14,7 +14,6 @@ const { entryFile, lastUpdated } = Astro.props;
 const editHref = entryFile
   ? `https://github.com/susanthgit/claw-planet/edit/main/${entryFile}`
   : 'https://github.com/susanthgit/claw-planet';
-const dateText = lastUpdated ?? '—';
 const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '';
 ---
 
@@ -57,7 +56,9 @@ const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '';
     </button>
 
     <div class="header-meta">
-      <span class="meta-item meta-updated"><span class="dot">●</span> last updated {dateText}</span>
+      {lastUpdated?.trim() && (
+        <span class="meta-item meta-updated"><span class="dot">●</span> last updated {lastUpdated}</span>
+      )}
       <a class="meta-item" href={editHref} target="_blank" rel="noopener">edit on GitHub</a>
       <a class="meta-item" href="/colophon/">colophon</a>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
