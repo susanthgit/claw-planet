@@ -51,5 +51,7 @@ const products = [
   description="OpenAI vendor hub on Claw — plain-English field notes on Codex CLI, OpenAI Agents SDK, Apps SDK, ChatGPT Atlas, and Custom GPTs. Day-1 sourced seed."
   ogImage="/og/home.png"
 >
-  <VendorHub vendor={vendor} products={products} />
+  <VendorHub vendor={vendor} products={products} compareLinks={[
+    { href: '/compare/cli-coding-agents/', label: '§ 7.2', title: 'CLI coding agents (Claude Code vs Codex CLI vs Gemini CLI vs Copilot CLI)' },
+  ]} />
 </BaseLayout>

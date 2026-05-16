@@ -53,6 +53,9 @@ const products = [
   description="Google vendor hub on Claw — plain-English field notes on Gemini CLI, Gemini API, NotebookLM, Vertex AI Agents, AI Studio, and Gems. Day-1 sourced seed."
   ogImage="/og/home.png"
 >
-  <VendorHub vendor={vendor} products={products} />
+  <VendorHub vendor={vendor} products={products} compareLinks={[
+    { href: '/compare/cli-coding-agents/', label: '§ 7.2', title: 'CLI coding agents (Claude Code vs Codex CLI vs Gemini CLI vs Copilot CLI)' },
+    { href: '/compare/direct-model-apis/', label: '§ 7.4', title: 'Direct model APIs (Claude API vs Gemini API vs Foundry)' },
+  ]} />
 </BaseLayout>
 

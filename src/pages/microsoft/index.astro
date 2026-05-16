@@ -53,6 +53,10 @@ const products = [
   description="Microsoft vendor hub on Claw — builder-only, public-sourced-only field notes on M365 Agents Toolkit, Copilot Studio, Azure AI Foundry, GitHub Copilot, Declarative Agents, and MCP for Microsoft surfaces. No customer engagement detail."
   ogImage="/og/home.png"
 >
-  <VendorHub vendor={vendor} products={products} />
+  <VendorHub vendor={vendor} products={products} compareLinks={[
+    { href: '/compare/cli-coding-agents/', label: '§ 7.2', title: 'CLI coding agents (Claude Code vs Codex CLI vs Gemini CLI vs Copilot CLI)' },
+    { href: '/compare/m365-extensibility-paths/', label: '§ 7.3', title: 'M365 extensibility paths (Copilot Studio vs Declarative Agents vs Custom Engine Agents)' },
+    { href: '/compare/direct-model-apis/', label: '§ 7.4', title: 'Direct model APIs — Foundry (Azure-governed platform, vs Claude API vs Gemini API)' },
+  ]} />
 </BaseLayout>
 
