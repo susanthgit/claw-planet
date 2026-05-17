@@ -6,7 +6,7 @@ description: "Where Model Context Protocol plugs into the Microsoft AI stack as 
 status: "published"
 verificationState: "sourced"
 verificationNote: "Compiled from learn.microsoft.com (microsoft-copilot-studio · microsoft-365-copilot · azure/ai-foundry · windows/ai/mcp), code.visualstudio.com (chat/mcp-servers · reference/mcp-configuration · v1.99 + v1.100 release notes), docs.github.com (copilot/concepts/about-mcp · copilot/how-tos/use-mcp-in-your-ide · copilot/how-tos/coding-agent/extend-coding-agent-with-mcp), and the microsoft/mcp catalogue repo as of 15 May 2026. All public sources only."
-lastReviewedAt: "2026-05-15"
+lastReviewedAt: "2026-05-17"
 sources:
   - "https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
   - "https://code.visualstudio.com/docs/copilot/reference/mcp-configuration"
@@ -70,6 +70,8 @@ The mcp.json shape:
 ```
 
 > Common confusion: "MCP in VS Code" requires the **GitHub Copilot Chat** extension + agent mode selected in Chat. It's not part of base VS Code without the extension.
+
+> → See [§VSC.1 VS Code as an MCP host](/microsoft/vs-code/overview/) for the deep dive — four config scopes, four transports, the sandbox + approval model, and the Windows-unsandboxed gotcha.
 
 ### GitHub Copilot IDE (VS Code, Visual Studio, JetBrains, Xcode)
 

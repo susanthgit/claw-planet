@@ -14,7 +14,7 @@
 export interface Product {
   slug: string;            // e.g. 'claude-code'
   name: string;            // e.g. 'Claude Code'
-  type: 'CLI' | 'Hosted product' | 'Low-code platform' | 'API / SDK' | 'Runtime' | 'Catalogue';
+  type: 'CLI' | 'Hosted product' | 'Low-code platform' | 'API / SDK' | 'Runtime' | 'Catalogue' | 'IDE';
   status: 'live' | 'coming-in-batch' | 'planned' | 'phase-2';
   description: string;
   href?: string;           // only when status=live; click target

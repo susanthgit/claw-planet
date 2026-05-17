@@ -16,7 +16,7 @@ import { getCollection } from 'astro:content';
 
 // Astro 5 evaluates getStaticPaths in a separate scope; inline the keys.
 export async function getStaticPaths() {
-  const PRODUCT_KEYS = ['agents-toolkit', 'copilot-studio', 'foundry', 'github-copilot', 'declarative-agents', 'mcp'];
+  const PRODUCT_KEYS = ['agents-toolkit', 'copilot-studio', 'foundry', 'github-copilot', 'declarative-agents', 'mcp', 'vs-code'];
   return PRODUCT_KEYS.map(product => ({ params: { product } }));
 }
 
@@ -56,6 +56,12 @@ const PRODUCT_META: Record<string, { title: string; code: string; lede: string; 
     code: 'MMS',
     lede: `Model Context Protocol — the open <a href="https://modelcontextprotocol.io">MCP</a> standard from Anthropic — is now wired into <strong>multiple Microsoft surfaces</strong>: VS Code (agent mode), GitHub Copilot, Copilot Studio (MCP as an action source), the Microsoft 365 Agents Toolkit (scaffolding MCP plugins for M365 Copilot), and Foundry Agent Service. Status differs per surface — some GA, some preview. Pages below are <strong>sourced</strong> from official Microsoft Learn docs across each surface.`,
     description: 'MCP for Microsoft — per-surface support, status (GA vs preview), auth shapes, transports. Sourced from learn.microsoft.com.',
+  },
+  'vs-code': {
+    title: 'VS Code as an MCP host',
+    code: 'VSC',
+    lede: `VS Code is <strong>Microsoft's editor MCP host</strong>. MCP support lives inside the GitHub Copilot extension and runs in Copilot Chat's agent mode. <strong>Tools GA since v1.99 (March 2025); Resources, Prompts, Auth GA in v1.101 (May 2025); Sampling experimental.</strong> Configuration ships in four places — <code>.vscode/mcp.json</code> (workspace, team-shareable, VCS-committable), user profile, remote user, and <code>devcontainer.json</code>. The platform-specific gotcha that bites mixed-OS teams: <strong>sandboxing is macOS + Linux only — Windows always runs local MCP servers unsandboxed.</strong> Pages below are <strong>sourced</strong> from <a href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers">code.visualstudio.com/docs/copilot</a> and the v1.101 release notes.`,
+    description: 'VS Code as an MCP host — config scopes, transports, capabilities, auth, the sandbox + approval model, and the Windows-unsandboxed gotcha. Sourced from code.visualstudio.com.',
   },
 };
 

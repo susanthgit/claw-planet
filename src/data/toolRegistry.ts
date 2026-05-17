@@ -14,6 +14,7 @@
  *
  * Set 2026-05-15 (Claw v0b · Batch E).
  * Updated 2026-05-17 (Session 14 · external-href exception clarified).
+ * Updated 2026-05-17 (Session 15 · VS Code promoted to internal Claw page).
  */
 
 export interface ToolMeta {
@@ -45,10 +46,11 @@ export const toolRegistry = {
 
   // MCP hosts / clients (compare: mcp-clients)
   // External hrefs are intentional for clients without Claw product pages yet —
-  // Claude Desktop, VS Code, and the GHC cloud agent are queued S15+ candidates;
+  // Claude Desktop and the GHC cloud agent are queued S16+ candidates;
   // Cursor is third-party (outside our 5-vendor universe), external is honest.
+  // VS Code promoted to internal Claw page in Session 15 (17 May 2026).
   'claude-desktop':    { label: 'Claude Desktop',         href: 'https://www.claude.com/download' },
-  'vs-code':           { label: 'VS Code (Copilot)',      href: 'https://code.visualstudio.com/docs/copilot/chat/mcp-servers' },
+  'vs-code':           { label: 'VS Code (Copilot)',      href: '/microsoft/vs-code/overview/' },
   'cursor':            { label: 'Cursor',                 href: 'https://docs.cursor.com/context/model-context-protocol' },
   'ghc-cloud-agent':   { label: 'GHC Cloud Agent',        href: 'https://docs.github.com/en/copilot/how-tos/agents/copilot-coding-agent/extending-copilot-coding-agent-with-mcp' },
 } satisfies Record<string, ToolMeta>;

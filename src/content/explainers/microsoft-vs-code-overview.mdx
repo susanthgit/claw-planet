@@ -1,0 +1,286 @@
+---
+title: "VS Code as an MCP host — the editor that plugs MCP servers into Copilot Chat"
+section: "VS Code"
+sectionNumber: "VSC.1"
+description: "Microsoft's editor surface for MCP servers. The four config locations (workspace .vscode/mcp.json, user profile, dev container, remote user), the trust + sandbox model (per-tool default; sandboxed auto-approve; macOS + Linux only — Windows always unsandboxed), and the gotchas (the mcp.json-direct-start trust bypass, org-policy off by default for Copilot Business/Enterprise, Sampling experimental)."
+status: "published"
+verificationState: "sourced"
+verificationNote: "Compiled from canonical VS Code docs (code.visualstudio.com/docs/copilot/chat/mcp-servers, /docs/copilot/reference/mcp-configuration, /updates/v1_101), the MCP Apps support blog post (Jan 2026), GitHub MCP concept docs, and the MCP specification on 17 May 2026. VS Code MCP support has Tools GA since v1.99 (Mar 2025), Streamable HTTP since v1.100 (Apr 2025), full client maturity (Resources / Prompts / Auth) GA in v1.101 (May 2025). Sampling remains experimental. The MCP spec and VS Code's MCP surface change fast; verify version pins, transport behaviour, and capability cells against canonical docs before relying on them in production."
+lastReviewedAt: "2026-05-17"
+sources:
+  - "https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+  - "https://code.visualstudio.com/docs/copilot/reference/mcp-configuration"
+  - "https://code.visualstudio.com/updates/v1_101"
+  - "https://code.visualstudio.com/blogs/2026/01/26/mcp-apps-support"
+  - "https://docs.github.com/en/copilot/concepts/about-mcp"
+  - "https://modelcontextprotocol.io/specification"
+seeAlso:
+  - "7.6"
+  - "MMS.1"
+  - "GHC.1"
+vendor: "microsoft"
+product: "vs-code"
+---
+
+## The thirty-second version
+
+**VS Code is Microsoft's editor MCP host.** It speaks MCP via the **GitHub Copilot extension** (the MCP host logic lives inside the extension, not in base VS Code) in **agent mode** inside Copilot Chat. Of the eight clients in [§7.6](/compare/mcp-clients/), it's one of two IDE-shaped hosts (the other is Cursor) — and the one with the most-canonical documentation, the most-mature client surface, and the most-team-friendly config model.
+
+The headline asymmetry to know up front:
+
+- **Config lives in four places.** Workspace (`.vscode/mcp.json` — team-shareable, VCS-committable), user profile, remote user (for VS Code Remote sessions), and `devcontainer.json` (for dev containers). The workspace tier is what most teams reach for first because it ships with the repo.
+- **Per-tool approval is the default.** Each tool invocation surfaces a confirmation prompt. The one exception is **sandboxed local servers**, which auto-approve because the OS-level isolation does the safety job for you.
+- **🔴 Sandboxing is macOS + Linux only — Windows always runs local MCP servers unsandboxed.** The VS Code docs say this verbatim ("Sandboxing is currently not available on Windows"). On Windows, you fall back to per-tool confirmation for safety; the OS-level filesystem/network isolation simply isn't there.
+
+> **Scope boundary.** This page is about **VS Code as the editor MCP host** — what it speaks, where you configure it, the trust model. Three adjacent surfaces are documented separately:
+> - **[GitHub Copilot](/microsoft/github-copilot/)** — the subscription, model picker, and chat surface that sits inside VS Code. VS Code is the host; Copilot is the brain.
+> - **[GitHub Copilot cloud agent](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/mcp-and-cloud-agent)** — the autonomous coding-agent surface that runs on GitHub.com, has its own MCP config (per-repo, in the GitHub UI), and uses a different approval posture. Queued as its own Claw page.
+> - **[MCP across Microsoft surfaces](/microsoft/mcp/)** — the cross-surface comparison that places VS Code next to Copilot Studio, ATK, and Foundry. Read [§MMS.1](/microsoft/mcp/overview/) when you need the comparison; read this page when you need depth on VS Code specifically.
+
+## Where VS Code fits on the MCP map
+
+[§7.6 MCP hosts and clients](/compare/mcp-clients/) puts eight applications and runtimes into six shapes. VS Code sits in the **IDE** shape alongside Cursor. Two things distinguish VS Code from the rest:
+
+1. **Per-workspace config baked into a real editor.** `.vscode/mcp.json` is team-shareable, VCS-committable, and renders next to the rest of the workspace config with VS Code's built-in JSON IntelliSense. The MCP servers your project needs ship with the repo.
+2. **Auto-discovery of Claude Desktop config.** The `chat.mcp.discovery.enabled` setting imports `claude_desktop_config.json` so any server you wired up for Claude Desktop appears in VS Code too — without duplicating config.
+
+The trade-off VS Code makes (vs Claude Code) is **scope granularity**. Claude Code has three explicit scope tiers (local, project, user) with separate files; VS Code has workspace vs user profile plus the dev-container and remote-user overlays. The Claude Code model is sharper for the "private-per-checkout vs team-shared vs global" decision. The VS Code model is friendlier for the workspace-only common case.
+
+## Four ways to add a server
+
+### 1. From the gallery (`@mcp` in Extensions view)
+
+The lowest-friction path. Open the Extensions view (`Ctrl+Shift+X`), type `@mcp` to filter, click **Install** (or right-click → **Install in Workspace** for `.vscode/mcp.json`). VS Code prompts you to **trust the server** before starting it — the trust dialog only appears the first time a given server is started.
+
+The gallery surfaces servers from the [GitHub MCP Registry](https://github.com/mcp), which is currently in public preview.
+
+### 2. Edit `mcp.json` directly
+
+Open the workspace file (`.vscode/mcp.json`) or run **MCP: Open User Configuration** from the Command Palette for the user-profile file. VS Code gives you JSON IntelliSense for the schema.
+
+A minimal example with one remote and one local server:
+
+```json
+{
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@microsoft/mcp-server-playwright"]
+    }
+  }
+}
+```
+
+> ⚠️ **Don't hardcode secrets in `mcp.json`.** Use input variables (see auth section below) or environment files. Workspace `.vscode/mcp.json` gets committed to the repo; secrets in there leak to anyone who clones it.
+
+### 3. From the command line
+
+```bash
+code --add-mcp "{\"name\":\"my-server\",\"command\":\"uvx\",\"args\":[\"mcp-server-fetch\"]}"
+```
+
+Persists to the user profile's `mcp.json`. Useful for scripted setup or quick experiments before deciding whether to keep a server.
+
+### 4. In a dev container
+
+Add the server config under `customizations.vscode.mcp` in `devcontainer.json`:
+
+```json
+{
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:latest",
+  "customizations": {
+    "vscode": {
+      "mcp": {
+        "servers": {
+          "playwright": {
+            "command": "npx",
+            "args": ["-y", "@microsoft/mcp-server-playwright"]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+When the dev container builds, VS Code writes these into the remote `mcp.json` automatically. Useful for containerised development environments that need MCP wiring out of the box.
+
+## Where config lives — four scopes
+
+| Scope | File | Lives in | When it loads |
+|---|---|---|---|
+| Workspace | `.vscode/mcp.json` | Your repo (commit it) | Active when this workspace is open |
+| User profile | `mcp.json` in profile folder | Per VS Code profile | Active in every workspace under this profile |
+| Remote user | Remote `mcp.json` | The remote machine (SSH / WSL / Codespace) | When you're connected to that remote |
+| Dev container | `devcontainer.json` → `customizations.vscode.mcp` | Repo + container image | When the dev container is up |
+
+A few load-order facts worth knowing:
+
+- **Servers in your user profile run locally** (on your machine, not on the remote). If you SSH into a remote and want a server to execute *on the remote*, configure it in workspace settings or the remote user `mcp.json` (**MCP: Open Remote User Configuration**).
+- **Profiles isolate MCP config.** Each VS Code profile has its own MCP server config, which is what lets you switch between (e.g.) a "work" profile with the GitHub MCP server and a "personal" profile without.
+- **Workspace config is the team-shareable tier.** This is the key thing VS Code does that Claude Desktop and Copilot CLI don't.
+
+## Transports
+
+VS Code speaks **four** MCP transports:
+
+- **stdio** — local processes (`command`, `args`, `env`). The default for npm / pipx-style local servers.
+- **Streamable HTTP** (`type: "http"`) — the forward-path remote transport. Added in v1.100 (April 2025).
+- **SSE** (`type: "sse"`) — the legacy remote transport. VS Code tries Streamable HTTP first and **auto-falls back to SSE** if the server doesn't speak HTTP Stream. You cannot pin to SSE-only.
+- **Unix sockets and Windows named pipes** — `unix:///path/to/server.sock` or `pipe:///pipe/name` for HTTP traffic over local IPC. Useful when you need a local HTTP server without binding a TCP port.
+
+> **The SSE-fallback is a feature, not a gotcha** — it means VS Code works with older servers that haven't migrated to Streamable HTTP. But it does mean you can't *force* a server to use SSE for testing purposes from VS Code; you'd need a different MCP client to verify SSE-only behaviour.
+
+## Capabilities
+
+VS Code's MCP client surface, as of v1.101 (May 2025):
+
+| Capability | Status | Notes |
+|---|---|---|
+| **Tools** | ✓ GA (since v1.99, Mar 2025) | The most-used primitive. Surfaced as agent tools in Copilot Chat. |
+| **Resources** | ✓ GA (v1.101) | Attach via **Add Context** → **MCP Resources** in Chat, or via **MCP: Browse Resources**. |
+| **Prompts** | ✓ GA (v1.101) | Surface as `/mcp.server.prompt` slash commands in chat input. |
+| **Sampling** | ⚠️ experimental | Servers can call back to the editor's model. Useful for agentic servers that need their own reasoning step. API may change. |
+| **MCP Apps** | ✓ (Jan 2026 blog) | Interactive UI components (forms, visualisations, drag-and-drop lists) rendered inline in chat. MCP Apps is an open standard not in the core MCP spec — also supported by ChatGPT. |
+
+> **About Sampling.** Production MCP servers shouldn't depend on Sampling yet — VS Code's docs flag the API as experimental and warn it may change. Use it for prototyping; treat it as out-of-scope when designing servers you intend to ship.
+
+## Auth
+
+VS Code handles four auth shapes for MCP servers:
+
+- **No auth** — for local stdio servers that don't need credentials.
+- **Static headers** — `headers: { "Authorization": "Bearer ..." }` on HTTP/SSE servers. The bearer value can reference an input variable.
+- **Input variables** — define them in the `inputs` array; reference with `${input:<id>}`. VS Code prompts at first use and stores the value in the OS credential store (Keychain on macOS, Credential Manager on Windows, libsecret on Linux). The classic pattern:
+  ```json
+  {
+    "inputs": [
+      { "type": "promptString", "id": "api-key", "description": "API Key", "password": true }
+    ],
+    "servers": {
+      "my-server": {
+        "type": "http",
+        "url": "https://api.example.com/mcp",
+        "headers": { "Authorization": "Bearer ${input:api-key}" }
+      }
+    }
+  }
+  ```
+- **OAuth 2.0** — VS Code implements **Dynamic Client Registration** (DCR) for both spec versions of the MCP auth flow. Also has native handling for **GitHub OAuth** (no manual DCR needed) and **Microsoft Entra OIDC**. The "Auth" code lens on the server config in `mcp.json` triggers the OAuth flow with a redirect.
+
+The `chat.mcp.serverSampling` setting controls which models a server can call when using Sampling.
+
+## The sandbox + approval model
+
+By default, **every tool call requires per-call user confirmation**. VS Code surfaces a dialog with the server name, tool name, and arguments before the call runs. You can approve, deny, or whitelist that specific tool for the session.
+
+You can opt out of the per-call confirmation by **enabling sandboxing** for a server. Sandboxing isolates the server's filesystem and network access to an explicit allowlist:
+
+```json
+{
+  "servers": {
+    "myServer": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"],
+      "sandboxEnabled": true,
+      "sandbox": {
+        "filesystem": {
+          "allowWrite": ["${workspaceFolder}"],
+          "denyRead": ["${userHome}/.ssh"]
+        },
+        "network": {
+          "allowedDomains": ["api.example.com", "*.cdn.example.com"]
+        }
+      }
+    }
+  }
+}
+```
+
+When sandboxing is enabled, **tool calls auto-approve** because the server runs in an isolated environment where it can only touch what you explicitly permitted.
+
+> **🔴 Sandboxing is macOS + Linux only.** The VS Code docs say this verbatim: *"Sandboxing is currently not available on Windows."* On Windows, **all** local stdio MCP servers run unsandboxed, regardless of the `sandboxEnabled` flag, and you fall back to per-tool confirmation for safety. This is the single most important platform-specific gotcha when teams mix Windows and Mac/Linux developers — the same `.vscode/mcp.json` produces different runtime safety behaviour per OS.
+
+The sandbox rules support `filesystem.allowWrite`, `filesystem.denyRead`, `filesystem.denyWrite`, `network.allowedDomains`, and `network.deniedDomains`. Wildcards work for domains (`*.example.com`).
+
+## Trust on first start — and the one bypass
+
+The **first** time a given server is started, VS Code surfaces a trust dialog: the server name, the config that will run, and a confirm/cancel choice. If you don't trust it, the server doesn't start and chat continues without its tools.
+
+You can reset trust decisions via **MCP: Reset Trust** in the Command Palette.
+
+> ⚠️ **The gotcha.** *"If you start the MCP server directly from the `mcp.json` file, you will not be prompted to trust the server configuration."* — the VS Code docs say this explicitly. The trust dialog only fires through the normal start path. If you're reviewing a teammate's PR that adds a server to `.vscode/mcp.json`, don't run it from the file's inline code lens — install via the gallery or the Command Palette so the trust prompt actually appears.
+
+**Committed `.vscode/mcp.json` is a trust boundary.** When a teammate's PR adds an MCP server to the workspace config, you're trusting (a) the command/URL they specified, (b) the server's package on npm or its remote endpoint, and (c) any environment variables it reads. Review server commands and URLs before merging the same way you'd review a `package.json` dependency add. Never commit secrets — use input variables and let the OS credential store hold them.
+
+## Settings Sync — and the org-policy gate
+
+**Settings Sync** carries MCP server configuration across your VS Code installations. Enable it via **Settings Sync: Configure** in the Command Palette and tick the **MCP Servers** option. This is one of the things that makes the per-user-profile config tier useful — you set up your servers once, they appear on every VS Code instance signed into the same account.
+
+For Copilot Business and Copilot Enterprise tenants, **MCP servers are gated by the GitHub org policy *"MCP servers in Copilot"*** — and that policy is **off by default**. Admins must explicitly enable it. If you're on a locked-down enterprise tenant and MCP is invisible, file the policy request before assuming the feature is broken. Free / Pro / Pro+ tiers are unaffected.
+
+## Dev mode — iterating on a local server
+
+When you're building your own MCP server, the `dev` key in `mcp.json` saves you from manually restarting on every file change:
+
+```json
+{
+  "servers": {
+    "my-server": {
+      "command": "node",
+      "args": ["server.js"],
+      "dev": {
+        "watch": "src/**/*.ts",
+        "debug": { "type": "node" }
+      }
+    }
+  }
+}
+```
+
+- `watch` — a glob; file changes restart the server.
+- `debug` — wires the server to the VS Code debugger. Currently supports Node.js and Python.
+
+The full reference is on the [MCP Dev Guide](https://code.visualstudio.com/api/extension-guides/ai/mcp). This isn't a feature most teams need — but if you're shipping an MCP server, it's the fastest local iteration loop you'll find.
+
+## Common pitfalls
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Server in `mcp.json` but never starts | Trust dialog dismissed; or server was started "from `mcp.json`" and the trust prompt didn't fire | **MCP: Reset Trust** → start via the gallery or Command Palette so the dialog appears |
+| `@mcp` in Extensions view returns nothing | Org policy "MCP servers in Copilot" is off | Ask your GitHub org admin to enable it (Business/Enterprise only) |
+| Sandbox config ignored on Windows | Sandboxing isn't available on Windows | Per-tool confirmation is the only Windows safety surface; consider running write-capable servers in WSL |
+| Server tool calls take seconds longer than expected | HTTP-first transport tried Streamable HTTP and timed out before falling back to SSE | Pin the server to `type: "sse"` in config if you know it's SSE-only |
+| Sampling-using server breaks after a VS Code update | Sampling API is experimental and may change | Don't depend on Sampling in production servers yet |
+| Server works in your VS Code but not a teammate's | Mismatched profiles; user-profile config doesn't sync without Settings Sync turned on | Move the server to `.vscode/mcp.json` (workspace) or enable Settings Sync |
+| Secrets visible in `.vscode/mcp.json` | Hardcoded credentials in committed config | Replace with `${input:<id>}` input variables; secrets land in OS credential store |
+| Server runs locally on your remote SSH session | Server defined in user profile, which runs on your local machine | Move to workspace settings or **MCP: Open Remote User Configuration** |
+
+## How VS Code compares to the other IDE / CLI hosts
+
+Lightweight contrast — read [§7.6](/compare/mcp-clients/) for the full 8-client matrix.
+
+- **vs [Claude Code](/anthropic/claude-code/)** — Claude Code has the richest OAuth implementation (DCR + RFC 9728 + CIMD) and three explicit scope tiers; VS Code has IDE polish, per-workspace `.vscode/mcp.json` for team-shared config, MCP Apps support, and the GitHub auth native path. Many teams run **both** for different jobs (Claude Code in the terminal; VS Code in the editor).
+- **vs Copilot CLI** — Copilot CLI has only the global user config (`~/.copilot/mcp-config.json`) — no per-project scope. VS Code is the same-family path with per-workspace config when teams need it.
+- **vs Cursor** — same VS Code-fork heritage and similar config locations by analogy, but Cursor's docs site is JS-rendered so capability cells are inferred not canonical. VS Code wins on canonical-source verifiability.
+
+## What we are NOT claiming
+
+- **That VS Code is the "best" MCP host.** Depends on your scenario — terminal-first work fits Claude Code or Copilot CLI better; managed runtime work fits Foundry Agent Service; autonomous coding fits the GHC cloud agent. See [§7.6](/compare/mcp-clients/) for the decision tree.
+- **That MCP Apps will land on every host on the same timeline.** It's currently a VS Code + ChatGPT feature; other hosts may not adopt it.
+- **That Sampling is production-ready.** It's experimental in VS Code as of 17 May 2026.
+- **That the GHC cloud agent works the same way.** It runs on GitHub.com (not your machine), has its own MCP config in the repo's GitHub UI, and **calls tools without per-call approval** — different posture, different page.
+
+## What to read next
+
+- [§7.6 MCP hosts and clients](/compare/mcp-clients/) — eight-client matrix; the asymmetry-to-read-first row is approval/autonomy.
+- [§MMS.1 MCP across Microsoft surfaces](/microsoft/mcp/overview/) — VS Code in context with Copilot Studio, ATK, Foundry, and Windows AI Foundry.
+- [§GHC.1 GitHub Copilot overview](/microsoft/github-copilot/overview/) — the subscription, model picker, and chat surface that runs inside this editor.
+- [§CC.5 MCP integration in Claude Code](/anthropic/claude-code/mcp/) — the terminal-CLI counterpart most teams pair with VS Code.
+- [VS Code MCP server reference](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) — Microsoft's canonical doc.
+- [VS Code MCP configuration reference](https://code.visualstudio.com/docs/copilot/reference/mcp-configuration) — the full `mcp.json` schema.

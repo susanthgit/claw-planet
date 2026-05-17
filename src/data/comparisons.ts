@@ -1266,7 +1266,7 @@ export const comparisons: Record<string, Comparison> = {
         cells: {
           'claude-desktop':       { value: 'Per-tool-call UI approval required', note: 'Every tool call surfaces a prompt; no bulk-approve toggle.', sourceRefs: ['cd-quickstart'] },
           'claude-code':          { value: 'Per-session trust for project `.mcp.json` · per-tool prompts otherwise', note: 'First time a project-scoped `.mcp.json` is loaded, an explicit approval prompt runs before any server is used.', sourceRefs: ['cc-mcp'] },
-          'vs-code':              { value: 'Per-tool confirmation by default · sandboxed servers auto-approve', note: 'Sandboxing (stdio isolation) is macOS + Linux only — Windows users run unsandboxed and confirm each call.', sourceRefs: ['vsc-v101'] },
+          'vs-code':              { value: 'Per-tool confirmation by default · sandboxed servers auto-approve', note: 'Sandboxing (stdio isolation) is macOS + Linux only — Windows users run unsandboxed and confirm each call.', sourceRefs: ['vsc-v101', 'vsc-mcp'] },
           'cursor':               { value: 'Not confirmed', note: 'Per-tool approval model not stated in canonical docs (JS-rendered). Inferred to require user confirmation in Agent mode by VS Code-fork analogy.', sourceRefs: ['cursor-changelog'] },
           'copilot-studio':       { value: 'User consent at connection setup · per-conversation auth on first run', note: 'Power Platform connector auth flow handles consent. No per-tool-call prompt at runtime.', sourceRefs: ['cps-mcp-add'] },
           'copilot-cli':          { value: 'No per-call approval — tools run automatically', note: 'Once a server is in the config and tools are allowlisted, the CLI calls them in-session without prompting.', sourceRefs: ['gcli-mcp'] },
@@ -1280,7 +1280,7 @@ export const comparisons: Record<string, Comparison> = {
         cells: {
           'claude-desktop':       { value: 'macOS + Windows · no Linux build', note: 'The only client of the eight with a platform gap.', sourceRefs: ['cd-launch'] },
           'claude-code':          { value: 'All three (macOS · Windows · Linux)', sourceRefs: ['cc-overview'] },
-          'vs-code':              { value: 'All three', note: 'Sandboxing for local MCP servers: macOS + Linux only (Windows unsandboxed).', sourceRefs: ['vsc-v101'] },
+          'vs-code':              { value: 'All three', note: 'Sandboxing for local MCP servers: macOS + Linux only (Windows unsandboxed).', sourceRefs: ['vsc-v101', 'vsc-mcp'] },
           'cursor':               { value: 'All three', note: 'Anysphere ships macOS · Windows · Linux builds.', sourceRefs: ['cursor-changelog'] },
           'copilot-studio':       { value: 'All three (SaaS — any browser)', sourceRefs: ['cps-mcp'] },
           'copilot-cli':          { value: 'All three', sourceRefs: ['gcli-mcp'] },
@@ -1308,7 +1308,7 @@ export const comparisons: Record<string, Comparison> = {
         cells: {
           'claude-desktop':       { value: 'No Linux build — the reference host doesn\'t run on the platform most dev/CI tooling targets', sourceRefs: ['cd-launch'] },
           'claude-code':          { value: 'Server name `workspace` is reserved — Claude Code skips the server at load time and shows a warning asking you to rename it. Not silent, but easy to overlook in CI or a busy terminal', sourceRefs: ['cc-mcp'] },
-          'vs-code':              { value: 'Stdio sandboxing is macOS + Linux only — Windows users run all local MCP servers unsandboxed', sourceRefs: ['vsc-v101'] },
+          'vs-code':              { value: 'Stdio sandboxing is macOS + Linux only — Windows users run all local MCP servers unsandboxed', sourceRefs: ['vsc-v101', 'vsc-mcp'] },
           'cursor':               { value: 'Docs site is fully JS-rendered — automated verification of Cursor\'s exact MCP capability depth is not possible without running the product', sourceRefs: ['cursor-changelog'] },
           'copilot-studio':       { value: 'No Prompts support + SSE dropped Aug 2025 — SSE-only servers cannot connect and Prompt-publishing servers lose that capability', sourceRefs: ['cps-mcp', 'cps-mcp-add'] },
           'copilot-cli':          { value: 'No project-scoped MCP config — only a global `~/.copilot/mcp-config.json`. Teams that need per-project MCP configs should use VS Code or Claude Code', sourceRefs: ['gcli-mcp'] },

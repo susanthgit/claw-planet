@@ -24,7 +24,8 @@ const fdyCount = await countByProduct('foundry');
 const ghcCount = await countByProduct('github-copilot');
 const daCount  = await countByProduct('declarative-agents');
 const mcpCount = await countByProduct('mcp');
-const total = atkCount + cpsCount + fdyCount + ghcCount + daCount + mcpCount;
+const vscCount = await countByProduct('vs-code');
+const total = atkCount + cpsCount + fdyCount + ghcCount + daCount + mcpCount + vscCount;
 
 const vendor = {
   slug: 'microsoft',
@@ -34,7 +35,7 @@ const vendor = {
   officialLabel: 'learn.microsoft.com',
   status: total >= 8 ? 'live' as const : 'coming-in-batch' as const,
   statusNote: total >= 8
-    ? `Batch D shipped — ${total} sourced entries live across 6 products. Pages all start as <em>sourced</em> with citations; Sush upgrades to <em>tried</em> over time as he experiments. PRs with verification notes welcome.`
+    ? `Batch D shipped — ${total} sourced entries live across 7 products. Pages all start as <em>sourced</em> with citations; Sush upgrades to <em>tried</em> over time as he experiments. PRs with verification notes welcome.`
     : `Day-1 sourced seed is mid-build (Batch D — ${total}/8 pages so far). Pages all start as <em>sourced</em> with citations.`,
 };
 
@@ -45,12 +46,13 @@ const products = [
   { slug: 'github-copilot', name: 'GitHub Copilot', type: 'CLI' as const, status: (ghcCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch D', href: '/microsoft/github-copilot/', description: `GitHub's developer assistant — code completion + Chat + CLI. Surfaces in VS Code, JetBrains, Visual Studio, Xcode, Neovim, Eclipse, terminal. Free / Pro / Pro+ / Business / Enterprise tiers. ${ghcCount} pages: overview.` },
   { slug: 'declarative-agents', name: 'Declarative Agents (M365)', type: 'API / SDK' as const, status: (daCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch D', href: '/microsoft/declarative-agents/', description: `The manifest-based agent format that runs inside Microsoft 365 Copilot Chat. Conversation starters, instructions, capabilities (web search, Graph connectors, code interpreter, OneDrive/SharePoint), API-plugin actions. ${daCount} pages: overview.` },
   { slug: 'mcp', name: 'MCP for Microsoft surfaces', type: 'Catalogue' as const, status: (mcpCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch D', href: '/microsoft/mcp/', description: `Where MCP plugs into the Microsoft AI stack: VS Code (agent mode), GitHub Copilot, Copilot Studio (actions), the M365 Agents Toolkit, and Foundry Agent Service. Status differs per surface. ${mcpCount} pages: overview.` },
+  { slug: 'vs-code', name: 'VS Code (as an MCP host)', type: 'IDE' as const, status: (vscCount > 0 ? 'live' : 'coming-in-batch') as 'live' | 'coming-in-batch', batchHint: 'Batch E', href: '/microsoft/vs-code/', description: `Microsoft's editor MCP host — runs MCP servers via the GitHub Copilot extension in agent mode. Per-workspace <code>.vscode/mcp.json</code> makes team-shared config straightforward. Tools GA since v1.99 (Mar 2025); full client maturity (Resources + Prompts + Auth) GA v1.101 (May 2025). Sandboxing macOS + Linux only — Windows always unsandboxed. ${vscCount} pages: overview.` },
 ];
 ---
 
 <BaseLayout
   title="Microsoft — Claw"
-  description="Microsoft vendor hub on Claw — builder-only, public-sourced-only field notes on M365 Agents Toolkit, Copilot Studio, Microsoft Foundry, GitHub Copilot, Declarative Agents, and MCP for Microsoft surfaces. No customer engagement detail."
+  description="Microsoft vendor hub on Claw — builder-only, public-sourced-only field notes on M365 Agents Toolkit, Copilot Studio, Microsoft Foundry, GitHub Copilot, Declarative Agents, MCP for Microsoft surfaces, and VS Code as an MCP host. No customer engagement detail."
   ogImage="/og/home.png"
 >
   <VendorHub vendor={vendor} products={products} compareLinks={[
@@ -58,6 +60,7 @@ const products = [
     { href: '/compare/m365-extensibility-paths/', label: '§ 7.3', title: 'M365 extensibility paths (Copilot Studio vs Declarative Agents vs Custom Engine Agents)' },
     { href: '/compare/direct-model-apis/', label: '§ 7.4', title: 'Direct model APIs — Foundry (Azure-governed platform, vs Claude API vs Gemini API)' },
     { href: '/compare/hosted-agent-platforms/', label: '§ 7.5', title: 'Agent platforms — Foundry Agent Service vs Vertex AI Agents vs OpenAI Agents SDK vs Copilot Studio' },
+    { href: '/compare/mcp-clients/', label: '§ 7.6', title: 'MCP hosts and clients — where you plug an MCP server in (Claude Desktop · Claude Code · VS Code · Cursor · Copilot Studio · Copilot CLI · Foundry Agent Service · GHC cloud agent)' },
   ]} />
 </BaseLayout>
 

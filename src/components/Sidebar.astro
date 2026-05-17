@@ -153,9 +153,10 @@ if (activeVendor === 'openclaw') {
     { num: 'GEM',  title: 'Gems',             count: gemKids.length,  slug: '/google/gems/',              children: gemKids },
   ];
 } else if (activeVendor === 'microsoft') {
-  // Microsoft — product-shaped nav. 6 products (Batch D, 15 May 2026):
+  // Microsoft — product-shaped nav. 7 products (Batch D, 15 May 2026; VS Code added S15, 17 May 2026):
   // M365 Agents Toolkit · Copilot Studio · Microsoft Foundry · GitHub Copilot ·
-  // Declarative Agents · MCP for Microsoft. Builder-only · public sources only.
+  // Declarative Agents · MCP for Microsoft · VS Code (as MCP host).
+  // Builder-only · public sources only.
   // voice-lint enforces a public-source-citation gate on every Microsoft entry.
   const atkKids = await loadVendorProductChildren('microsoft', 'agents-toolkit', '/microsoft/agents-toolkit/');
   const cpsKids = await loadVendorProductChildren('microsoft', 'copilot-studio', '/microsoft/copilot-studio/');
@@ -163,6 +164,7 @@ if (activeVendor === 'openclaw') {
   const ghcKids = await loadVendorProductChildren('microsoft', 'github-copilot', '/microsoft/github-copilot/');
   const daKids  = await loadVendorProductChildren('microsoft', 'declarative-agents', '/microsoft/declarative-agents/');
   const mcpKids = await loadVendorProductChildren('microsoft', 'mcp', '/microsoft/mcp/');
+  const vscKids = await loadVendorProductChildren('microsoft', 'vs-code', '/microsoft/vs-code/');
 
   sections = [
     { num: 'MS',   title: 'Hub',                count: undefined,       slug: '/microsoft/' },
@@ -172,8 +174,9 @@ if (activeVendor === 'openclaw') {
     { num: 'GHC',  title: 'GitHub Copilot',     count: ghcKids.length, slug: '/microsoft/github-copilot/',     children: ghcKids },
     { num: 'DA',   title: 'Declarative Agents', count: daKids.length,  slug: '/microsoft/declarative-agents/', children: daKids },
     { num: 'MMS',  title: 'MCP for Microsoft',  count: mcpKids.length, slug: '/microsoft/mcp/',                children: mcpKids },
+    { num: 'VSC',  title: 'VS Code (MCP host)', count: vscKids.length, slug: '/microsoft/vs-code/',            children: vscKids },
   ];
-} else {
+}else {
   // Fallback for future vendors before their batch lands.
   sections = [
     { num: '·', title: 'Hub', count: undefined, slug: `/${activeVendor}/` },
